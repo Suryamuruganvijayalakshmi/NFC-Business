@@ -111,6 +111,45 @@ export async function loginUser(email: string, password?: string): Promise<{ use
   return { user };
 }
 
+export async function loginWithGoogle(): Promise<{ error?: string }> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const redirectUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : 'https://signbridge.click/auth/callback';
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) return { error: error.message };
+      return {};
+    } catch (err: any) {
+      return { error: err?.message || 'Google authentication failed' };
+    }
+  }
+
+  // Fallback demo Google user when offline
+  const demoGoogleUser: UserSession = {
+    id: `user-google-${Date.now()}`,
+    email: 'surya.google@signbridge.click',
+    user_metadata: {
+      full_name: 'Surya Narayanan',
+      username: 'surya',
+      profile_type: 'professional',
+    }
+  };
+  setCurrentUser(demoGoogleUser);
+  return {};
+}
+
 export async function signUpUser(
   email: string, 
   password: string, 
