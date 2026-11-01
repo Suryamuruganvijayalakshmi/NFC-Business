@@ -236,6 +236,17 @@ export default function SignUpPage() {
               <span>{loading ? 'Creating Identity...' : 'Complete Registration'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+
+            <p className="text-[11px] text-center text-slate-500 mt-3 leading-relaxed">
+              By creating an account, you agree to SignBridge&apos;s{' '}
+              <Link href="/terms" className="text-[#087CF0] hover:underline font-medium">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="text-[#087CF0] hover:underline font-medium">
+                Privacy Policy
+              </Link>.
+            </p>
           </form>
 
           <div className="mt-6 text-center text-xs text-slate-500">

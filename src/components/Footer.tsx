@@ -146,9 +146,15 @@ export default function Footer() {
             &copy; 2026 SignBridge. All rights reserved. Your Identity. One Tap Away.
           </p>
           <div className="flex items-center gap-6">
-            <span className="hover:text-slate-300 cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-slate-300 cursor-pointer">Terms of Service</span>
-            <span className="hover:text-slate-300 cursor-pointer">NFC Hardware Specs</span>
+            <Link href="/privacy" className="hover:text-slate-300 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-slate-300 transition-colors">
+              Terms of Service
+            </Link>
+            <Link href="/features" className="hover:text-slate-300 transition-colors">
+              NFC Hardware Specs
+            </Link>
           </div>
         </div>
 
