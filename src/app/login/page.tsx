@@ -11,6 +11,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -18,6 +19,12 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!agreeTerms) {
+      setError('Please agree to the Terms and Conditions to proceed.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -36,6 +43,10 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setError('');
+    if (!agreeTerms) {
+      setError('Please agree to the Terms and Conditions before continuing with Google.');
+      return;
+    }
     setGoogleLoading(true);
     const res = await loginWithGoogle();
     if (res.error) {
@@ -151,6 +162,27 @@ export default function LoginPage() {
                 />
                 <Lock className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
               </div>
+            </div>
+
+            {/* Terms and Conditions Checkbox */}
+            <div className="flex items-start gap-2.5 pt-1">
+              <input
+                id="login-terms"
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#087CF0] focus:ring-[#087CF0] cursor-pointer accent-[#087CF0]"
+              />
+              <label htmlFor="login-terms" className="text-xs text-slate-600 leading-snug cursor-pointer select-none">
+                I agree to the{' '}
+                <Link href="/terms" target="_blank" className="text-[#087CF0] font-semibold hover:underline">
+                  Terms and Conditions
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" target="_blank" className="text-[#087CF0] font-semibold hover:underline">
+                  Privacy Policy
+                </Link>
+              </label>
             </div>
 
             <button

@@ -15,6 +15,7 @@ export default function SignUpPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [profileType, setProfileType] = useState<ProfileType>('professional');
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -22,6 +23,11 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!agreeTerms) {
+      setError('Please agree to the Terms of Service and Privacy Policy.');
+      return;
+    }
 
     // Username format check
     const cleanUsername = username.toLowerCase().replace(/[^a-z0-9_-]/g, '').trim();
@@ -48,6 +54,10 @@ export default function SignUpPage() {
 
   const handleGoogleSignUp = async () => {
     setError('');
+    if (!agreeTerms) {
+      setError('Please agree to the Terms of Service and Privacy Policy before continuing with Google.');
+      return;
+    }
     setGoogleLoading(true);
     const res = await loginWithGoogle();
     if (res.error) {
@@ -227,26 +237,36 @@ export default function SignUpPage() {
               </div>
             </div>
 
+            {/* Terms and Conditions Checkbox */}
+            <div className="flex items-start gap-2.5 pt-2">
+              <input
+                id="signup-terms"
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#087CF0] focus:ring-[#087CF0] cursor-pointer accent-[#087CF0]"
+              />
+              <label htmlFor="signup-terms" className="text-xs text-slate-600 leading-snug cursor-pointer select-none">
+                I agree to the{' '}
+                <Link href="/terms" target="_blank" className="text-[#087CF0] font-semibold hover:underline">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" target="_blank" className="text-[#087CF0] font-semibold hover:underline">
+                  Privacy Policy
+                </Link>
+              </label>
+            </div>
+
             {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-4 py-3.5 rounded-xl bg-[#087CF0] text-white text-xs sm:text-sm font-semibold hover:bg-[#0668cc] transition-colors flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 disabled:opacity-50"
+              className="w-full mt-2 py-3.5 rounded-xl bg-[#087CF0] text-white text-xs sm:text-sm font-semibold hover:bg-[#0668cc] transition-colors flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 disabled:opacity-50"
             >
               <span>{loading ? 'Creating Identity...' : 'Complete Registration'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-
-            <p className="text-[11px] text-center text-slate-500 mt-3 leading-relaxed">
-              By creating an account, you agree to SignBridge&apos;s{' '}
-              <Link href="/terms" className="text-[#087CF0] hover:underline font-medium">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="text-[#087CF0] hover:underline font-medium">
-                Privacy Policy
-              </Link>.
-            </p>
           </form>
 
           <div className="mt-6 text-center text-xs text-slate-500">
