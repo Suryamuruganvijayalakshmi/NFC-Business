@@ -52,9 +52,8 @@ export default function LoginPage() {
     if (res.error) {
       setError(res.error);
       setGoogleLoading(false);
-    } else {
-      router.push('/dashboard');
     }
+    // The browser is being redirected to accounts.google.com by loginWithGoogle()
   };
 
   const handleQuickDemoLogin = async (demoEmail: string) => {

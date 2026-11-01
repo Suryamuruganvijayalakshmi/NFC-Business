@@ -111,7 +111,7 @@ export async function loginUser(email: string, password?: string): Promise<{ use
   return { user };
 }
 
-export async function loginWithGoogle(): Promise<{ error?: string }> {
+export async function loginWithGoogle(): Promise<{ url?: string; error?: string }> {
   if (isSupabaseConfigured && supabase) {
     try {
       const redirectUrl = typeof window !== 'undefined'
@@ -130,24 +130,22 @@ export async function loginWithGoogle(): Promise<{ error?: string }> {
       });
 
       if (error) return { error: error.message };
-      return {};
+
+      if (data?.url) {
+        if (typeof window !== 'undefined') {
+          // Redirect the browser window to Google's real OAuth portal
+          window.location.href = data.url;
+        }
+        return { url: data.url };
+      }
+
+      return { error: 'Failed to generate Google sign-in redirect.' };
     } catch (err: any) {
       return { error: err?.message || 'Google authentication failed' };
     }
   }
 
-  // Fallback demo Google user when offline
-  const demoGoogleUser: UserSession = {
-    id: `user-google-${Date.now()}`,
-    email: 'surya.google@signbridge.click',
-    user_metadata: {
-      full_name: 'Surya Narayanan',
-      username: 'surya',
-      profile_type: 'professional',
-    }
-  };
-  setCurrentUser(demoGoogleUser);
-  return {};
+  return { error: 'Supabase authentication is not configured.' };
 }
 
 export async function signUpUser(

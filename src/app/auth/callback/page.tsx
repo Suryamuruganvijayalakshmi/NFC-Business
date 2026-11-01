@@ -12,18 +12,31 @@ function CallbackContent() {
   const [status, setStatus] = useState('Authenticating with Google...');
 
   useEffect(() => {
+    let isMounted = true;
+
     async function handleAuth() {
       if (isSupabaseConfigured && supabase) {
         try {
+          // If code is in URL search params (PKCE flow), exchange it
+          if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+              const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
+              if (exchangeErr) {
+                console.warn('OAuth exchange error:', exchangeErr.message);
+              }
+            }
+          }
+
           const { data, error } = await supabase.auth.getSession();
           if (error) {
-            setStatus(`Authentication error: ${error.message}`);
-            setTimeout(() => router.push('/login'), 2500);
+            if (isMounted) setStatus(`Authentication error: ${error.message}`);
+            setTimeout(() => router.push('/login'), 2000);
             return;
           }
 
-          if (data.session?.user) {
-            const user = data.session.user;
+          const processUser = (user: any) => {
             const fullName = user.user_metadata?.full_name || user.user_metadata?.name || 'SignBridge Member';
             const email = user.email || '';
             const username = user.user_metadata?.username || email.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user${Date.now().toString().slice(-4)}`;
@@ -65,20 +78,49 @@ function CallbackContent() {
               saveProfile(newProfile);
             }
 
-            setStatus('Success! Redirecting to your dashboard...');
-            setTimeout(() => router.replace('/dashboard'), 600);
+            if (isMounted) setStatus('Success! Redirecting to your dashboard...');
+            setTimeout(() => router.replace('/dashboard'), 500);
+          };
+
+          if (data.session?.user) {
+            processUser(data.session.user);
             return;
           }
+
+          // Listen for session resolution via onAuthStateChange
+          const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+              processUser(session.user);
+            }
+          });
+
+          // Timeout fallback: if no session detected after 4 seconds, send to login
+          setTimeout(() => {
+            if (isMounted && !data.session?.user) {
+              setStatus('Authentication incomplete. Redirecting to login...');
+              router.replace('/login');
+            }
+          }, 4000);
+
+          return () => {
+            authListener.subscription.unsubscribe();
+          };
         } catch (e: any) {
           console.warn('Callback error:', e);
+          if (isMounted) setStatus('Authentication failed. Returning to login...');
+          setTimeout(() => router.replace('/login'), 2000);
         }
+      } else {
+        if (isMounted) setStatus('Authentication service not configured. Returning to login...');
+        setTimeout(() => router.replace('/login'), 2000);
       }
-
-      // Fallback
-      router.replace('/dashboard');
     }
 
     handleAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   return (

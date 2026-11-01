@@ -63,9 +63,8 @@ export default function SignUpPage() {
     if (res.error) {
       setError(res.error);
       setGoogleLoading(false);
-    } else {
-      router.push('/dashboard/profile');
     }
+    // The browser is being redirected to accounts.google.com by loginWithGoogle()
   };
 
   const profileTypes: { id: ProfileType; title: string; desc: string; icon: any }[] = [
