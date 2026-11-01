@@ -46,8 +46,8 @@ Under **Environment variables (advanced)**, add the following variables for both
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://gtrhfzxgkcjknlbrkwmp.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` *(your anon key)* |
-| `NEXT_PUBLIC_APP_URL` | `https://signbridge.click` |
-| `NEXT_PUBLIC_SITE_DOMAIN` | `signbridge.click` |
+| `NEXT_PUBLIC_APP_URL` | `https://nfc.signbridge.click` |
+| `NEXT_PUBLIC_SITE_DOMAIN` | `nfc.signbridge.click` |
 | `NODE_VERSION` | `20` (or `22`) |
 
 Click **Save and Deploy**.
@@ -56,12 +56,29 @@ Cloudflare will clone your repository, run the build, and publish your global ed
 
 ---
 
-### Step 4: Connect Your Custom Domain (`signbridge.click`)
-1. In Cloudflare Pages, open your newly deployed project (`signbridge-id`).
-2. Navigate to the **Custom domains** tab.
+### Step 4: Connect Your Custom Domain (`nfc.signbridge.click`)
+1. In Cloudflare Pages, open your newly deployed project.
+2. Navigate to the **Custom domains** tab at the top.
 3. Click **Set up a custom domain**.
-4. Enter `signbridge.click` (and optionally `www.signbridge.click`).
-5. Cloudflare will automatically provision a free universal SSL/TLS certificate and route worldwide traffic to your edge deployment.
+4. Enter **`nfc.signbridge.click`**.
+5. Click **Continue** &rarr; **Activate domain**.
+6. Cloudflare automatically sets up the DNS CNAME record and provisions a free Universal SSL certificate.
+
+---
+
+### Step 5: Update Supabase OAuth for `nfc.signbridge.click`
+To ensure Google Sign-In and email login work seamlessly on your live subdomain:
+1. Go to your **Supabase Dashboard** (`gtrhfzxgkcjknlbrkwmp`).
+2. Go to **Authentication** &rarr; **URL Configuration**.
+3. Set **Site URL** to:
+   ```
+   https://nfc.signbridge.click
+   ```
+4. Under **Redirect URLs**, add:
+   ```
+   https://nfc.signbridge.click/auth/callback
+   ```
+5. Click **Save**.
 
 ---
 
@@ -70,5 +87,4 @@ Cloudflare will clone your repository, run the build, and publish your global ed
 - **`public/_headers`**: Configures edge security headers and long-term caching for immutable assets (`/_next/static/*`).
 - **`public/_redirects`**: Manages contactless card redirects and SPA routing.
 - **`next.config.ts`**: Contains `images: { unoptimized: true }` so edge CDNs can serve all avatars and portfolio media natively without node image servers.
-- **`wrangler.toml`**: Cloudflare Workers / Pages compatibility declaration.
 - **New User Onboarding (`/onboarding`)**: Automatically intercepts first-time sign-ins (Google or email) to collect their unique username, title, bio, and phone number before taking them to their own dedicated dashboard.

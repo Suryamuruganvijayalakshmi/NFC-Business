@@ -116,7 +116,7 @@ export async function loginWithGoogle(): Promise<{ url?: string; error?: string 
     try {
       const redirectUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/auth/callback`
-        : 'https://signbridge.click/auth/callback';
+        : (process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback` : 'https://nfc.signbridge.click/auth/callback');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
