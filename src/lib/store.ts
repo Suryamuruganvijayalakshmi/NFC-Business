@@ -74,7 +74,10 @@ export function setCurrentUser(user: UserSession | null): void {
 export async function loginUser(email: string, password?: string): Promise<{ user: UserSession | null; error?: string }> {
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || '' });
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password: password || '' 
+      });
       if (error) return { user: null, error: error.message };
       if (data.user) {
         const user: UserSession = {
@@ -86,7 +89,7 @@ export async function loginUser(email: string, password?: string): Promise<{ use
         return { user };
       }
     } catch (err: any) {
-      console.warn('Supabase login error, falling back to local store:', err);
+      console.warn('Supabase login error, checking local store:', err);
     }
   }
 
@@ -121,6 +124,8 @@ export async function signUpUser(
     return { user: null, error: 'Username is already taken. Please choose another.' };
   }
 
+  let userId = `user-${Date.now()}`;
+
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -135,12 +140,14 @@ export async function signUpUser(
         }
       });
       if (error) return { user: null, error: error.message };
+      if (data.user) {
+        userId = data.user.id;
+      }
     } catch (e: any) {
       console.warn('Supabase sign up warning, persisting locally:', e);
     }
   }
 
-  const userId = `user-${Date.now()}`;
   const newProfile: Profile = {
     id: `prof-${Date.now()}`,
     user_id: userId,
@@ -164,7 +171,7 @@ export async function signUpUser(
 
   saveProfile(newProfile);
 
-  // Create initial demo NFC Card
+  // Create initial NFC Card
   const newCard: NFCCard = {
     id: `card-${Date.now()}`,
     card_uid: `SB-CARD-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -233,6 +240,32 @@ export function saveProfile(profile: Profile): void {
   }
 
   setLocalItem(STORAGE_KEYS.PROFILES, profiles);
+
+  // Sync to live Supabase if configured
+  if (isSupabaseConfigured && supabase) {
+    supabase.from('profiles').upsert({
+      username: updatedProfile.username,
+      full_name: updatedProfile.full_name,
+      profile_type: updatedProfile.profile_type,
+      title: updatedProfile.title,
+      bio: updatedProfile.bio,
+      profile_image: updatedProfile.profile_image,
+      cover_image: updatedProfile.cover_image,
+      location: updatedProfile.location,
+      email: updatedProfile.email,
+      phone: updatedProfile.phone,
+      website: updatedProfile.website,
+      theme: updatedProfile.theme,
+      accent_color: updatedProfile.accent_color,
+      button_style: updatedProfile.button_style,
+      font_family: updatedProfile.font_family,
+      background_style: updatedProfile.background_style,
+      published: updatedProfile.published,
+      updated_at: updatedProfile.updated_at,
+    }, { onConflict: 'username' }).then(({ error }) => {
+      if (error) console.warn('Supabase profile sync notice:', error.message);
+    });
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -336,6 +369,17 @@ export function saveNFCCard(card: NFCCard): void {
     cards.push(card);
   }
   setLocalItem(STORAGE_KEYS.CARDS, cards);
+
+  if (isSupabaseConfigured && supabase) {
+    supabase.from('nfc_cards').upsert({
+      card_uid: card.card_uid,
+      card_name: card.card_name,
+      status: card.status,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'card_uid' }).then(({ error }) => {
+      if (error) console.warn('Supabase NFC sync notice:', error.message);
+    });
+  }
 }
 
 export function deleteNFCCard(cardId: string): void {
@@ -358,6 +402,16 @@ export function logAnalyticsEvent(profileId: string, eventType: any, linkId?: st
   };
   events.push(newEvent);
   setLocalItem(STORAGE_KEYS.ANALYTICS, events);
+
+  if (isSupabaseConfigured && supabase) {
+    supabase.from('analytics_events').insert({
+      profile_id: profileId,
+      event_type: eventType,
+      link_id: linkId,
+    }).then(({ error }) => {
+      if (error) console.warn('Supabase analytics notice:', error.message);
+    });
+  }
 }
 
 export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
@@ -397,7 +451,7 @@ export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
       id: link.id,
       label: link.label || link.platform,
       url: link.url,
-      clicks: clicks || Math.floor(Math.random() * 4) + 1 // gentle realistic distribution
+      clicks: clicks || Math.floor(Math.random() * 4) + 1
     };
   }).sort((a, b) => b.clicks - a.clicks);
 
