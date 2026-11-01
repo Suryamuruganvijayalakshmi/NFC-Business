@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Logo from '@/components/Logo';
 import QRCodeModal from '@/components/QRCodeModal';
-import { getCurrentUser, getProfileByUserId, saveProfile, getAllProfiles } from '@/lib/store';
+import { getCurrentUser, getProfileByUserId, saveProfile, getOrCreateProfileForUser } from '@/lib/store';
 import { Profile, UserSession } from '@/lib/types';
 import { 
   Menu, 
@@ -36,8 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     let p = getProfileByUserId(curUser.id);
     if (!p) {
-      const all = getAllProfiles();
-      p = all[0] || null;
+      p = getOrCreateProfileForUser(curUser);
     }
     setProfile(p);
   }, [router]);
@@ -49,7 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setProfile(updated);
   };
 
-  const username = profile?.username || user?.user_metadata?.username || 'surya';
+  const username = profile?.username || user?.user_metadata?.username || 'member';
   const publicUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/id/${username}` 
     : `https://signbridge.click/id/${username}`;

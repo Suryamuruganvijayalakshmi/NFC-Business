@@ -53,33 +53,15 @@ function CallbackContent() {
 
             setCurrentUser(sessionUser);
 
-            // Ensure profile exists in local store & Supabase
-            let existing = getProfileByUserId(user.id);
+            // Check if profile exists for this user
+            const existing = getProfileByUserId(user.id);
             if (!existing) {
-              const newProfile: Profile = {
-                id: `prof-${Date.now()}`,
-                user_id: user.id,
-                username,
-                full_name: fullName,
-                profile_type: 'professional',
-                title: 'SignBridge Pioneer',
-                bio: 'Welcome to my official digital identity page.',
-                profile_image: user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-                email,
-                theme: 'signature',
-                accent_color: '#087CF0',
-                button_style: 'rounded',
-                font_family: 'sans',
-                background_style: 'navy_grid',
-                published: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              };
-              saveProfile(newProfile);
+              if (isMounted) setStatus('Welcome to SignBridge! Setting up your workspace...');
+              setTimeout(() => router.replace('/onboarding'), 400);
+            } else {
+              if (isMounted) setStatus('Success! Loading your personalized dashboard...');
+              setTimeout(() => router.replace('/dashboard'), 400);
             }
-
-            if (isMounted) setStatus('Success! Redirecting to your dashboard...');
-            setTimeout(() => router.replace('/dashboard'), 500);
           };
 
           if (data.session?.user) {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   getCurrentUser, 
   getProfileByUserId, 
-  getAllProfiles, 
+  getOrCreateProfileForUser, 
   getAnalyticsSummary,
   getLinksByProfileId
 } from '@/lib/store';
@@ -32,8 +32,7 @@ export default function AnalyticsDashboardPage() {
 
     let p = getProfileByUserId(user.id);
     if (!p) {
-      const all = getAllProfiles();
-      p = all[0] || null;
+      p = getOrCreateProfileForUser(user);
     }
 
     if (p) {

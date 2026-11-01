@@ -261,6 +261,40 @@ export function getProfileByUserId(userId: string): Profile | null {
   return profiles.find(p => p.user_id === userId) || null;
 }
 
+export function getOrCreateProfileForUser(user: UserSession): Profile {
+  const existing = getProfileByUserId(user.id);
+  if (existing) return existing;
+
+  const username = user.user_metadata?.username || user.email?.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user_${Date.now().toString().slice(-4)}`;
+
+  const newProfile: Profile = {
+    id: `prof-${Date.now()}`,
+    user_id: user.id,
+    username: username,
+    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'SignBridge Member',
+    profile_type: user.user_metadata?.profile_type || 'professional',
+    title: 'Professional & Innovator',
+    bio: 'Welcome to my official digital identity page.',
+    profile_image: (user.user_metadata as any)?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+    cover_image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80',
+    email: user.email || '',
+    phone: '',
+    location: '',
+    website: '',
+    theme: 'signature',
+    accent_color: '#087CF0',
+    button_style: 'rounded',
+    font_family: 'sans',
+    background_style: 'navy_grid',
+    published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  saveProfile(newProfile);
+  return newProfile;
+}
+
 export function saveProfile(profile: Profile): void {
   const profiles = getAllProfiles();
   const index = profiles.findIndex(p => p.id === profile.id || p.username.toLowerCase() === profile.username.toLowerCase());

@@ -5,7 +5,7 @@ import {
   getCurrentUser, 
   getProfileByUserId, 
   saveProfile, 
-  getAllProfiles,
+  getOrCreateProfileForUser,
   getSectionsByProfileId,
   getProjectsByProfileId,
   getLinksByProfileId
@@ -56,8 +56,7 @@ export default function DesignCustomizationPage() {
 
     let p = getProfileByUserId(user.id);
     if (!p) {
-      const all = getAllProfiles();
-      p = all[0] || null;
+      p = getOrCreateProfileForUser(user);
     }
 
     if (p) {

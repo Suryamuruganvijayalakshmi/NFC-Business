@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   getCurrentUser, 
   getProfileByUserId, 
-  getAllProfiles,
+  getOrCreateProfileForUser,
   getProjectsByProfileId, 
   saveProject, 
   deleteProject 
@@ -43,8 +43,7 @@ export default function PortfolioManagerPage() {
 
     let p = getProfileByUserId(user.id);
     if (!p) {
-      const all = getAllProfiles();
-      p = all[0] || null;
+      p = getOrCreateProfileForUser(user);
     }
 
     if (p) {

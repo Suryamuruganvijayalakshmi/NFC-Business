@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   getCurrentUser, 
   getProfileByUserId, 
-  getAllProfiles,
+  getOrCreateProfileForUser,
   getLinksByProfileId, 
   saveLink, 
   deleteLink 
@@ -40,8 +40,7 @@ export default function LinksManagerPage() {
 
     let p = getProfileByUserId(user.id);
     if (!p) {
-      const all = getAllProfiles();
-      p = all[0] || null;
+      p = getOrCreateProfileForUser(user);
     }
 
     if (p) {

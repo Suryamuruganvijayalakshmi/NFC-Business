@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   getCurrentUser, 
   getProfileByUserId, 
-  getAllProfiles, 
+  getOrCreateProfileForUser, 
+  getAllProfiles,
   saveProfile 
 } from '@/lib/store';
 import { Profile } from '@/lib/types';
@@ -35,8 +36,7 @@ export default function AccountSettingsPage() {
 
     let p = getProfileByUserId(user.id);
     if (!p) {
-      const all = getAllProfiles();
-      p = all[0] || null;
+      p = getOrCreateProfileForUser(user);
     }
 
     if (p) {
@@ -60,7 +60,7 @@ export default function AccountSettingsPage() {
 
     // Check conflict
     const all = getAllProfiles();
-    const conflict = all.find(p => p.username.toLowerCase() === cleanUsername && p.id !== profile.id);
+    const conflict = all.find((p: Profile) => p.username.toLowerCase() === cleanUsername && p.id !== profile.id);
     if (conflict) {
       setError('This username is already claimed by another user.');
       return;

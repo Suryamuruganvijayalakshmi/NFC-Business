@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   getCurrentUser, 
   getProfileByUserId, 
-  getAllProfiles,
+  getOrCreateProfileForUser,
   getNFCCardsByUserId, 
   saveNFCCard, 
   deleteNFCCard 
@@ -43,13 +43,27 @@ export default function NFCCardManagementPage() {
 
     let p = getProfileByUserId(user.id);
     if (!p) {
-      const all = getAllProfiles();
-      p = all[0] || null;
+      p = getOrCreateProfileForUser(user);
     }
 
     if (p) {
       setProfile(p);
-      setCards(getNFCCardsByUserId(user.id));
+      let userCards = getNFCCardsByUserId(user.id);
+      if (userCards.length === 0) {
+        const defaultCard: NFCCard = {
+          id: `card-${Date.now()}`,
+          card_uid: `SB-CARD-${Math.floor(1000 + Math.random() * 9000)}`,
+          owner_user_id: user.id,
+          profile_id: p.id,
+          card_name: `${p.full_name}'s Smart Card`,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        saveNFCCard(defaultCard);
+        userCards = [defaultCard];
+      }
+      setCards(userCards);
     }
   }, []);
 

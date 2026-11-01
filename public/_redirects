@@ -1,0 +1,4 @@
+# Cloudflare Pages SPA Routing & Tap Redirection Fallbacks
+/t/:cardId  /t/:cardId  200
+/id/:username  /id/:username  200
+/dashboard/*  /dashboard/:splat  200
