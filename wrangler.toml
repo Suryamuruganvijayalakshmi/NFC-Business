@@ -1,7 +1,0 @@
-name = "signbridge-click"
-compatibility_date = "2026-03-01"
-compatibility_flags = ["nodejs_compat"]
-
-[vars]
-NEXT_PUBLIC_SITE_DOMAIN = "signbridge.click"
-NEXT_PUBLIC_APP_URL = "https://signbridge.click"
