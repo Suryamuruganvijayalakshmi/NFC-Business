@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-blue: #087CF0;
+  --color-brand-blue-hover: #0668cc;
+  --color-brand-blue-light: #EBF4FE;
+  --color-brand-orange: #FF7900;
+  --color-brand-orange-hover: #e06a00;
+  --color-brand-orange-light: #FFF4E5;
+  --color-brand-navy: #101828;
+  --color-brand-navy-light: #1A253A;
+  --color-brand-navy-card: #152033;
+  --color-brand-light: #F1F7FF;
+  --color-brand-gray: #667085;
+  --color-brand-gray-light: #F8FAFC;
+  --color-brand-border: #E4E7EC;
+  --color-brand-dark-border: #1E293B;
+
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+:root {
+  --brand-blue: #087CF0;
+  --brand-orange: #FF7900;
+  --brand-navy: #101828;
+  --brand-light: #F1F7FF;
+  --brand-gray: #667085;
+  --bg-color: #FAFAFB;
+  --card-bg: #FFFFFF;
+  --border-color: #E4E7EC;
+  --text-primary: #101828;
+  --text-secondary: #667085;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism & Card Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-panel-dark {
+  background: rgba(16, 24, 40, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glow-blue {
+  box-shadow: 0 0 40px -10px rgba(8, 124, 240, 0.25);
+}
+
+.glow-orange {
+  box-shadow: 0 0 40px -10px rgba(255, 121, 0, 0.25);
+}
+
+.glow-subtle {
+  box-shadow: 0 20px 40px -15px rgba(16, 24, 40, 0.07);
+}
+
+/* TwoCode-inspired Live Pill Pulsing Beacon */
+.pulse-beacon {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #30D158;
+}
+
+.pulse-beacon::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #30D158;
+  animation: beaconPulse 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes beaconPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(48, 209, 88, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0);
+  }
+}
+
+/* Subtle Animated Shimmer for Card Preview */
+@keyframes shimmerWave {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-card {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmerWave 3s infinite linear;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
