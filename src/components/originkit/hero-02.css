@@ -2,8 +2,10 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap");
 
-@theme {
+:root {
   --font-urbanist: "Urbanist", Inter, ui-sans-serif, sans-serif;
+  --animate-page-reveal: page-reveal 500ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+  --animate-trusted-marquee: trusted-marquee 36s linear infinite;
 }
 
 @keyframes page-reveal {
@@ -15,10 +17,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-@theme {
-  --animate-page-reveal: page-reveal 500ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -35,10 +33,6 @@
   to {
     transform: translateX(-50%);
   }
-}
-
-@theme {
-  --animate-trusted-marquee: trusted-marquee 36s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

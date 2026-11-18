@@ -4,11 +4,14 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-@theme {
+
+:root {
   --animate-trusted-marquee: trusted-marquee 36s linear infinite;
 }
+
 @media (prefers-reduced-motion: reduce) {
   @keyframes trusted-marquee {
     from, to { transform: none; }
   }
 }
+
