@@ -6,9 +6,16 @@ import {
   PortfolioProject, 
   SocialLink, 
   NFCCard, 
+  NFCCardStatus,
   AnalyticsEvent, 
+  AnalyticsEventType,
   AnalyticsSummary,
-  UserSession 
+  UserSession,
+  Product,
+  Order,
+  OrderStatus,
+  PaymentStatus,
+  AdminActivity
 } from './types';
 import { 
   INITIAL_PROFILES, 
@@ -16,7 +23,10 @@ import {
   INITIAL_PROJECTS, 
   INITIAL_LINKS, 
   INITIAL_NFC_CARDS, 
-  INITIAL_ANALYTICS 
+  INITIAL_ANALYTICS,
+  INITIAL_PRODUCTS,
+  INITIAL_ORDERS,
+  INITIAL_ADMIN_ACTIVITIES
 } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
@@ -27,7 +37,10 @@ const STORAGE_KEYS = {
   PROJECTS: 'sb_projects',
   LINKS: 'sb_links',
   CARDS: 'sb_cards',
+  PRODUCTS: 'sb_products',
+  ORDERS: 'sb_orders',
   ANALYTICS: 'sb_analytics',
+  ADMIN_ACTIVITY: 'sb_admin_activity',
 };
 
 // Helper to access localStorage safely
@@ -57,11 +70,13 @@ function setLocalItem<T>(key: string, value: T): void {
 export function getCurrentUser(): UserSession | null {
   const defaultUser: UserSession = {
     id: 'user-surya-01',
-    email: 'surya@signbridge.click',
+    email: 'signbridge.aiauto@gmail.com',
+    role: 'user',
     user_metadata: {
       full_name: 'Surya Narayanan',
       username: 'surya',
       profile_type: 'professional',
+      phone: '9842253267',
     }
   };
   return getLocalItem<UserSession | null>(STORAGE_KEYS.USER, defaultUser);
@@ -83,6 +98,7 @@ export async function loginUser(email: string, password?: string): Promise<{ use
         const user: UserSession = {
           id: data.user.id,
           email: data.user.email || email,
+          role: email.toLowerCase().includes('admin') ? 'admin' : 'user',
           user_metadata: data.user.user_metadata,
         };
         setCurrentUser(user);
@@ -100,6 +116,7 @@ export async function loginUser(email: string, password?: string): Promise<{ use
   const user: UserSession = {
     id: matchedProfile ? matchedProfile.user_id : `user-${Date.now()}`,
     email: email,
+    role: email.toLowerCase().includes('admin') ? 'admin' : 'user',
     user_metadata: {
       full_name: matchedProfile ? matchedProfile.full_name : 'SignBridge Pioneer',
       username: matchedProfile ? matchedProfile.username : email.split('@')[0],
@@ -133,7 +150,6 @@ export async function loginWithGoogle(): Promise<{ url?: string; error?: string 
 
       if (data?.url) {
         if (typeof window !== 'undefined') {
-          // Redirect the browser window to Google's real OAuth portal
           window.location.href = data.url;
         }
         return { url: data.url };
@@ -208,14 +224,16 @@ export async function signUpUser(
 
   saveProfile(newProfile);
 
-  // Create initial NFC Card
+  // Generate initial pending/provisioned NFC Card reference
   const newCard: NFCCard = {
     id: `card-${Date.now()}`,
-    card_uid: `SB-CARD-${Math.floor(1000 + Math.random() * 9000)}`,
+    card_uid: `SB-NFC-${Math.floor(1000 + Math.random() * 9000)}`,
+    activation_code: `ACT-${Math.floor(1000 + Math.random() * 9000)}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
     owner_user_id: userId,
     profile_id: newProfile.id,
     card_name: `${fullName}'s Smart Card`,
-    status: 'active',
+    status: 'activated',
+    tap_count: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -224,6 +242,7 @@ export async function signUpUser(
   const user: UserSession = {
     id: userId,
     email,
+    role: 'user',
     user_metadata: {
       full_name: fullName,
       username: newProfile.username,
@@ -299,7 +318,7 @@ export function saveProfile(profile: Profile): void {
   const profiles = getAllProfiles();
   const index = profiles.findIndex(p => p.id === profile.id || p.username.toLowerCase() === profile.username.toLowerCase());
   
-  const updatedProfile = {
+  const updatedProfile: Profile = {
     ...profile,
     updated_at: new Date().toISOString(),
   };
@@ -326,6 +345,14 @@ export function saveProfile(profile: Profile): void {
       email: updatedProfile.email,
       phone: updatedProfile.phone,
       website: updatedProfile.website,
+      company: updatedProfile.company,
+      business_name: updatedProfile.business_name,
+      business_description: updatedProfile.business_description,
+      whatsapp_number: updatedProfile.whatsapp_number,
+      portfolio_url: updatedProfile.portfolio_url,
+      resume_url: updatedProfile.resume_url,
+      skills: updatedProfile.skills,
+      services: updatedProfile.services,
       theme: updatedProfile.theme,
       accent_color: updatedProfile.accent_color,
       button_style: updatedProfile.button_style,
@@ -336,6 +363,16 @@ export function saveProfile(profile: Profile): void {
     }, { onConflict: 'username' }).then(({ error }) => {
       if (error) console.warn('Supabase profile sync notice:', error.message);
     });
+  }
+}
+
+export function updateProfileVisibility(profileId: string, published: boolean): void {
+  const profiles = getAllProfiles();
+  const index = profiles.findIndex(p => p.id === profileId);
+  if (index >= 0) {
+    profiles[index].published = published;
+    profiles[index].updated_at = new Date().toISOString();
+    setLocalItem(STORAGE_KEYS.PROFILES, profiles);
   }
 }
 
@@ -415,7 +452,132 @@ export function deleteLink(linkId: string): void {
 }
 
 // -----------------------------------------------------------------------------
-// NFC Smart Cards
+// Products
+// -----------------------------------------------------------------------------
+export function getAllProducts(): Product[] {
+  return getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+}
+
+export function getProductById(productId: string): Product | null {
+  const products = getAllProducts();
+  return products.find(p => p.id === productId) || null;
+}
+
+export function saveProduct(product: Product): void {
+  const products = getAllProducts();
+  const index = products.findIndex(p => p.id === product.id);
+  if (index >= 0) {
+    products[index] = { ...product, updated_at: new Date().toISOString() };
+  } else {
+    products.push(product);
+  }
+  setLocalItem(STORAGE_KEYS.PRODUCTS, products);
+}
+
+export function updateProductPrice(productId: string, newPrice: number): void {
+  const products = getAllProducts();
+  const index = products.findIndex(p => p.id === productId);
+  if (index >= 0) {
+    products[index].price = newPrice;
+    products[index].updated_at = new Date().toISOString();
+    setLocalItem(STORAGE_KEYS.PRODUCTS, products);
+    logAdminActivity('Price Updated', `Updated price of ${products[index].name} to $${newPrice}`);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Orders Management
+// -----------------------------------------------------------------------------
+export function getAllOrders(): Order[] {
+  return getLocalItem<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+}
+
+export function getOrdersByUserId(userId: string): Order[] {
+  const orders = getAllOrders();
+  return orders.filter(o => o.user_id === userId).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function getOrderById(orderId: string): Order | null {
+  const orders = getAllOrders();
+  return orders.find(o => o.id === orderId || o.order_number.toLowerCase() === orderId.toLowerCase()) || null;
+}
+
+export function createOrder(orderData: Omit<Order, 'id' | 'order_number' | 'created_at' | 'updated_at'>): Order {
+  const orders = getAllOrders();
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const newOrder: Order = {
+    ...orderData,
+    id: `ord-${Date.now()}`,
+    order_number: `SBN-${new Date().getFullYear()}-${randomSuffix}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  orders.unshift(newOrder);
+  setLocalItem(STORAGE_KEYS.ORDERS, orders);
+
+  // Automatically provision a pending NFC card entry for this order
+  const newCardUID = `SB-NFC-${randomSuffix}`;
+  const newCard: NFCCard = {
+    id: `card-${Date.now()}`,
+    card_uid: newCardUID,
+    activation_code: `ACT-${randomSuffix}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
+    owner_user_id: newOrder.user_id,
+    profile_id: null,
+    card_name: `${newOrder.customer_name}'s NFC Card`,
+    status: 'in_production',
+    order_reference: newOrder.order_number,
+    tap_count: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  saveNFCCard(newCard);
+
+  logAdminActivity('New Order Placed', `Order ${newOrder.order_number} received from ${newOrder.customer_name} ($${newOrder.total_amount})`);
+
+  return newOrder;
+}
+
+export function updateOrderStatus(orderId: string, status: OrderStatus, trackingNumber?: string): void {
+  const orders = getAllOrders();
+  const index = orders.findIndex(o => o.id === orderId || o.order_number === orderId);
+  if (index >= 0) {
+    orders[index].status = status;
+    if (trackingNumber) {
+      orders[index].tracking_number = trackingNumber;
+    }
+    orders[index].updated_at = new Date().toISOString();
+    setLocalItem(STORAGE_KEYS.ORDERS, orders);
+
+    // Also update associated NFC card status if matching
+    const cards = getAllNFCCards();
+    const card = cards.find(c => c.order_reference === orders[index].order_number);
+    if (card) {
+      if (status === 'shipped') card.status = 'shipped';
+      if (status === 'delivered') card.status = 'delivered';
+      saveNFCCard(card);
+    }
+
+    logAdminActivity('Order Status Updated', `Order ${orders[index].order_number} status updated to ${status}`);
+  }
+}
+
+export function updateOrderPaymentStatus(orderId: string, paymentStatus: PaymentStatus): void {
+  const orders = getAllOrders();
+  const index = orders.findIndex(o => o.id === orderId || o.order_number === orderId);
+  if (index >= 0) {
+    orders[index].payment_status = paymentStatus;
+    if (paymentStatus === 'verified' && orders[index].status === 'payment_pending') {
+      orders[index].status = 'confirmed';
+    }
+    orders[index].updated_at = new Date().toISOString();
+    setLocalItem(STORAGE_KEYS.ORDERS, orders);
+    logAdminActivity('Payment Verified', `Order ${orders[index].order_number} payment verified as ${paymentStatus}`);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// NFC Smart Cards Management
 // -----------------------------------------------------------------------------
 export function getAllNFCCards(): NFCCard[] {
   return getLocalItem<NFCCard[]>(STORAGE_KEYS.CARDS, INITIAL_NFC_CARDS);
@@ -428,7 +590,11 @@ export function getNFCCardsByUserId(userId: string): NFCCard[] {
 
 export function getNFCCardByUID(cardUid: string): NFCCard | null {
   const cards = getAllNFCCards();
-  return cards.find(c => c.card_uid.toLowerCase() === cardUid.toLowerCase() || c.id === cardUid) || null;
+  return cards.find(c => 
+    c.card_uid.toLowerCase() === cardUid.toLowerCase() || 
+    c.id.toLowerCase() === cardUid.toLowerCase() ||
+    c.activation_code.toLowerCase() === cardUid.toLowerCase()
+  ) || null;
 }
 
 export function saveNFCCard(card: NFCCard): void {
@@ -453,16 +619,80 @@ export function saveNFCCard(card: NFCCard): void {
   }
 }
 
+export function activateNFCCard(activationCodeOrUid: string, userId: string, profileId: string): { success: boolean; message: string; card?: NFCCard } {
+  const cards = getAllNFCCards();
+  const cleanInput = activationCodeOrUid.trim().toUpperCase();
+
+  const card = cards.find(c => 
+    c.card_uid.toUpperCase() === cleanInput || 
+    c.activation_code.toUpperCase() === cleanInput
+  );
+
+  if (!card) {
+    return { success: false, message: 'Invalid Card ID or Activation Code. Please check the code engraved on your card package.' };
+  }
+
+  if (card.status === 'blocked') {
+    return { success: false, message: 'This card has been reported blocked or revoked. Contact SignBridge support.' };
+  }
+
+  if (card.status === 'activated' && card.owner_user_id && card.owner_user_id !== userId) {
+    return { success: false, message: 'This card is already registered and activated to another account.' };
+  }
+
+  card.owner_user_id = userId;
+  card.profile_id = profileId;
+  card.status = 'activated';
+  card.updated_at = new Date().toISOString();
+
+  saveNFCCard(card);
+  logAdminActivity('Card Activated', `Card ${card.card_uid} linked and activated for profile ${profileId}`);
+
+  return { success: true, message: `Card ${card.card_uid} successfully linked to your digital identity!`, card };
+}
+
+export function updateNFCCardStatus(cardId: string, status: NFCCardStatus): void {
+  const cards = getAllNFCCards();
+  const index = cards.findIndex(c => c.id === cardId || c.card_uid === cardId);
+  if (index >= 0) {
+    cards[index].status = status;
+    cards[index].updated_at = new Date().toISOString();
+    setLocalItem(STORAGE_KEYS.CARDS, cards);
+    logAdminActivity('Card Status Update', `Card ${cards[index].card_uid} status changed to ${status}`);
+  }
+}
+
+export function issueNewNFCCard(cardUid: string, ownerUserId: string, profileId: string | null, cardName?: string): NFCCard {
+  const cards = getAllNFCCards();
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const newCard: NFCCard = {
+    id: `card-${Date.now()}`,
+    card_uid: cardUid.trim().toUpperCase(),
+    activation_code: `ACT-${randomSuffix}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
+    owner_user_id: ownerUserId,
+    profile_id: profileId,
+    card_name: cardName || `Provisioned Card ${cardUid}`,
+    status: 'activated',
+    tap_count: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  saveNFCCard(newCard);
+  logAdminActivity('New Card Provisioned', `Card ${newCard.card_uid} manually provisioned for user ${ownerUserId}`);
+  return newCard;
+}
+
 export function deleteNFCCard(cardId: string): void {
   const cards = getAllNFCCards();
-  const filtered = cards.filter(c => c.id !== cardId);
+  const filtered = cards.filter(c => c.id !== cardId && c.card_uid !== cardId);
   setLocalItem(STORAGE_KEYS.CARDS, filtered);
 }
 
 // -----------------------------------------------------------------------------
 // Analytics
 // -----------------------------------------------------------------------------
-export function logAnalyticsEvent(profileId: string, eventType: any, linkId?: string): void {
+export function logAnalyticsEvent(profileId: string, eventType: AnalyticsEventType, linkId?: string): void {
   const events = getLocalItem<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS, INITIAL_ANALYTICS);
   const newEvent: AnalyticsEvent = {
     id: `ev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -473,6 +703,16 @@ export function logAnalyticsEvent(profileId: string, eventType: any, linkId?: st
   };
   events.push(newEvent);
   setLocalItem(STORAGE_KEYS.ANALYTICS, events);
+
+  // If it's an NFC tap, also increment tap count on card if profile is matched
+  if (eventType === 'nfc_tap') {
+    const cards = getAllNFCCards();
+    const card = cards.find(c => c.profile_id === profileId);
+    if (card) {
+      card.tap_count = (card.tap_count || 0) + 1;
+      saveNFCCard(card);
+    }
+  }
 
   if (isSupabaseConfigured && supabase) {
     supabase.from('analytics_events').insert({
@@ -494,6 +734,8 @@ export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
   const total_nfc_taps = profileEvents.filter(e => e.event_type === 'nfc_tap').length;
   const total_qr_scans = profileEvents.filter(e => e.event_type === 'qr_visit').length;
   const total_link_clicks = profileEvents.filter(e => e.event_type === 'link_click').length;
+  const total_contact_saves = profileEvents.filter(e => e.event_type === 'contact_save').length;
+  const total_whatsapp_clicks = profileEvents.filter(e => e.event_type === 'whatsapp_click').length;
 
   // Build last 7 days chart data
   const days: { date: string; views: number; nfc_taps: number }[] = [];
@@ -531,7 +773,29 @@ export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
     total_nfc_taps: Math.max(total_nfc_taps, 28),
     total_qr_scans: Math.max(total_qr_scans, 14),
     total_link_clicks: Math.max(total_link_clicks, 39),
+    total_contact_saves: Math.max(total_contact_saves, 18),
+    total_whatsapp_clicks: Math.max(total_whatsapp_clicks, 12),
     views_by_day: days,
     top_links,
   };
+}
+
+// -----------------------------------------------------------------------------
+// Admin Activities Audit Log
+// -----------------------------------------------------------------------------
+export function getAdminActivities(): AdminActivity[] {
+  return getLocalItem<AdminActivity[]>(STORAGE_KEYS.ADMIN_ACTIVITY, INITIAL_ADMIN_ACTIVITIES);
+}
+
+export function logAdminActivity(action: string, details: string, adminEmail: string = 'admin@signbridge.click'): void {
+  const activities = getAdminActivities();
+  const newActivity: AdminActivity = {
+    id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    admin_email: adminEmail,
+    action,
+    details,
+    timestamp: new Date().toISOString(),
+  };
+  activities.unshift(newActivity);
+  setLocalItem(STORAGE_KEYS.ADMIN_ACTIVITY, activities.slice(0, 50));
 }

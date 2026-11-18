@@ -1,683 +1,699 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import NFCCardVisual from '@/components/NFCCardVisual';
+import Hero02SignTap from '@/components/Hero02SignTap';
+import SignTapLoader from '@/components/SignTapLoader';
+import { getAllProducts, getAllProfiles } from '@/lib/store';
+import { Product, Profile } from '@/lib/types';
 import { 
   ArrowRight, 
   Wifi, 
   Smartphone, 
-  QrCode, 
-  UserCheck, 
-  BarChart3, 
-  Layers, 
   ShieldCheck, 
   Sparkles, 
   Check, 
-  ExternalLink,
-  ChevronRight,
-  Briefcase,
-  Palette,
-  Building,
-  User,
-  Zap
+  Briefcase, 
+  Building, 
+  User, 
+  CreditCard, 
+  Share2, 
+  Phone, 
+  Download, 
+  Plus, 
+  Minus, 
+  Globe 
 } from 'lucide-react';
 
 export default function HomePage() {
-  const [activeStep, setActiveStep] = useState(0);
-  const [activeCategory, setActiveCategory] = useState<'professional' | 'creator' | 'business' | 'personal'>('professional');
-  const [nfcTapped, setNfcTapped] = useState(false);
+  const [isSiteLoaded, setIsSiteLoaded] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [activePreviewProfile, setActivePreviewProfile] = useState<string>('surya');
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [tapSuccess, setTapSuccess] = useState(false);
 
-  const steps = [
+  useEffect(() => {
+    setProducts(getAllProducts());
+    setProfiles(getAllProfiles());
+  }, []);
+
+  const currentProfile = profiles.find(p => p.username === activePreviewProfile) || profiles[0] || {
+    full_name: 'Surya Narayanan',
+    username: 'surya',
+    title: 'Hardware Architect & Founder',
+    company: 'SignTap Labs',
+    bio: 'Pioneering physical-to-digital interactions. Building next-generation NFC embedded systems and modern web experiences.',
+    profile_image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    cover_image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+    skills: ['NFC Architecture', 'Embedded IoT', 'Full-Stack Next.js', 'System Security'],
+    theme: 'signature',
+    accent_color: '#923cf6',
+  };
+
+  const handleCardTapSimulation = () => {
+    setTapSuccess(true);
+    setTimeout(() => setTapSuccess(false), 3500);
+  };
+
+  const faqs = [
     {
-      num: '01',
-      title: 'Create Your Identity',
-      headline: 'Build your personal or business profile in minutes.',
-      description: 'Choose your unique username (signbridge.click/id/yourname), add your professional bio, headshot, contact credentials, and verified social links.',
-      badge: 'Zero Coding Required',
+      q: 'Do visitors need an app to read my SignTap NFC Card?',
+      a: 'No! Modern iPhones (iPhone XS and newer) and Android phones natively read NFC tags in the background. When someone taps your card, your digital profile opens instantly in their default mobile browser. No app installation or account signup is required for visitors.'
     },
     {
-      num: '02',
-      title: 'Customize Your Experience',
-      headline: 'Tailor templates, colors, and showcase projects.',
-      description: 'Switch between Minimal, Signature, and Creative themes. Highlight your design portfolio, services, certifications, work history, and custom accent tones.',
-      badge: 'Real-time Live Preview',
+      q: 'How does physical SignTap card activation work?',
+      a: 'Each physical card is dispatched with a unique Card UID and activation code. Once you receive your card, log in to your dashboard, navigate to "NFC Card Management", and enter your code to link the card to your profile in seconds.'
     },
     {
-      num: '03',
-      title: 'Tap. Share. Connect.',
-      headline: 'Bridge the physical world with one smartphone tap.',
-      description: 'Link your SignBridge NFC Smart Card or share your dynamic QR code. Anyone tapping their phone gets instant access with 1-click vCard phonebook saving.',
-      badge: 'Works on iOS & Android',
+      q: 'Can I update my profile after ordering the physical card?',
+      a: 'Yes, absolutely! The physical NFC card stores only your secure unique profile URL or redirect token, never your personal data. You can update your phone number, social links, portfolio, or resume anytime from your dashboard, and your card will immediately reflect the changes without rewriting.'
     },
+    {
+      q: 'Is my personal information secure with SignTap?',
+      a: 'Yes. Your data is stored in Supabase PostgreSQL with strict Row Level Security (RLS) policies. Only published information is visible to the public. If your card is ever lost or stolen, you can instantly block or unlink it from your private dashboard with a single click.'
+    },
+    {
+      q: 'How long does card manufacturing and delivery take?',
+      a: 'Standard orders are manufactured and dispatched within 2 to 4 business days. Delivery typically takes 3 to 7 business days depending on your shipping address. You can track your order status in real time from your account.'
+    },
+    {
+      q: 'What happens if someone has an older phone without NFC?',
+      a: 'Every SignTap NFC Card comes with a precision-printed dynamic backup QR code on the back. Anyone with any smartphone camera can scan the QR code to open your digital identity page instantly.'
+    }
   ];
 
-  const categories = {
-    professional: {
-      title: 'Professional',
-      desc: 'Engineers, executives, consultants, and founders looking to replace paper business cards with high-conversion dynamic identity.',
-      features: ['Experience & Education Timeline', 'Verified Skill Badges', '1-Tap Phonebook vCard Save', 'Resume & Project Links'],
-      demoUser: 'surya',
-      name: 'Surya Narayanan',
-      role: 'Founder & Hardware Architect',
-      tagline: 'SignBridge Inc.',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      badgeColor: 'bg-[#087CF0]/10 text-[#087CF0] border-[#087CF0]/30',
+  const features = [
+    {
+      title: 'One-Tap Profile Sharing',
+      desc: 'Simply touch your card to any NFC smartphone for instant profile transmission.',
+      icon: <Wifi className="w-5 h-5 text-[#923cf6]" />,
     },
-    creator: {
-      title: 'Creator',
-      desc: 'Artists, YouTubers, photographers, and streamers highlighting media showcases, sponsorship inquiry buttons, and social channels.',
-      features: ['Visual Media Gallery', 'Direct Collab Inquiry Modal', 'Social Media Hub', 'Custom Creator Gradients'],
-      demoUser: 'elena',
-      name: 'Elena Rostova',
-      role: 'Visual Storyteller & Motion Designer',
-      tagline: 'Amsterdam',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-      badgeColor: 'bg-[#FF7900]/10 text-[#FF7900] border-[#FF7900]/30',
+    {
+      title: 'Personalized Digital Identity',
+      desc: 'Showcase your photo, cover banner, biography, professional designation, and company.',
+      icon: <User className="w-5 h-5 text-[#FF7900]" />,
     },
-    business: {
-      title: 'Business',
-      desc: 'Agencies, stores, clinics, and enterprises offering services, direct WhatsApp messaging, location directions, and product portfolios.',
-      features: ['WhatsApp 1-Click Chat', 'Service & Product Showcase', 'Team NFC Smart Cards', 'Corporate Domain Routing'],
-      demoUser: 'apex-studios',
-      name: 'Apex Digital Labs',
-      role: 'Enterprise NFC Solutions',
-      tagline: 'London & Singapore',
-      avatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=400&q=80',
-      badgeColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
+    {
+      title: 'Portfolio & Project Integration',
+      desc: 'Highlight your best case studies, code repositories, creative designs, and client work.',
+      icon: <Briefcase className="w-5 h-5 text-[#087CF0]" />,
     },
-    personal: {
-      title: 'Personal',
-      desc: 'Students, graduates, and innovators sharing personal projects, hobbies, resumes, and contact links on campus or tech conferences.',
-      features: ['Clean Minimal Layout', 'Quick Bio & Interests', 'Instant QR & Link Share', 'No App Installation'],
-      demoUser: 'surya',
-      name: 'Surya Narayanan',
-      role: 'Student & Tech Explorer',
-      tagline: 'Class of 2026',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
-      badgeColor: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
+    {
+      title: 'Verified Social Links',
+      desc: 'Consolidate LinkedIn, GitHub, X, Instagram, YouTube, and custom web links in one hub.',
+      icon: <Share2 className="w-5 h-5 text-[#923cf6]" />,
     },
-  };
-
-  const handleSimulatedTap = () => {
-    setNfcTapped(true);
-    setTimeout(() => setNfcTapped(false), 3000);
-  };
+    {
+      title: 'Direct Contact Actions',
+      desc: 'Instant 1-tap phone calls, WhatsApp chat initiation, direct emails, and website routing.',
+      icon: <Phone className="w-5 h-5 text-[#087CF0]" />,
+    },
+    {
+      title: 'Business Information',
+      desc: 'List company credentials, tax registration, team departments, and physical office location.',
+      icon: <Building className="w-5 h-5 text-[#FF7900]" />,
+    },
+    {
+      title: 'Custom Profile URL',
+      desc: 'Claim your memorable personal handle (e.g. signtap.me/u/yourname) for easy sharing.',
+      icon: <Globe className="w-5 h-5 text-[#923cf6]" />,
+    },
+    {
+      title: 'Real-Time Editable Profile',
+      desc: 'Update your contact details or change themes anytime without reprinting physical cards.',
+      icon: <Sparkles className="w-5 h-5 text-[#FF7900]" />,
+    },
+    {
+      title: 'Mobile-Optimized Experience',
+      desc: 'Engineered specifically for lightning-fast mobile loading and responsive fluid layout.',
+      icon: <Smartphone className="w-5 h-5 text-[#087CF0]" />,
+    },
+    {
+      title: 'Zero App Required',
+      desc: 'Visitors interact smoothly through their browser without installing third-party apps.',
+      icon: <ShieldCheck className="w-5 h-5 text-[#30D158]" />,
+    }
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFAFB]">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-[#FAFAFB] overflow-x-hidden relative">
+      {/* Light Theme Futuristic NFC Contactless Loader */}
+      <SignTapLoader onFinish={() => setIsSiteLoaded(true)} />
 
-      <main className="flex-1">
-        {/* =========================================================================
-            HERO SECTION — Inspired by twocode.nl Spacious Impact
-            ========================================================================= */}
-        <section className="relative pt-12 pb-20 sm:pt-20 sm:pb-32 overflow-hidden border-b border-slate-200/60 bg-gradient-to-b from-white via-[#F8FAFD] to-[#FAFAFB]">
-          
-          {/* Subtle Ambient Glows */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-tr from-[#087CF0]/10 via-[#FF7900]/10 to-transparent blur-3xl rounded-full pointer-events-none" />
+      {/* Main page content smoothly reveals after loader completes */}
+      <div 
+        className={`flex-1 flex flex-col transition-all duration-700 ease-out will-change-transform ${
+          isSiteLoaded
+            ? 'opacity-100 translate-y-0 filter blur-0'
+            : 'opacity-0 translate-y-4 filter blur-sm pointer-events-none'
+        }`}
+      >
+        {/* =====================================================================
+            ORIGINKIT HERO 02 SECTION ADAPTED FOR SIGNTAP
+        ===================================================================== */}
+        <Hero02SignTap
+          currentProfile={currentProfile}
+          onCardTap={handleCardTapSimulation}
+          tapSuccess={tapSuccess}
+        />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="w-full px-2.5 sm:px-4 space-y-12 sm:space-y-16">
+        
+        {/* =====================================================================
+            C. HOW IT WORKS — HERO-02 STYLED CARD CONTAINER
+        ===================================================================== */}
+        <section id="how-it-works" className="max-w-7xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-14 shadow-xs">
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-xs font-semibold text-[#923cf6] shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#923cf6] animate-pulse" />
+              <span>Simple 3-Step Experience</span>
+            </div>
+            <h2 className="font-urbanist text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0d0d0d] tracking-tight mt-3">
+              How SignTap Works
+            </h2>
+            <p className="text-slate-600 text-xs sm:text-sm md:text-base mt-2">
+              From choosing your card to making unforgettable contactless introductions.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            {/* Top Pill / Badge */}
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100/90 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-2xs backdrop-blur-md">
-                <span className="pulse-beacon" />
-                <span>SignBridge ID V2.0 is live</span>
-                <span className="text-slate-300">|</span>
-                <span className="text-[#087CF0] flex items-center gap-1">
-                  NFC + QR + Smart Web <ArrowRight className="w-3 h-3" />
-                </span>
-              </div>
-            </div>
-
-            {/* Headline & Subhead */}
-            <div className="mt-8 text-center max-w-4xl mx-auto">
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-[#101828] leading-[1.08]">
-                Your Identity.{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#087CF0] via-[#0560bd] to-[#FF7900]">
-                  One Tap Away.
-                </span>
-              </h1>
-              <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                Create your digital identity. Showcase your work, share your story, and connect with the world through your personalized SignBridge profile and physical NFC Smart Card.
-              </p>
-
-              {/* CTAs */}
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/signup"
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#101828] text-white text-base font-semibold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/15 flex items-center justify-center gap-3 group"
-                >
-                  <span>Create Your Free Profile</span>
-                  <span className="w-6 h-6 rounded-lg bg-[#FF7900] flex items-center justify-center text-white group-hover:translate-x-1 transition-transform">
-                    <ArrowRight className="w-3.5 h-3.5" />
+            {/* Step 01 */}
+            <div className="relative p-7 sm:p-8 rounded-2xl md:rounded-3xl bg-[#f8fafc] border border-[#dee5ed] hover:border-[#923cf6]/40 hover:shadow-lg transition-all group flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-[#923cf6]/30 font-mono group-hover:text-[#923cf6] transition-colors">
+                    01
                   </span>
-                </Link>
-
-                <Link
-                  href="/id/surya"
-                  className="w-full sm:w-auto px-7 py-4 rounded-xl bg-white border border-slate-200 text-slate-800 text-base font-semibold hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-2"
-                >
-                  <span>Explore Live Profile</span>
-                  <ExternalLink className="w-4 h-4 text-slate-400" />
-                </Link>
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 text-[#923cf6] flex items-center justify-center">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                </div>
+                <h3 className="font-urbanist text-lg sm:text-xl font-bold text-[#101828] mt-4">Get Your Card</h3>
+                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                  Choose your preferred physical SignTap card design and place your order. Customize your name and shipping address.
+                </p>
               </div>
+              <div className="mt-6 pt-4 border-t border-slate-200/60 text-xs font-semibold text-[#923cf6] flex items-center gap-1">
+                <span>Explore products below</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
 
-              {/* Small Trust Note */}
-              <p className="mt-4 text-xs text-slate-400 font-medium">
-                No app installation required for visitors · Compatible with all NFC smartphones
+            {/* Step 02 */}
+            <div className="relative p-7 sm:p-8 rounded-2xl md:rounded-3xl bg-[#f8fafc] border border-[#dee5ed] hover:border-[#FF7900]/40 hover:shadow-lg transition-all group flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-[#FF7900]/30 font-mono group-hover:text-[#FF7900] transition-colors">
+                    02
+                  </span>
+                  <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#FF7900] flex items-center justify-center">
+                    <User className="w-5 h-5" />
+                  </div>
+                </div>
+                <h3 className="font-urbanist text-lg sm:text-xl font-bold text-[#101828] mt-4">Create Your Identity</h3>
+                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                  Build your personalized digital profile using your dashboard. Add your bio, social hubs, portfolio, and contact buttons.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-200/60 text-xs font-semibold text-[#FF7900] flex items-center gap-1">
+                <span>Live preview editor</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            {/* Step 03 */}
+            <div className="relative p-7 sm:p-8 rounded-2xl md:rounded-3xl bg-[#f8fafc] border border-[#dee5ed] hover:border-emerald-500/40 hover:shadow-lg transition-all group flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-emerald-500/30 font-mono group-hover:text-emerald-500 transition-colors">
+                    03
+                  </span>
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <Wifi className="w-5 h-5" />
+                  </div>
+                </div>
+                <h3 className="font-urbanist text-lg sm:text-xl font-bold text-[#101828] mt-4">Tap and Connect</h3>
+                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                  Let anyone tap your NFC card to instantly access your digital profile and save your contact directly with 1 click.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-200/60 text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                <span>No app or login needed</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* =====================================================================
+            D. PRODUCT SHOWCASE — SIGNTAP HARDWARE COLLECTION
+        ===================================================================== */}
+        <section id="products" className="max-w-7xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-14 shadow-xs">
+          
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 sm:mb-12">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-xs font-semibold text-[#923cf6] shadow-2xs">
+                <Wifi className="w-3.5 h-3.5" />
+                <span>Genuine NTAG216 Microchips</span>
+              </div>
+              <h2 className="font-urbanist text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0d0d0d] tracking-tight mt-3">
+                Explore SignTap NFC Cards
+              </h2>
+              <p className="text-slate-600 text-xs sm:text-sm md:text-base mt-1.5 max-w-xl">
+                Precision-engineered physical smart cards connected to your real-time cloud identity.
               </p>
             </div>
 
-            {/* Hero Interactive Hardware Visual (NFC Card + Smartphone Mockup) */}
-            <div className="mt-16 lg:mt-24 max-w-5xl mx-auto">
-              <div className="relative rounded-3xl bg-gradient-to-b from-white to-slate-50/80 border border-slate-200/90 p-6 sm:p-12 shadow-2xl">
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                  
-                  {/* Left Column: Interactive Physical NFC Smart Card */}
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#087CF0] mb-2 flex items-center gap-1.5">
-                      <Wifi className="w-4 h-4" /> Physical SignBridge Smart Card
-                    </span>
-                    <h3 className="text-xl font-bold text-slate-900 mb-6">
-                      Tap against any modern phone
-                    </h3>
+            <Link
+              href="/explore-cards"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#923cf6] hover:text-[#8129e0]"
+            >
+              <span>View full technical specs</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
-                    {/* Interactive 3D Card */}
-                    <NFCCardVisual 
-                      fullName="Surya Narayanan"
-                      title="Founder & Hardware Architect"
-                      username="surya"
-                      onTap={handleSimulatedTap}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="rounded-2xl md:rounded-3xl bg-[#f8fafc] border border-[#dee5ed] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
+              >
+                <div>
+                  {/* Card Visual Banner */}
+                  <div className="relative h-44 overflow-hidden bg-slate-900">
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                    
+                    {product.badge && (
+                      <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#101828]/80 backdrop-blur-md text-[10px] font-bold text-white border border-white/20">
+                        {product.badge}
+                      </span>
+                    )}
 
-                    <p className="text-xs text-slate-500 mt-4 max-w-xs">
-                      Tapping the card triggers an encrypted NDEF payload redirecting directly to your dynamic identity.
-                    </p>
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-white text-xs font-mono">
+                      <Wifi className="w-3.5 h-3.5 text-[#923cf6]" />
+                      <span>{product.material}</span>
+                    </div>
                   </div>
 
-                  {/* Right Column: Mobile Screen Profile Representation */}
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#FF7900] mb-2 flex items-center gap-1.5">
-                      <Smartphone className="w-4 h-4" /> Instant Mobile Profile View
-                    </span>
-                    <h3 className="text-xl font-bold text-slate-900 mb-6">
-                      What visitors immediately see
+                  {/* Body Content */}
+                  <div className="p-5 sm:p-6">
+                    <h3 className="font-urbanist text-base sm:text-lg font-bold text-[#101828] group-hover:text-[#923cf6] transition-colors">
+                      {product.name}
                     </h3>
 
-                    {/* Realistic Smartphone Shell */}
-                    <div className="relative w-[280px] sm:w-[320px] rounded-[36px] bg-slate-900 p-3 shadow-2xl ring-1 ring-slate-800">
-                      
-                      {/* Notch / Dynamic Island */}
-                      <div className="absolute top-5 left-1/2 -translate-x-1/2 w-24 h-4 bg-black rounded-full z-20 flex items-center justify-center">
-                        <span className="w-2 h-2 rounded-full bg-slate-800 mr-2" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-900" />
-                      </div>
-
-                      {/* Phone Screen Container */}
-                      <div className="w-full h-[460px] rounded-[28px] bg-[#0C121E] overflow-y-auto overflow-x-hidden p-4 text-white relative text-left">
-                        
-                        {/* Tap Feedback Animation */}
-                        {nfcTapped && (
-                          <div className="absolute inset-0 bg-[#087CF0]/20 backdrop-blur-xs flex items-center justify-center z-30 animate-fade-in">
-                            <div className="px-4 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold shadow-2xl animate-bounce flex items-center gap-2">
-                              <Zap className="w-4 h-4 text-[#FF7900]" />
-                              Instant NFC Connection Established!
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Top Micro-Header */}
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 pb-3 border-b border-white/10">
-                          <span className="font-mono">signbridge.click/id/surya</span>
-                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                        </div>
-
-                        {/* Avatar & Info */}
-                        <div className="mt-4 flex items-center gap-3">
-                          <img 
-                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" 
-                            alt="Surya" 
-                            className="w-12 h-12 rounded-xl object-cover ring-2 ring-[#087CF0]" 
-                          />
-                          <div>
-                            <h4 className="text-sm font-bold text-white flex items-center gap-1">
-                              Surya Narayanan
-                              <ShieldCheck className="w-3.5 h-3.5 text-[#087CF0]" />
-                            </h4>
-                            <p className="text-[11px] text-slate-400">Founder & Hardware Architect</p>
-                          </div>
-                        </div>
-
-                        {/* Quick CTA */}
-                        <div className="grid grid-cols-2 gap-2 mt-4">
-                          <button className="py-2 px-3 rounded-lg bg-[#087CF0] text-[11px] font-semibold text-white shadow-sm flex items-center justify-center gap-1">
-                            <UserCheck className="w-3 h-3" /> Save Contact
-                          </button>
-                          <button className="py-2 px-3 rounded-lg bg-white/10 text-[11px] font-semibold text-white border border-white/10 flex items-center justify-center gap-1">
-                            <QrCode className="w-3 h-3 text-[#FF7900]" /> Show QR
-                          </button>
-                        </div>
-
-                        {/* Social Links Chips */}
-                        <div className="mt-4 space-y-1.5">
-                          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-[#087CF0]" />
-                              LinkedIn Profile
-                            </span>
-                            <ExternalLink className="w-3 h-3 text-slate-400" />
-                          </div>
-                          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-[#FF7900]" />
-                              Hardware GitHub Repos
-                            </span>
-                            <ExternalLink className="w-3 h-3 text-slate-400" />
-                          </div>
-                          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                              WhatsApp Connect
-                            </span>
-                            <ExternalLink className="w-3 h-3 text-slate-400" />
-                          </div>
-                        </div>
-
-                        {/* Portfolio Mini Card */}
-                        <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10">
-                          <span className="text-[9px] uppercase font-mono text-[#087CF0]">Featured Work</span>
-                          <p className="text-xs font-bold text-white mt-0.5">SignBridge Smart Card V2</p>
-                          <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">
-                            Matte black encrypted NFC hardware with instant cloud redirect.
-                          </p>
-                        </div>
-
-                        <div className="mt-6 text-center">
-                          <p className="text-[9px] text-slate-500">
-                            Powered by SignBridge ID · One Tap Away
-                          </p>
-                        </div>
-                      </div>
+                    {/* Price */}
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="text-2xl sm:text-3xl font-extrabold text-[#101828] font-sans">
+                        ${product.price}
+                      </span>
+                      <span className="text-[11px] text-slate-500 uppercase font-mono">
+                        {product.currency} · Lifetime updates
+                      </span>
                     </div>
 
-                    <Link 
-                      href="/id/surya"
-                      className="text-xs font-semibold text-[#087CF0] mt-3 hover:underline flex items-center gap-1"
-                    >
-                      Open full public view in new tab <ExternalLink className="w-3 h-3" />
-                    </Link>
-                  </div>
+                    <p className="text-xs text-slate-600 mt-2.5 leading-relaxed">
+                      {product.short_description}
+                    </p>
 
+                    {/* Feature bullet list */}
+                    <div className="mt-4 space-y-2 pt-3 border-t border-slate-200/60">
+                      {product.features.slice(0, 4).map((feat, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs text-slate-600">
+                          <Check className="w-3.5 h-3.5 text-[#923cf6] shrink-0 mt-0.5" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* =========================================================================
-            HOW IT WORKS — Interactive Timeline Tabs (twocode.nl style)
-            ========================================================================= */}
-        <section className="py-20 sm:py-28 bg-white border-b border-slate-200/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <div className="text-center max-w-3xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#FF7900]">
-                Simple 3-Step Setup
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#101828] mt-2">
-                Set it up once.{' '}
-                <span className="italic font-normal text-slate-600">Share forever.</span>
-              </h2>
-              <p className="mt-4 text-slate-600 text-sm sm:text-base">
-                Go from a blank page to a fully functioning NFC contactless card and smart web identity in under three minutes.
-              </p>
-            </div>
-
-            {/* Interactive Step Tabs */}
-            <div className="mt-12 max-w-4xl mx-auto">
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-1.5 rounded-2xl bg-slate-100 border border-slate-200">
-                {steps.map((step, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveStep(idx)}
-                    className={`flex items-center gap-3 p-3.5 rounded-xl text-left transition-all ${
-                      activeStep === idx
-                        ? 'bg-white text-slate-900 shadow-sm font-semibold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                    }`}
+                {/* Pill Order Button in Hero 02 style */}
+                <div className="p-5 sm:p-6 pt-0">
+                  <Link
+                    href={`/order?product=${product.id}`}
+                    className="w-full py-2.5 px-4 rounded-full bg-[#923cf6] hover:bg-[#8129e0] hover:scale-[1.02] text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-xs group-hover:shadow-md active:scale-95"
                   >
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
-                      activeStep === idx ? 'bg-[#087CF0] text-white' : 'bg-slate-200 text-slate-600'
-                    }`}>
-                      {step.num}
-                    </span>
-                    <span className="text-sm font-medium">{step.title}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Active Step Panel */}
-              <div className="mt-6 rounded-3xl bg-[#101828] text-white p-8 sm:p-12 border border-white/10 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex-1 space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-medium text-[#FF7900]">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    {steps[activeStep].badge}
-                  </div>
-                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                    {steps[activeStep].headline}
-                  </h3>
-                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                    {steps[activeStep].description}
-                  </p>
-                  
-                  <div className="pt-2">
-                    <Link
-                      href="/signup"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#087CF0] text-white text-xs font-semibold hover:bg-[#0668cc] transition-colors"
-                    >
-                      Try Step {steps[activeStep].num} Now <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="w-full md:w-72 p-6 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#087CF0] to-[#FF7900] flex items-center justify-center text-white mb-4 shadow-lg">
-                    {activeStep === 0 && <User className="w-8 h-8" />}
-                    {activeStep === 1 && <Palette className="w-8 h-8" />}
-                    {activeStep === 2 && <Wifi className="w-8 h-8" />}
-                  </div>
-                  <h4 className="text-sm font-bold text-white">
-                    {steps[activeStep].title}
-                  </h4>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Instant sync to cloud database & NFC chips
-                  </p>
+                    <span>Customize & Order</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
-
-            </div>
-
+            ))}
           </div>
+
         </section>
 
-        {/* =========================================================================
-            PROFILE TYPES — 4 Categories with Live Switcher
-            ========================================================================= */}
-        <section id="profile-types" className="py-20 sm:py-28 bg-[#FAFAFB] border-b border-slate-200/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <div className="text-center max-w-3xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#087CF0]">
-                Tailored Archetypes
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#101828] mt-2">
-                Designed for every kind of ambition
-              </h2>
-              <p className="mt-4 text-slate-600 text-sm sm:text-base">
-                Whether you are a solo creative, founder, executive, or growing business, SignBridge ID provides purpose-built layouts.
-              </p>
-            </div>
-
-            {/* Category Tabs */}
-            <div className="mt-12 flex justify-center">
-              <div className="inline-flex p-1.5 rounded-2xl bg-slate-200/80 border border-slate-300/60">
-                {(['professional', 'creator', 'business', 'personal'] as const).map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-semibold capitalize transition-all ${
-                      activeCategory === cat
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Category Showcase Card */}
-            <div className="mt-8 max-w-4xl mx-auto rounded-3xl bg-white border border-slate-200 p-6 sm:p-12 shadow-md">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                
-                {/* Details */}
-                <div>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${categories[activeCategory].badgeColor}`}>
-                    {categories[activeCategory].title} Profile
-                  </span>
-                  
-                  <h3 className="text-2xl font-bold text-slate-900 mt-3">
-                    Built for high-impact networking
-                  </h3>
-                  
-                  <p className="text-slate-600 text-sm mt-3 leading-relaxed">
-                    {categories[activeCategory].desc}
-                  </p>
-
-                  <div className="mt-6 space-y-2.5">
-                    {categories[activeCategory].features.map((feat, idx) => (
-                      <div key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700 font-medium">
-                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                          <Check className="w-3 h-3" />
-                        </span>
-                        {feat}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-8 flex items-center gap-3">
-                    <Link
-                      href={`/id/${categories[activeCategory].demoUser}`}
-                      className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5"
-                    >
-                      View Live Example <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                    <Link
-                      href="/signup"
-                      className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors"
-                    >
-                      Create This Profile
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Visual Preview */}
-                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col items-center text-center">
-                  <img 
-                    src={categories[activeCategory].avatar} 
-                    alt={categories[activeCategory].name}
-                    className="w-20 h-20 rounded-2xl object-cover shadow-md ring-4 ring-white"
-                  />
-                  <h4 className="font-bold text-slate-900 text-base mt-3">
-                    {categories[activeCategory].name}
-                  </h4>
-                  <p className="text-xs text-slate-500 font-medium">
-                    {categories[activeCategory].role}
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    {categories[activeCategory].tagline}
-                  </p>
-
-                  <div className="w-full mt-5 pt-4 border-t border-slate-200/60 flex justify-between text-xs font-medium text-slate-600">
-                    <span>URL Path:</span>
-                    <span className="font-mono text-[#087CF0]">/id/{categories[activeCategory].demoUser}</span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* =========================================================================
-            FEATURES GRID — 8 Core Pillars
-            ========================================================================= */}
-        <section className="py-20 sm:py-28 bg-white border-b border-slate-200/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <div className="text-center max-w-3xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#FF7900]">
-                Everything You Need
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#101828] mt-2">
-                Engineered for trust, performance, & physical simplicity
-              </h2>
-              <p className="mt-4 text-slate-600 text-sm sm:text-base">
-                SignBridge ID removes paper card waste, app installation barriers, and outdated contacts forever.
-              </p>
-            </div>
-
-            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              
-              {/* Feature 1 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-[#087CF0]/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-[#087CF0]/10 text-[#087CF0] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Personalized Digital Identity</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Your custom username (signbridge.click/id/you) with bio, social links, resume, and credentials.
-                </p>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-[#FF7900]/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-[#FF7900]/10 text-[#FF7900] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">3 Premium Templates</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Switch between Minimal, Signature, and Creative themes with live previews and custom accents.
-                </p>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-emerald-500/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Briefcase className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Portfolio Showcase</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Display high-resolution project cards, technology tags, and direct web links with ordering controls.
-                </p>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-purple-500/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Building className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Business Information</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Direct WhatsApp messaging, office locations, product listings, and corporate inquiries.
-                </p>
-              </div>
-
-              {/* Feature 5 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-[#087CF0]/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-[#087CF0]/10 text-[#087CF0] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Wifi className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">NFC Smart Card Link</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Manage physical card UIDs, generate unique tap URLs (signbridge.click/t/cardId), and reassign cards.
-                </p>
-              </div>
-
-              {/* Feature 6 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-[#FF7900]/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-[#FF7900]/10 text-[#FF7900] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <QrCode className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Vector QR Code Sharing</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Download high-resolution PNG QR codes, share via native mobile sheets, or print on merchandise.
-                </p>
-              </div>
-
-              {/* Feature 7 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-emerald-500/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Smartphone className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">1-Tap Contact Saving</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Downloads standard vCard (.vcf) formatted files directly into the smartphone's address book.
-                </p>
-              </div>
-
-              {/* Feature 8 */}
-              <div className="p-6 rounded-2xl border border-slate-200 bg-[#FAFAFB] hover:border-purple-500/40 hover:bg-white transition-all shadow-2xs group">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Profile Analytics</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Track profile views, NFC taps, QR scans, and link click engagement metrics privately.
-                </p>
-              </div>
-
-            </div>
-
-          </div>
-        </section>
-
-        {/* =========================================================================
-            FINAL CALL TO ACTION
-            ========================================================================= */}
-        <section className="py-20 sm:py-28 bg-[#101828] text-white relative overflow-hidden">
+        {/* =====================================================================
+            E. FEATURES — MODERN BENTO CAPABILITIES
+        ===================================================================== */}
+        <section id="features" className="max-w-7xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-14 shadow-xs">
           
-          <div className="absolute inset-0 bg-gradient-to-r from-[#087CF0]/20 via-transparent to-[#FF7900]/20 pointer-events-none" />
-
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-[#FF7900] mb-6">
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-xs font-semibold text-[#923cf6] shadow-2xs">
               <Sparkles className="w-3.5 h-3.5" />
-              Start Free in 60 Seconds
-            </span>
-
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-              Your Digital Identity Starts Here.
-            </h2>
-            
-            <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
-              Join thousands of creators, founders, and professionals who have elevated their networking with SignBridge ID.
-            </p>
-
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/signup"
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#087CF0] text-white text-base font-semibold hover:bg-[#0668cc] transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
-              >
-                <span>Create Your Profile</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/pricing"
-                className="w-full sm:w-auto px-7 py-4 rounded-xl bg-white/10 border border-white/15 text-white text-base font-semibold hover:bg-white/15 transition-all"
-              >
-                View NFC Card Pricing
-              </Link>
+              <span>Modern Identity Infrastructure</span>
             </div>
-
-            <p className="text-xs text-slate-400 mt-6">
-              SignBridge ID · Website: signbridge.click · Tagline: Your Identity. One Tap Away.
+            <h2 className="font-urbanist text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0d0d0d] tracking-tight mt-3">
+              Engineered for Frictionless Connection
+            </h2>
+            <p className="text-slate-600 text-xs sm:text-sm md:text-base mt-2">
+              Everything you need to leave an unforgettable impression in professional, creative, and business encounters.
             </p>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {features.map((feat, idx) => (
+              <div
+                key={idx}
+                className="p-6 rounded-2xl md:rounded-3xl bg-[#f8fafc] border border-[#dee5ed] hover:border-[#923cf6]/40 hover:bg-white hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center mb-4">
+                    {feat.icon}
+                  </div>
+                  <h3 className="font-urbanist text-base font-bold text-[#101828]">{feat.title}</h3>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
+                    {feat.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </section>
 
-      </main>
+        {/* =====================================================================
+            F. INTERACTIVE PROFILE PREVIEW — SIGNTAP LIVE EXPERIENCE
+        ===================================================================== */}
+        <section className="max-w-7xl mx-auto rounded-3xl md:rounded-[2rem] bg-[#101828] border border-white/10 p-6 sm:p-10 lg:p-14 shadow-2xl text-white relative overflow-hidden">
+          
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#923cf6]/15 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#087CF0]/10 blur-3xl pointer-events-none" />
+
+          <div className="text-center max-w-2xl mx-auto mb-10 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-xs font-semibold text-purple-200 border border-purple-400/20 mb-3">
+              <span className="w-2 h-2 rounded-full bg-[#30D158] animate-pulse" />
+              <span>Live Public Profile Experience</span>
+            </div>
+            <h2 className="font-urbanist text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+              See How Your Identity Looks
+            </h2>
+            <p className="text-slate-400 text-xs sm:text-sm mt-2">
+              Switch demo profiles to test the live mobile experience your contacts will see when tapping your SignTap card.
+            </p>
+
+            {/* Profile Switcher Pills */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => setActivePreviewProfile('surya')}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  activePreviewProfile === 'surya'
+                    ? 'bg-[#923cf6] text-white shadow-md'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/15'
+                }`}
+              >
+                Surya (Professional)
+              </button>
+              <button
+                onClick={() => setActivePreviewProfile('elena')}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  activePreviewProfile === 'elena'
+                    ? 'bg-[#FF7900] text-white shadow-md'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/15'
+                }`}
+              >
+                Elena (Creator)
+              </button>
+              <button
+                onClick={() => setActivePreviewProfile('apex-studios')}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  activePreviewProfile === 'apex-studios'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/15'
+                }`}
+              >
+                Apex Labs (Business)
+              </button>
+            </div>
+          </div>
+
+          {/* Smartphone Frame with Dynamic Island */}
+          <div className="max-w-xl mx-auto rounded-[36px] bg-[#1d1d1b] p-3 shadow-2xl relative z-10 border-4 border-[#2b2b29]">
+            
+            {/* Top Bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-white/10 rounded-t-[20px] border-b border-white/10 mb-2 text-white">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
+              </div>
+              <div className="px-3 py-0.5 rounded-md bg-white/5 text-[11px] font-mono text-slate-300 shadow-inner">
+                signbridge.click/u/{currentProfile.username}
+              </div>
+              <span className="text-[10px] font-semibold text-[#923cf6] uppercase">SignTap Verified</span>
+            </div>
+
+            {/* Viewport Content */}
+            <div className="rounded-[20px] bg-[#162032] p-6 text-white">
+              
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                <img
+                  src={currentProfile.profile_image}
+                  alt={currentProfile.full_name}
+                  className="w-18 h-18 rounded-2xl object-cover ring-2 ring-[#923cf6] shadow-md"
+                />
+                <div className="flex-1">
+                  <h3 className="font-urbanist text-xl font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
+                    {currentProfile.full_name}
+                    <ShieldCheck className="w-4 h-4 text-[#923cf6]" />
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">{currentProfile.title}</p>
+                  {currentProfile.company && (
+                    <p className="text-xs text-[#FF7900] font-medium mt-0.5">{currentProfile.company}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-300 leading-relaxed">
+                {currentProfile.bio}
+              </div>
+
+              {/* Skills */}
+              {currentProfile.skills && currentProfile.skills.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {currentProfile.skills.map((skill, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-md bg-white/10 text-[10px] text-slate-300">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Pill CTAs inside Profile */}
+              <div className="grid grid-cols-2 gap-2.5 mt-5">
+                <Link
+                  href={`/u/${currentProfile.username}`}
+                  className="py-2.5 px-4 rounded-full bg-[#923cf6] hover:bg-[#8129e0] text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-md"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Save Contact</span>
+                </Link>
+                <Link
+                  href={`/u/${currentProfile.username}`}
+                  className="py-2.5 px-4 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 border border-white/10"
+                >
+                  <Briefcase className="w-3.5 h-3.5 text-[#FF7900]" />
+                  <span>View Full Profile</span>
+                </Link>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className="mt-8 text-center relative z-10">
+            <Link
+              href="/signup"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#923cf6] hover:bg-[#8129e0] hover:scale-[1.02] px-8 py-3.5 text-sm font-semibold text-white transition-all shadow-lg shadow-purple-500/25 active:scale-95"
+            >
+              <Sparkles className="w-4 h-4 mr-2 text-[#FF7900]" />
+              <span>Claim Your Unique SignTap URL</span>
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+          </div>
+
+        </section>
+
+        {/* =====================================================================
+            G. WHY SIGNTAP — COMPETITIVE ADVANTAGE
+        ===================================================================== */}
+        <section className="max-w-7xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-14 shadow-xs">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            <div className="lg:col-span-6 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-xs font-semibold text-[#923cf6] shadow-2xs">
+                <span>The Permanent Advantage</span>
+              </div>
+              <h2 className="font-urbanist text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0d0d0d] tracking-tight">
+                Why Professionals Choose SignTap
+              </h2>
+              <p className="text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed">
+                Traditional paper business cards get lost, thrown away, or quickly go out of date. SignTap transforms networking into an interactive, permanent digital touchpoint.
+              </p>
+
+              <div className="space-y-3.5 pt-1">
+                {[
+                  {
+                    title: 'No need to carry multiple paper cards',
+                    desc: 'Never run out of cards at conferences or networking mixers. One card is all you ever need.'
+                  },
+                  {
+                    title: 'Update details without replacing your NFC card',
+                    desc: 'Changed your phone number, promotion, or company? Update your profile online and your physical card syncs instantly.'
+                  },
+                  {
+                    title: 'Share your information instantly',
+                    desc: 'A single phone tap transmits your vCard directly into their contacts book with zero manual typing errors.'
+                  },
+                  {
+                    title: 'Create an unforgettable professional first impression',
+                    desc: 'Stand out with cutting-edge technology that signals modern fluency and sophisticated taste.'
+                  },
+                  {
+                    title: 'One card for your complete digital identity',
+                    desc: 'Combines your resume, portfolio, social hubs, WhatsApp, and booking links in one unified experience.'
+                  }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-[#101828]">{item.title}</h4>
+                      <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href="/explore-cards"
+                  className="inline-flex items-center rounded-full bg-[#923cf6] hover:bg-[#8129e0] hover:scale-[1.02] px-6 py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition-all"
+                >
+                  <span>Select Your SignTap Card</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-2" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Comparison Cards */}
+            <div className="lg:col-span-6 bg-[#f8fafc] p-6 sm:p-8 rounded-2xl md:rounded-3xl border border-[#dee5ed] space-y-4">
+              <div className="p-5 rounded-2xl bg-white border border-rose-100 shadow-xs">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-rose-600 mb-2 flex items-center gap-1.5 font-mono">
+                  <Minus className="w-4 h-4" /> Traditional Paper Cards
+                </h4>
+                <ul className="space-y-1.5 text-xs text-slate-500">
+                  <li>• Expensive reprints whenever details, titles, or numbers change</li>
+                  <li>• 88% of paper business cards are thrown away in under 7 days</li>
+                  <li>• Tedious manual typing of email and contact numbers</li>
+                  <li>• Zero analytics or engagement telemetries</li>
+                </ul>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white border border-[#923cf6]/40 shadow-md">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#923cf6] mb-2 flex items-center gap-1.5 font-mono">
+                  <Plus className="w-4 h-4" /> SignTap Smart Card
+                </h4>
+                <ul className="space-y-1.5 text-xs text-slate-700 font-medium">
+                  <li>✓ One-time purchase with lifetime dynamic profile updates</li>
+                  <li>✓ Direct 1-tap phonebook saving with clean vCard file</li>
+                  <li>✓ Real-time analytics on profile visits and contact downloads</li>
+                  <li>✓ High-impact professional statement backed by SignBridge brand</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* =====================================================================
+            H. FAQ — ROUNDED ACCORDION SHELL
+        ===================================================================== */}
+        <section id="faq" className="max-w-4xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-14 shadow-xs">
+          
+          <div className="text-center mb-10 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-xs font-semibold text-[#923cf6] shadow-2xs">
+              <span>Got Questions?</span>
+            </div>
+            <h2 className="font-urbanist text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0d0d0d] tracking-tight mt-3">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-slate-600 text-xs sm:text-sm mt-1.5">
+              Everything you need to know about compatibility, activation, and delivery.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl bg-[#f8fafc] border border-[#dee5ed] overflow-hidden transition-all shadow-xs"
+                >
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm md:text-base text-[#101828] hover:text-[#923cf6] transition-colors"
+                  >
+                    <span>{faq.q}</span>
+                    <span className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 shrink-0">
+                      {isOpen ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-200/60 animate-in fade-in duration-200">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Contact Support Banner */}
+          <div className="mt-8 p-5 rounded-2xl bg-[#f8fafc] border border-slate-200 text-center">
+            <p className="text-xs sm:text-sm text-slate-600 font-medium">
+              Have questions about enterprise fleets or custom materials?
+            </p>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#923cf6] hover:text-[#8129e0] mt-1.5"
+            >
+              <span>Contact our SignTap identity specialists</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+        </section>
+
+      </div>
 
       <Footer />
+      </div>
     </div>
   );
 }

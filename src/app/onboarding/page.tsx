@@ -135,11 +135,13 @@ export default function OnboardingPage() {
       // Create their unique NFC card
       const newCard: NFCCard = {
         id: `card-${Date.now()}`,
-        card_uid: `SB-CARD-${Math.floor(1000 + Math.random() * 9000)}`,
+        card_uid: `ST-NFC-${Math.floor(1000 + Math.random() * 9000)}`,
+        activation_code: `ACT-${Math.floor(1000 + Math.random() * 9000)}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
         owner_user_id: user.id,
         profile_id: newProfile.id,
         card_name: `${newProfile.full_name}'s Smart Card`,
         status: 'active',
+        tap_count: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -171,8 +173,8 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-[#F8FAFD] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center mb-6">
         <Logo theme="light" size="lg" className="inline-block mb-3" />
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#087CF0]/10 text-[#087CF0] text-xs font-semibold mb-2">
-          <Sparkles className="w-3.5 h-3.5" /> Step 1 of 1: Welcome to SignBridge
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 text-[#923cf6] text-xs font-semibold mb-2">
+          <Sparkles className="w-3.5 h-3.5" /> Step 1 of 1: Welcome to SignTap
         </span>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-[#101828]">
           Claim Your Digital Identity Page
@@ -203,7 +205,7 @@ export default function OnboardingPage() {
               </p>
               <div className="relative flex items-center">
                 <span className="absolute left-3.5 text-xs font-mono font-medium text-slate-400 select-none">
-                  signbridge.click/id/
+                  signtap.me/u/
                 </span>
                 <input
                   required

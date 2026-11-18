@@ -50,8 +50,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const username = profile?.username || user?.user_metadata?.username || 'member';
   const publicUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/id/${username}` 
-    : `https://signbridge.click/id/${username}`;
+    ? `${window.location.origin}/u/${username}` 
+    : `https://signtap.me/u/${username}`;
 
   return (
     <div className="min-h-screen bg-[#F8FAFD] flex text-slate-800">
@@ -101,10 +101,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <div>
               <h2 className="text-sm font-bold text-slate-900 hidden sm:block">
-                {profile?.full_name || 'SignBridge Member'}
+                {profile?.full_name || 'SignTap Member'}
               </h2>
               <p className="text-[11px] text-slate-400 font-mono hidden sm:block">
-                signbridge.click/id/{username}
+                signtap.me/u/{username}
               </p>
             </div>
           </div>

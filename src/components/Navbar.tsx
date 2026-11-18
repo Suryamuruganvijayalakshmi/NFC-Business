@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Logo from './Logo';
+import Logo from '@/components/Logo';
 import { getCurrentUser } from '@/lib/store';
-import { ArrowRight, Menu, X, LayoutDashboard, User } from 'lucide-react';
+import { ArrowRight, Menu, X, LayoutDashboard, CreditCard, Sparkles, Wifi } from 'lucide-react';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,35 +17,40 @@ export default function Navbar() {
   }, [pathname]);
 
   const navLinks = [
-    { label: 'Overview', href: '/' },
+    { label: 'Home', href: '/' },
+    { label: 'How It Works', href: '/how-it-works' },
+    { label: 'Explore Cards', href: '/explore-cards' },
     { label: 'Features', href: '/features' },
-    { label: 'Templates', href: '/templates' },
     { label: 'Pricing', href: '/pricing' },
-    { label: 'About', href: '/about' },
+    { label: 'FAQ', href: '/faq' },
     { label: 'Contact', href: '/contact' },
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/85 backdrop-blur-xl border-b border-slate-200/60 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+    <div className="sticky top-2 z-40 w-full px-3 sm:px-6 pointer-events-none">
+      <header className="max-w-6xl mx-auto rounded-full border border-solid border-[#dee5ed] bg-white/95 backdrop-blur-xl shadow-[0_4px_16px_rgba(140,150,169,0.12)] px-4 sm:px-5 py-2.5 flex items-center justify-between pointer-events-auto transition-all">
         
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <Logo theme="light" size="md" />
+        {/* Brand Logo with SignTap Official Logo */}
+        <Link
+          href="/"
+          className="flex shrink-0 items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#923cf6]"
+          aria-label="SignTap Home"
+        >
+          <Logo theme="light" size="sm" />
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3.5 py-1.5 rounded-full text-xs lg:text-sm font-medium transition-colors ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-slate-100 text-slate-900 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'bg-[#101828] text-white shadow-xs'
+                    : 'text-[#45545e] hover:text-[#923cf6] hover:bg-slate-100/70'
                 }`}
               >
                 {link.label}
@@ -54,108 +59,121 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Right CTA / Auth Status */}
-        <div className="hidden md:flex items-center gap-3">
-          {/* Live NFC Status Pill (Inspired by twocode.nl) */}
-          <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200/80 text-[11px] font-medium text-slate-700">
-            <span className="pulse-beacon" />
-            <span><b>4,820+</b> Active NFC Cards</span>
-          </div>
-
+        {/* Right CTA / Auth Status with Hero 02 Purple Button */}
+        <div className="hidden md:flex items-center gap-2.5">
           {user ? (
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#101828] text-white text-xs lg:text-sm font-medium hover:bg-slate-800 transition-all shadow-sm"
-            >
-              <LayoutDashboard className="w-4 h-4 text-[#087CF0]" />
-              <span>Dashboard</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-[#101828] text-xs font-semibold transition-colors"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 text-[#923cf6]" />
+                <span>Dashboard</span>
+              </Link>
+
+              <Link
+                href="/order"
+                className="inline-flex items-center overflow-clip rounded-full bg-[#923cf6] hover:bg-[#8129e0] hover:scale-[1.02] px-4 py-2 text-xs font-semibold text-white transition-all shadow-md active:scale-95"
+              >
+                <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                <span>Get SignTap Card</span>
+              </Link>
+            </div>
           ) : (
             <>
               <Link
                 href="/login"
-                className="px-3.5 py-2 text-xs lg:text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                className="px-3.5 py-1.5 text-xs font-semibold text-[#45545e] hover:text-[#010110] transition-colors"
               >
-                Log in
+                Login
               </Link>
 
-              {/* TwoCode-inspired custom CTA button with sliding arrow */}
               <Link
-                href="/signup"
-                className="group relative flex items-center gap-2.5 overflow-hidden rounded-xl bg-[#101828] text-white py-1.5 pr-4 pl-1.5 transition-all hover:bg-slate-800 shadow-md"
+                href="/order"
+                className="inline-flex items-center overflow-clip rounded-full bg-[#923cf6] hover:bg-[#8129e0] hover:scale-[1.02] px-4 py-2 text-xs font-semibold text-white transition-all shadow-md active:scale-95"
               >
-                <span className="flex w-7 h-7 items-center justify-center rounded-lg bg-[#FF7900] text-white">
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                </span>
-                <span className="text-xs lg:text-sm font-semibold tracking-wide">
-                  Create Profile
-                </span>
+                <span>Get SignTap Card</span>
+                <ArrowRight className="w-3 h-3 ml-1.5" />
               </Link>
             </>
           )}
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Hamburger */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors"
-          aria-label="Toggle Navigation Menu"
+          className="lg:hidden p-2 rounded-full text-slate-700 hover:bg-slate-100 transition-colors"
+          aria-label="Toggle navigation menu"
         >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
-      </div>
+      </header>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-6 animate-fade-in">
-          <div className="flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium ${
-                  pathname === link.href
-                    ? 'bg-slate-100 text-[#087CF0] font-semibold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+        <div className="lg:hidden max-w-6xl mx-auto mt-2 rounded-2xl border border-solid border-[#dee5ed] bg-white/95 backdrop-blur-2xl p-4 shadow-xl pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex flex-col space-y-1">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-[#101828] text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+          <div className="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
             {user ? (
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#101828] text-white text-sm font-semibold shadow-sm"
-              >
-                <LayoutDashboard className="w-4 h-4 text-[#087CF0]" />
-                Go to Dashboard
-              </Link>
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-slate-900 text-white text-xs font-semibold"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-[#923cf6]" />
+                  <span>Go to Dashboard</span>
+                </Link>
+                <Link
+                  href="/order"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-[#923cf6] text-white text-xs font-semibold"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span>Get SignTap Card</span>
+                </Link>
+              </>
             ) : (
               <>
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
+                  className="w-full py-2.5 rounded-full text-center text-xs font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50"
                 >
-                  Log in
+                  Log In
                 </Link>
                 <Link
-                  href="/signup"
+                  href="/order"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-xl bg-[#087CF0] text-white text-sm font-semibold shadow-sm"
+                  className="w-full py-2.5 rounded-full text-center text-xs font-semibold text-white bg-[#923cf6] hover:bg-[#8129e0] flex items-center justify-center gap-2"
                 >
-                  Create Your Free Profile
+                  <span>Get SignTap Card</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </>
             )}
           </div>
         </div>
       )}
-    </header>
+    </div>
   );
 }

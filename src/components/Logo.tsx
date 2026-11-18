@@ -1,85 +1,88 @@
 import React from 'react';
-import Link from 'next/link';
+import Image from 'next/image';
 
 interface LogoProps {
   className?: string;
   variant?: 'full' | 'icon';
   theme?: 'light' | 'dark';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  showBadge?: boolean;
+  animated?: boolean;
 }
 
 export default function Logo({ 
   className = '', 
   variant = 'full', 
-  theme = 'dark',
-  size = 'md' 
+  theme = 'light',
+  size = 'md',
+  showBadge = true,
+  animated = true,
 }: LogoProps) {
-  const isDark = theme === 'dark'; // Dark theme means dark background (so white/light text)
+  const isDark = theme === 'dark';
 
-  const sizeDimensions = {
-    sm: { icon: 28, text: 'text-lg', sub: 'text-[9px]' },
-    md: { icon: 34, text: 'text-xl', sub: 'text-[10px]' },
-    lg: { icon: 44, text: 'text-2xl', sub: 'text-xs' },
+  const sizeConfig = {
+    xs: { iconWidth: 26, iconHeight: 22, text: 'text-base', sub: 'text-[8px]', badge: 'text-[8px] px-1 py-0.2' },
+    sm: { iconWidth: 34, iconHeight: 29, text: 'text-lg sm:text-xl', sub: 'text-[9px]', badge: 'text-[9px] px-1.5 py-0.5' },
+    md: { iconWidth: 42, iconHeight: 36, text: 'text-xl sm:text-2xl', sub: 'text-[10px]', badge: 'text-[10px] px-2 py-0.5' },
+    lg: { iconWidth: 54, iconHeight: 46, text: 'text-2xl sm:text-3xl', sub: 'text-xs', badge: 'text-xs px-2.5 py-1' },
+    xl: { iconWidth: 72, iconHeight: 61, text: 'text-3xl sm:text-4xl', sub: 'text-sm', badge: 'text-sm px-3 py-1' },
   }[size];
 
   return (
-    <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      {/* Official SignBridge Hex-Bridge Signal Icon */}
-      <div 
-        className="relative flex items-center justify-center rounded-xl bg-gradient-to-br from-[#101828] to-[#1A253A] border border-white/10 shadow-sm transition-transform hover:scale-105 duration-300"
-        style={{ width: sizeDimensions.icon, height: sizeDimensions.icon }}
-      >
-        <svg 
-          viewBox="0 0 36 36" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-4/5 h-4/5"
-        >
-          {/* NFC contactless wave - SignBridge Blue */}
-          <path 
-            d="M8 18C8 12.4772 12.4772 8 18 8" 
-            stroke="#087CF0" 
-            strokeWidth="3.2" 
-            strokeLinecap="round" 
+    <div className={`flex items-center gap-2.5 select-none group ${className}`}>
+      {/* Official SignTap Futuristic Gradient NFC S Logo Icon with Continuous Animation */}
+      <div className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+        animated ? 'hover:rotate-1' : ''
+      }`}>
+        
+        {/* Animated Contactless Backglow Aura */}
+        {animated && (
+          <div 
+            className="absolute inset-0 rounded-full bg-gradient-to-r from-[#923cf6]/30 via-[#06b6d4]/20 to-[#FF7900]/20 blur-md pointer-events-none animate-pulse" 
+            style={{ animationDuration: '3s' }}
           />
-          {/* Outer Wave - SignBridge Orange */}
-          <path 
-            d="M5 18C5 10.8203 10.8203 5 18 5" 
-            stroke="#FF7900" 
-            strokeWidth="3.2" 
-            strokeLinecap="round" 
-            strokeDasharray="1 5"
+        )}
+
+        <Image
+          src="/images/signtap-logo.png"
+          alt="SignTap Logo"
+          width={sizeConfig.iconWidth}
+          height={sizeConfig.iconHeight}
+          priority
+          className="relative z-10 object-contain drop-shadow-[0_2px_10px_rgba(146,60,246,0.35)] transition-all group-hover:drop-shadow-[0_0_16px_rgba(146,60,246,0.6)]"
+        />
+
+        {/* Animated Micro NFC Signal Waves */}
+        {animated && (
+          <span 
+            className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-400 opacity-75 animate-ping pointer-events-none" 
+            style={{ animationDuration: '2.5s' }}
           />
-          {/* Bridge Arch Connection */}
-          <path 
-            d="M10 27C12.5 21 23.5 21 26 27" 
-            stroke="#087CF0" 
-            strokeWidth="3.2" 
-            strokeLinecap="round" 
-          />
-          {/* Dynamic Chip Core - Orange */}
-          <circle cx="18" cy="18" r="3.2" fill="#FF7900" />
-          <path 
-            d="M18 18L26 12" 
-            stroke="#087CF0" 
-            strokeWidth="2.4" 
-            strokeLinecap="round" 
-          />
-        </svg>
+        )}
       </div>
 
       {variant === 'full' && (
         <div className="flex flex-col leading-none">
-          <div className="flex items-center gap-1">
-            <span className={`font-semibold tracking-tight ${isDark ? 'text-white' : 'text-[#101828]'} ${sizeDimensions.text}`}>
-              Sign<span className="text-[#087CF0]">Bridge</span>
+          <div className="flex items-center gap-1.5">
+            <span className={`font-urbanist font-extrabold tracking-tight transition-colors ${
+              isDark ? 'text-white' : 'text-[#0d0d0d]'
+            } ${sizeConfig.text}`}>
+              Sign<span className="text-[#923cf6] group-hover:text-[#a855f7] transition-colors">Tap</span>
             </span>
-            <span className="px-1.5 py-0.5 rounded-md bg-[#FF7900]/10 text-[#FF7900] text-[10px] font-bold tracking-wider uppercase border border-[#FF7900]/20">
-              ID
-            </span>
+            {showBadge && (
+              <span className={`rounded-full font-bold uppercase tracking-wider font-mono border transition-all ${
+                isDark 
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-400/30 group-hover:border-purple-400/60' 
+                  : 'bg-purple-50 text-[#923cf6] border-purple-200 group-hover:bg-purple-100'
+              } ${sizeConfig.badge}`}>
+                NFC
+              </span>
+            )}
           </div>
-          <span className={`font-medium tracking-wider uppercase mt-0.5 opacity-60 ${isDark ? 'text-slate-300' : 'text-slate-500'} ${sizeDimensions.sub}`}>
-            signbridge.click
+          <span className={`font-medium tracking-wider uppercase mt-1 opacity-70 transition-opacity group-hover:opacity-100 ${
+            isDark ? 'text-slate-400' : 'text-slate-500'
+          } ${sizeConfig.sub}`}>
+            Digital Identity
           </span>
         </div>
       )}

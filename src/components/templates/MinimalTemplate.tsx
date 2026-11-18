@@ -278,17 +278,15 @@ export default function MinimalTemplate({
           </div>
         )}
 
-        {/* SignBridge ID Footer Badge */}
+        {/* SignTap NFC Footer Badge */}
         <div className="mt-12 text-center pt-6 border-t border-slate-100">
           <p className="text-[11px] text-slate-400">
             Powered by{' '}
             <a 
-              href="https://signbridge.click" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="font-semibold text-slate-700 hover:text-[#087CF0] transition-colors"
+              href="/" 
+              className="font-semibold text-slate-700 hover:text-[#923cf6] transition-colors"
             >
-              SignBridge ID
+              SignTap NFC
             </a>
             {' '}· Your Identity. One Tap Away.
           </p>

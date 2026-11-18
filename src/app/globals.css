@@ -1,4 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Hedvig+Letters+Serif:opsz@12..24&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Manrope:wght@400;500;600;700&family=Monda:wght@400;500;600;700&family=Outfit:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&family=Red+Hat+Display:wght@400;500;600;700&family=Rethink+Sans:wght@400;500;600;700&family=Tillana:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+@import "./originkit-section-themes.css";
+@import "./originkit-section-theme.css";
 
 @theme {
   --color-brand-blue: #087CF0;
@@ -145,3 +149,124 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* =========================================================================
+   SIGNTAP ADVANCED NFC ANIMATIONS & EFFECTS
+   ========================================================================= */
+
+/* 1. NFC Radio Waves Pulse */
+@keyframes nfcPulse {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.animate-nfc-wave-1 {
+  animation: nfcPulse 2.4s cubic-bezier(0.15, 0.85, 0.35, 1) infinite;
+}
+
+.animate-nfc-wave-2 {
+  animation: nfcPulse 2.4s cubic-bezier(0.15, 0.85, 0.35, 1) infinite;
+  animation-delay: 0.75s;
+}
+
+.animate-nfc-wave-3 {
+  animation: nfcPulse 2.4s cubic-bezier(0.15, 0.85, 0.35, 1) infinite;
+  animation-delay: 1.5s;
+}
+
+/* 2. Floating Action Cards Physics Bobbing */
+@keyframes floatBob {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(0.6deg);
+  }
+}
+
+@keyframes floatBobReverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(8px) rotate(-0.6deg);
+  }
+}
+
+.animate-float-bob {
+  animation: floatBob 5.5s ease-in-out infinite;
+}
+
+.animate-float-bob-delayed {
+  animation: floatBobReverse 6.5s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
+.animate-float-bob-slow {
+  animation: floatBob 7.5s ease-in-out infinite;
+  animation-delay: 2.2s;
+}
+
+/* 3. Laser Chip Scanline */
+@keyframes laserScan {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+.animate-laser-scan {
+  animation: laserScan 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* 4. Shimmer Gradient Border */
+@keyframes borderShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-border-shimmer {
+  background-size: 200% 200%;
+  animation: borderShimmer 4s ease infinite;
+}
+
+/* 5. Electric Glow Pulse */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 25px -5px rgba(146, 60, 246, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 45px 5px rgba(6, 182, 212, 0.5);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 3.5s ease-in-out infinite;
+}
+

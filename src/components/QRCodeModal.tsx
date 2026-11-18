@@ -5,15 +5,15 @@ import { QRCodeSVG } from 'qrcode.react';
 import { X, Download, Share2, Copy, Check } from 'lucide-react';
 
 interface QRCodeModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
   onClose: () => void;
-  url: string;
+  url?: string;
   fullName: string;
   username: string;
 }
 
 export default function QRCodeModal({
-  isOpen,
+  isOpen = true,
   onClose,
   url,
   fullName,
@@ -22,10 +22,14 @@ export default function QRCodeModal({
   const [copied, setCopied] = React.useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
-  if (!isOpen) return null;
+  const profileUrl = url || (typeof window !== 'undefined' 
+    ? `${window.location.origin}/u/${username}` 
+    : `https://signtap.me/u/${username}`);
+
+  if (isOpen === false) return null;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(profileUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -55,7 +59,7 @@ export default function QRCodeModal({
       // Trigger download
       const pngFile = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
-      downloadLink.download = `SignBridge-QR-${username}.png`;
+      downloadLink.download = `SignTap-QR-${username}.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };
@@ -67,9 +71,9 @@ export default function QRCodeModal({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${fullName}'s SignBridge Profile`,
-          text: `Connect with ${fullName} on SignBridge ID`,
-          url: url,
+          title: `${fullName}'s SignTap Profile`,
+          text: `Connect with ${fullName} on SignTap NFC`,
+          url: profileUrl,
         });
       } catch (err) {
         handleCopy();
@@ -95,8 +99,8 @@ export default function QRCodeModal({
 
         {/* Header */}
         <div className="text-center mb-5">
-          <span className="px-2.5 py-1 rounded-full bg-[#087CF0]/10 text-[#087CF0] text-xs font-semibold uppercase tracking-wider">
-            SignBridge QR Code
+          <span className="px-2.5 py-1 rounded-full bg-purple-50 text-[#923cf6] text-xs font-semibold uppercase tracking-wider border border-purple-100">
+            SignTap QR Code
           </span>
           <h3 className="text-lg font-bold mt-2 text-slate-900">
             {fullName}
@@ -112,7 +116,7 @@ export default function QRCodeModal({
           className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner my-4"
         >
           <QRCodeSVG 
-            value={url}
+            value={profileUrl}
             size={220}
             level="H"
             includeMargin={true}

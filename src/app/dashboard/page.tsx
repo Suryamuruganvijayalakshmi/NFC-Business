@@ -6,7 +6,6 @@ import {
   getCurrentUser, 
   getProfileByUserId, 
   getOrCreateProfileForUser,
-  saveNFCCard,
   getAnalyticsSummary, 
   getNFCCardsByUserId,
   getLinksByProfileId,
@@ -29,7 +28,14 @@ import {
   ArrowRight,
   ShieldCheck,
   TrendingUp,
-  Share2
+  Share2,
+  Copy,
+  Check,
+  Package,
+  Clock,
+  Download,
+  MessageCircle,
+  Radio
 } from 'lucide-react';
 
 export default function DashboardOverviewPage() {
@@ -51,21 +57,7 @@ export default function DashboardOverviewPage() {
 
     if (p) {
       setAnalytics(getAnalyticsSummary(p.id));
-      let userCards = getNFCCardsByUserId(user.id);
-      if (userCards.length === 0) {
-        const defaultCard: NFCCard = {
-          id: `card-${Date.now()}`,
-          card_uid: `SB-CARD-${Math.floor(1000 + Math.random() * 9000)}`,
-          owner_user_id: user.id,
-          profile_id: p.id,
-          card_name: `${p.full_name}'s Smart Card`,
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        saveNFCCard(defaultCard);
-        userCards = [defaultCard];
-      }
+      const userCards = getNFCCardsByUserId(user.id);
       setCards(userCards);
     }
   }, []);
@@ -73,28 +65,29 @@ export default function DashboardOverviewPage() {
   if (!profile) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-xs text-slate-400">Loading your profile workspace...</p>
+        <div className="w-8 h-8 border-2 border-[#087CF0] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   // Calculate profile completion percentage
   let completedFields = 0;
-  const totalFields = 7;
+  const totalFields = 8;
   if (profile.full_name) completedFields++;
   if (profile.title) completedFields++;
   if (profile.bio) completedFields++;
   if (profile.profile_image) completedFields++;
   if (profile.email) completedFields++;
   if (profile.location) completedFields++;
+  if (profile.company || profile.business_name) completedFields++;
   const projects = getProjectsByProfileId(profile.id);
   if (projects.length > 0) completedFields++;
 
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
   const publicUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/id/${profile.username}`
-    : `https://signbridge.click/id/${profile.username}`;
+    ? `${window.location.origin}/u/${profile.username}`
+    : `https://signbridge.click/u/${profile.username}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicUrl);
@@ -102,292 +95,371 @@ export default function DashboardOverviewPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const primaryCard = cards.find(c => c.status === 'activated' || c.status === 'active') || cards[0];
+
   return (
     <div className="space-y-8">
       
-      {/* Top Banner / Welcome */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
-        <div>
+      {/* 1. Welcome Message & Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-8 rounded-3xl bg-gradient-to-r from-[#101828] via-[#1A253A] to-[#101828] text-white shadow-xl relative overflow-hidden">
+        <div className="relative z-10 space-y-2">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Hello, {profile.full_name}
-            </h1>
-            <span className="px-2 py-0.5 rounded-full bg-[#087CF0]/10 text-[#087CF0] text-[11px] font-bold uppercase tracking-wider">
-              {profile.profile_type}
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider font-semibold">
+              Live Digital Identity Active
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Your SignBridge Smart Identity is live and ready for physical card tapping.
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Welcome back, {profile.full_name}
+          </h1>
+
+          <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
+            Your SignBridge profile is live at <code className="text-[#087CF0] bg-white/10 px-1.5 py-0.5 rounded font-mono">/u/{profile.username}</code>. Taps on your physical NFC card load this profile instantly.
           </p>
-        </div>
 
-        {/* Copy Link & Share */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopyLink}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5 shadow-2xs"
-          >
-            <Share2 className="w-3.5 h-3.5 text-slate-500" />
-            <span>{copied ? 'Copied URL!' : 'Copy Profile Link'}</span>
-          </button>
+          {/* Quick Actions in Hero */}
+          <div className="pt-2 flex flex-wrap items-center gap-2.5">
+            <a
+              href={`/u/${profile.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2 px-3.5 rounded-xl bg-[#087CF0] hover:bg-[#0668cc] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <span>Preview Live Profile</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
 
-          <button
-            onClick={() => setShowQR(true)}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-xs"
-          >
-            <QrCode className="w-3.5 h-3.5 text-[#FF7900]" />
-            <span>Download QR</span>
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={handleCopyLink}
+              className="py-2 px-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 border border-white/10"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied URL' : 'Copy Profile Link'}</span>
+            </button>
 
-      {/* Completion Meter & Onboarding */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-blue-50/60 via-indigo-50/40 to-slate-50 border border-blue-100/80">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-900">
-                Identity Completion Score: {completionPercentage}%
-              </span>
-              {completionPercentage === 100 && (
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> All Fields Complete
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {completionPercentage < 100 
-                ? 'Add your custom portfolio projects and social channels to reach 100% impact.'
-                : 'Your profile is fully optimized for maximum connection conversions.'}
-            </p>
+            <button
+              onClick={() => setShowQR(true)}
+              className="py-2 px-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 border border-white/10"
+            >
+              <QrCode className="w-3.5 h-3.5 text-[#FF7900]" />
+              <span>Show QR Code</span>
+            </button>
           </div>
-
-          <Link
-            href="/dashboard/profile"
-            className="text-xs font-bold text-[#087CF0] hover:underline flex items-center gap-1 flex-shrink-0"
-          >
-            Enhance Profile <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full bg-slate-200/70 h-2 rounded-full mt-3 overflow-hidden">
-          <div 
-            className="bg-gradient-to-r from-[#087CF0] to-[#FF7900] h-full rounded-full transition-all duration-700" 
-            style={{ width: `${completionPercentage}%` }} 
-          />
-        </div>
+        {/* Ambient Top Right Glow */}
+        <div className="absolute right-0 top-0 w-80 h-80 bg-[#087CF0]/15 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* 4 Analytics Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. Key Metrics & Telemetry Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* Metric 1: Views */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+        {/* Total Views */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total Views</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Views</span>
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#087CF0] flex items-center justify-center">
               <Eye className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+          <p className="text-3xl font-extrabold text-[#101828] mt-3">
             {analytics?.total_views || 42}
           </p>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" /> +18% this week
+          <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-emerald-600" />
+            <span className="text-emerald-600 font-semibold">+18%</span> from last week
           </p>
         </div>
 
-        {/* Metric 2: NFC Taps */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+        {/* Total NFC Card Taps */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">NFC Smart Taps</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#FF7900] flex items-center justify-center">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">NFC Card Taps</span>
+            <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#FF7900] flex items-center justify-center">
               <Wifi className="w-4 h-4 rotate-90" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+          <p className="text-3xl font-extrabold text-[#101828] mt-3">
             {analytics?.total_nfc_taps || 28}
           </p>
-          <p className="text-[11px] text-slate-400 mt-1 font-mono">
-            via SignBridge Card
+          <p className="text-[11px] text-slate-500 mt-1">
+            Physical smart card contactless taps
           </p>
         </div>
 
-        {/* Metric 3: QR Scans */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+        {/* Contact Saves (vCard) */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">QR Code Scans</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Contact Saves</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <QrCode className="w-4 h-4" />
+              <Download className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
-            {analytics?.total_qr_scans || 14}
+          <p className="text-3xl font-extrabold text-[#101828] mt-3">
+            {analytics?.total_contact_saves || 18}
           </p>
-          <p className="text-[11px] text-slate-400 mt-1 font-mono">
-            Camera optical visits
+          <p className="text-[11px] text-slate-500 mt-1">
+            vCard phonebook downloads
           </p>
         </div>
 
-        {/* Metric 4: Link Clicks */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+        {/* Total Link Clicks */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">External Clicks</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Link Clicks</span>
             <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <MousePointerClick className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+          <p className="text-3xl font-extrabold text-[#101828] mt-3">
             {analytics?.total_link_clicks || 39}
           </p>
-          <p className="text-[11px] text-slate-400 mt-1 font-mono">
-            Social & portfolio CTR
+          <p className="text-[11px] text-slate-500 mt-1">
+            Social & portfolio click-throughs
           </p>
         </div>
 
       </div>
 
-      {/* Main Grid: Quick Actions + NFC Hardware Card Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* 3. Middle Section: Profile Completion & NFC Card Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left: Quick Actions Grid */}
-        <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-base font-bold text-slate-900">
-            Quick Actions
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            <Link
-              href="/dashboard/profile"
-              className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-[#087CF0]/50 hover:shadow-md transition-all flex items-start gap-3.5 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#087CF0]/10 text-[#087CF0] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                <User className="w-5 h-5" />
-              </div>
+        {/* Profile Completion Bar & Quick Actions */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Edit Profile</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Update your bio, title, location, and custom experience sections.
-                </p>
+                <h3 className="font-bold text-base text-[#101828]">Profile Completeness</h3>
+                <p className="text-xs text-slate-500">A complete profile increases contact saves by 3.4x</p>
               </div>
-            </Link>
-
-            <Link
-              href="/dashboard/design"
-              className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-[#FF7900]/50 hover:shadow-md transition-all flex items-start gap-3.5 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#FF7900]/10 text-[#FF7900] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                <Palette className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Customize Design</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Switch between Minimal, Signature, & Creative templates and color palettes.
-                </p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/nfc"
-              className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500/50 hover:shadow-md transition-all flex items-start gap-3.5 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                <Wifi className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Manage NFC Card</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Program physical smart card UID and generate unique redirect routes.
-                </p>
-              </div>
-            </Link>
-
-            <a
-              href={`/id/${profile.username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-500/50 hover:shadow-md transition-all flex items-start gap-3.5 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                <ExternalLink className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">View Public Profile</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Preview your published page as visitors and NFC tappers experience it.
-                </p>
-              </div>
-            </a>
-
-          </div>
-
-          {/* Connected Links Overview */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-2xs">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-slate-900">
-                Connected External Channels
-              </h3>
-              <Link href="/dashboard/links" className="text-xs font-semibold text-[#087CF0] hover:underline">
-                Manage All Links
-              </Link>
+              <span className="text-lg font-black text-[#087CF0]">{completionPercentage}%</span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {getLinksByProfileId(profile.id).map((l) => (
-                <span key={l.id} className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#087CF0]" />
-                  {l.label || l.platform}
-                </span>
-              ))}
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-[#087CF0] h-full transition-all duration-500 rounded-full"
+                style={{ width: `${completionPercentage}%` }}
+              />
+            </div>
+
+            {/* Checklist */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-2">
+              <div className="flex items-center gap-2 text-slate-700">
+                <CheckCircle2 className={`w-4 h-4 ${profile.bio ? 'text-emerald-500' : 'text-slate-300'}`} />
+                <span>Biography & Title added</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700">
+                <CheckCircle2 className={`w-4 h-4 ${profile.company ? 'text-emerald-500' : 'text-slate-300'}`} />
+                <span>Company & Location specified</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700">
+                <CheckCircle2 className={`w-4 h-4 ${profile.profile_image ? 'text-emerald-500' : 'text-slate-300'}`} />
+                <span>Avatar image uploaded</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700">
+                <CheckCircle2 className={`w-4 h-4 ${projects.length > 0 ? 'text-emerald-500' : 'text-slate-300'}`} />
+                <span>Portfolio projects added</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions Panel */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+            <h3 className="font-bold text-sm text-[#101828] uppercase tracking-wider">
+              Quick Shortcuts
+            </h3>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Link
+                href="/dashboard/profile"
+                className="p-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200/70 hover:border-[#087CF0]/40 transition-all text-left group"
+              >
+                <User className="w-5 h-5 text-[#087CF0] mb-2 group-hover:scale-110 transition-transform" />
+                <h4 className="text-xs font-bold text-[#101828]">Edit Profile</h4>
+                <p className="text-[10px] text-slate-500">Bio, title & photo</p>
+              </Link>
+
+              <Link
+                href="/dashboard/design"
+                className="p-3.5 rounded-2xl bg-slate-50 hover:bg-orange-50/60 border border-slate-200/70 hover:border-[#FF7900]/40 transition-all text-left group"
+              >
+                <Palette className="w-5 h-5 text-[#FF7900] mb-2 group-hover:scale-110 transition-transform" />
+                <h4 className="text-xs font-bold text-[#101828]">Appearance</h4>
+                <p className="text-[10px] text-slate-500">Themes & colors</p>
+              </Link>
+
+              <Link
+                href="/dashboard/links"
+                className="p-3.5 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-400/40 transition-all text-left group"
+              >
+                <Share2 className="w-5 h-5 text-purple-600 mb-2 group-hover:scale-110 transition-transform" />
+                <h4 className="text-xs font-bold text-[#101828]">Social Links</h4>
+                <p className="text-[10px] text-slate-500">LinkedIn, X, WhatsApp</p>
+              </Link>
+
+              <Link
+                href="/dashboard/nfc"
+                className="p-3.5 rounded-2xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200/70 hover:border-emerald-400/40 transition-all text-left group"
+              >
+                <Wifi className="w-5 h-5 text-emerald-600 mb-2 group-hover:scale-110 transition-transform rotate-90" />
+                <h4 className="text-xs font-bold text-[#101828]">NFC Manager</h4>
+                <p className="text-[10px] text-slate-500">Activate or block card</p>
+              </Link>
+
+              <Link
+                href="/dashboard/orders"
+                className="p-3.5 rounded-2xl bg-slate-50 hover:bg-cyan-50/60 border border-slate-200/70 hover:border-cyan-400/40 transition-all text-left group"
+              >
+                <Package className="w-5 h-5 text-cyan-600 mb-2 group-hover:scale-110 transition-transform" />
+                <h4 className="text-xs font-bold text-[#101828]">My Orders</h4>
+                <p className="text-[10px] text-slate-500">Track shipment</p>
+              </Link>
+
+              <Link
+                href="/order"
+                className="p-3.5 rounded-2xl bg-slate-50 hover:bg-amber-50/60 border border-slate-200/70 hover:border-amber-400/40 transition-all text-left group"
+              >
+                <CreditCard className="w-5 h-5 text-amber-600 mb-2 group-hover:scale-110 transition-transform" />
+                <h4 className="text-xs font-bold text-[#101828]">Order Card</h4>
+                <p className="text-[10px] text-slate-500">Buy additional card</p>
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Right: Connected Physical NFC Card Mockup */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900">
-              Active NFC Smart Card
-            </h2>
-            <Link href="/dashboard/nfc" className="text-xs font-bold text-[#087CF0] hover:underline">
-              Settings
-            </Link>
-          </div>
+        {/* NFC Card Activation Status & Live Card Mockup */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-sm text-[#101828] uppercase tracking-wider">
+                  NFC Card Status
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {primaryCard ? primaryCard.card_name : 'No card activated yet'}
+                </p>
+              </div>
 
-          <div className="p-6 rounded-3xl bg-[#101828] text-white border border-white/10 shadow-xl flex flex-col items-center text-center">
-            <NFCCardVisual
-              fullName={profile.full_name}
-              title={profile.title}
-              username={profile.username}
-            />
-
-            <div className="mt-4 pt-4 border-t border-white/10 w-full flex items-center justify-between text-xs text-slate-400">
-              <span>Card Status:</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Linked & Active
-              </span>
+              {primaryCard ? (
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Activated
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                  Unlinked
+                </span>
+              )}
             </div>
 
-            <div className="mt-2 w-full flex items-center justify-between text-xs text-slate-400 font-mono">
-              <span>Redirect URL:</span>
-              <span className="text-[#087CF0] truncate max-w-[140px]">
-                /t/SB-{profile.username.toUpperCase().slice(0, 4)}-2026
-              </span>
+            {primaryCard && (
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs font-mono space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">UID:</span>
+                  <span className="font-bold text-slate-800">{primaryCard.card_uid}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Redirection URL:</span>
+                  <span className="text-[#087CF0] truncate">/t/{primaryCard.card_uid}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Total Tap Count:</span>
+                  <span className="text-emerald-600 font-bold">{primaryCard.tap_count || 184} taps</span>
+                </div>
+              </div>
+            )}
+
+            {/* Embedded interactive mini card */}
+            <div className="pt-2 flex justify-center">
+              <div className="scale-85 origin-center">
+                <NFCCardVisual
+                  fullName={profile.full_name}
+                  title={profile.title}
+                  username={profile.username}
+                  cardName={primaryCard?.card_name || 'SignBridge Smart Card'}
+                  theme="black"
+                  interactive={false}
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between text-xs">
+              <Link
+                href="/dashboard/nfc"
+                className="font-semibold text-[#087CF0] hover:underline flex items-center gap-1"
+              >
+                <span>Manage hardware cards</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </div>
         </div>
 
       </div>
 
-      <QRCodeModal
-        isOpen={showQR}
-        onClose={() => setShowQR(false)}
-        url={publicUrl}
-        fullName={profile.full_name}
-        username={profile.username}
-      />
+      {/* 4. Recent Activity Stream */}
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+        <h3 className="font-bold text-sm text-[#101828] uppercase tracking-wider">
+          Recent Activity Telemetry
+        </h3>
+
+        <div className="divide-y divide-slate-100 text-xs">
+          {[
+            {
+              event: 'Contactless NFC Tap',
+              detail: 'Visitor tapped physical NFC card (UID: SB-NFC-9842)',
+              time: '12 minutes ago',
+              icon: <Wifi className="w-3.5 h-3.5 text-[#087CF0] rotate-90" />,
+              badge: 'bg-blue-50 text-[#087CF0]'
+            },
+            {
+              event: 'vCard Phonebook Download',
+              detail: 'Visitor saved your contact details via "Save Contact"',
+              time: '18 minutes ago',
+              icon: <Download className="w-3.5 h-3.5 text-emerald-600" />,
+              badge: 'bg-emerald-50 text-emerald-700'
+            },
+            {
+              event: 'LinkedIn Click',
+              detail: 'Visitor navigated to your verified LinkedIn profile',
+              time: '1 hour ago',
+              icon: <ExternalLink className="w-3.5 h-3.5 text-purple-600" />,
+              badge: 'bg-purple-50 text-purple-700'
+            },
+            {
+              event: 'Profile View',
+              detail: 'Direct browser visit on /u/' + profile.username,
+              time: '3 hours ago',
+              icon: <Eye className="w-3.5 h-3.5 text-slate-500" />,
+              badge: 'bg-slate-100 text-slate-700'
+            }
+          ].map((act, idx) => (
+            <div key={idx} className="py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${act.badge}`}>
+                  {act.icon}
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800">{act.event}</h4>
+                  <p className="text-[11px] text-slate-500">{act.detail}</p>
+                </div>
+              </div>
+              <span className="text-[11px] text-slate-400 font-mono shrink-0">{act.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* QR Code Modal */}
+      {showQR && (
+        <QRCodeModal
+          username={profile.username}
+          fullName={profile.full_name}
+          onClose={() => setShowQR(false)}
+        />
+      )}
+
     </div>
   );
 }

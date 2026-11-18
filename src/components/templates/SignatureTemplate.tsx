@@ -317,19 +317,17 @@ export default function SignatureTemplate({
           </div>
         )}
 
-        {/* SignBridge ID Footer Badge */}
+        {/* SignTap NFC Footer Badge */}
         <div className="mt-12 text-center pt-6 border-t border-white/10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-            <span className="w-2 h-2 rounded-full bg-[#087CF0]" />
+            <span className="w-2 h-2 rounded-full bg-[#923cf6] animate-pulse" />
             <p className="text-[11px] text-slate-400">
               Official Profile on{' '}
               <a 
-                href="https://signbridge.click" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="font-semibold text-white hover:text-[#087CF0] transition-colors"
+                href="/" 
+                className="font-semibold text-white hover:text-[#923cf6] transition-colors"
               >
-                SignBridge ID
+                SignTap NFC
               </a>
               {' '}· One Tap Away
             </p>

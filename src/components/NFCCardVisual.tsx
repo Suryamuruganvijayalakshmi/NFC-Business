@@ -46,9 +46,9 @@ export default function NFCCardVisual({
         onClick={handleTap}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`relative w-[340px] h-[214px] sm:w-[380px] sm:h-[240px] rounded-[18px] p-6 bg-gradient-to-tr ${themeStyles} border flex flex-col justify-between overflow-hidden cursor-pointer transition-all duration-500 transform ${
+        className={`relative w-[288px] h-[182px] sm:w-[380px] sm:h-[240px] rounded-[18px] p-4 sm:p-6 bg-gradient-to-tr ${themeStyles} border flex flex-col justify-between overflow-hidden cursor-pointer transition-all duration-500 transform ${
           isHovered ? '-translate-y-2 rotate-1 shadow-cyan-500/10' : 'shadow-slate-900/30'
-        } ${tapped ? 'scale-95 ring-4 ring-[#087CF0]' : ''}`}
+        } ${tapped ? 'scale-95 ring-4 ring-[#923cf6]' : ''}`}
         style={{
           boxShadow: '0 25px 50px -12px rgba(16, 24, 40, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
         }}
@@ -87,11 +87,11 @@ export default function NFCCardVisual({
           </div>
           
           <div className="flex flex-col">
-            <span className="text-[11px] font-mono tracking-widest text-[#FF7900] uppercase font-semibold">
-              SignBridge ID
+            <span className="text-[11px] font-mono tracking-widest text-[#923cf6] uppercase font-semibold">
+              SignTap NFC
             </span>
             <span className="text-[10px] text-white/40 font-mono">
-              signbridge.click/id/{username}
+              signtap.me/u/{username}
             </span>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function NFCCardVisual({
               ACTIVE
             </span>
             <span className="text-[9px] text-white/30 font-mono mt-1">
-              UID: SB-{username.toUpperCase().slice(0, 4)}-2026
+              UID: ST-{username.toUpperCase().slice(0, 4)}-2026
             </span>
           </div>
         </div>

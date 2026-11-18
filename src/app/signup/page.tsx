@@ -81,7 +81,7 @@ export default function SignUpPage() {
           <Logo theme="light" size="lg" />
         </Link>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-[#101828] tracking-tight">
-          Create your SignBridge ID
+          Create your SignTap NFC Profile
         </h2>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
           Your personalized digital identity and NFC smart card profile

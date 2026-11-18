@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import { loginUser, loginWithGoogle } from '@/lib/store';
-import { ArrowRight, Lock, Mail, AlertCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, Lock, Mail, AlertCircle, Sparkles, Wifi } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -71,7 +71,7 @@ export default function LoginPage() {
           <Logo theme="light" size="lg" />
         </Link>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-[#101828] tracking-tight">
-          Welcome back to SignBridge
+          Welcome back to SignTap
         </h2>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
           Manage your NFC Smart Card and digital profile
@@ -81,6 +81,20 @@ export default function LoginPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-8 px-6 sm:px-10 shadow-xl rounded-3xl border border-slate-200">
           
+          {/* Animated NFC Scanning Status when Loading */}
+          {loading && (
+            <div className="mb-4 p-4 rounded-2xl bg-purple-50 border border-purple-200 text-center animate-in fade-in duration-200">
+              <div className="relative flex items-center justify-center w-12 h-12 mx-auto mb-2">
+                <div className="absolute inset-0 rounded-full border border-purple-500/40 animate-ping" />
+                <div className="w-8 h-8 rounded-xl bg-[#923cf6] text-white flex items-center justify-center shadow-md">
+                  <Wifi className="w-4 h-4 animate-pulse" />
+                </div>
+              </div>
+              <p className="text-xs font-bold text-purple-900 font-mono">Authenticating SignTap NFC Identity...</p>
+              <p className="text-[10px] text-purple-600 font-mono mt-0.5">Decrypting Contactless Credentials</p>
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -202,20 +216,20 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
+                onClick={() => handleQuickDemoLogin('signbridge.aiauto@gmail.com')}
+                className="p-2 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100 text-purple-900 text-xs font-medium transition-colors text-left"
+              >
+                <p className="font-bold text-slate-900">SignBridge Auto</p>
+                <p className="text-[10px] text-purple-700 truncate">signbridge.aiauto</p>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleQuickDemoLogin('surya@signbridge.click')}
                 className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium transition-colors text-left"
               >
                 <p className="font-bold text-slate-900">Surya</p>
                 <p className="text-[10px] text-slate-500">Founder (Professional)</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('elena@rostova.design')}
-                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium transition-colors text-left"
-              >
-                <p className="font-bold text-slate-900">Elena</p>
-                <p className="text-[10px] text-slate-500">Designer (Creator)</p>
               </button>
             </div>
           </div>

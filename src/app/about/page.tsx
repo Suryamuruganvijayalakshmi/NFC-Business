@@ -24,7 +24,7 @@ export default function AboutPage() {
               Connecting Ideas, Empowering Innovation.
             </h1>
             <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-              SignBridge was founded with a singular conviction: the physical act of exchanging a business card shouldn't belong to the 19th century.
+              SignTap was founded with a singular conviction: the physical act of exchanging a business card shouldn&apos;t belong to the 19th century.
             </p>
           </div>
         </section>
@@ -46,17 +46,17 @@ export default function AboutPage() {
             </div>
 
             <div className="p-8 sm:p-10 rounded-3xl bg-[#101828] text-white border border-white/10 shadow-xl">
-              <div className="flex items-center gap-2 text-[#FF7900] text-xs font-bold uppercase tracking-wider mb-2">
-                <Wifi className="w-4 h-4" /> The SignBridge Innovation
+              <div className="flex items-center gap-2 text-[#923cf6] text-xs font-bold uppercase tracking-wider mb-2">
+                <Wifi className="w-4 h-4" /> The SignTap Innovation
               </div>
               <h2 className="text-2xl font-bold text-white">
                 Physical Hardware Meets Dynamic Cloud Identity
               </h2>
               <p className="mt-3 text-slate-300 leading-relaxed text-sm sm:text-base">
-                SignBridge ID pairs an elegant, durable physical smart card (equipped with an encrypted high-frequency NFC chip) with your personal web identity at <b className="text-white">signbridge.click</b>.
+                SignTap pairs an elegant, durable physical smart card (equipped with an encrypted high-frequency NFC chip) with your personal web identity at <b className="text-white">signtap.me</b>.
               </p>
               <p className="mt-3 text-slate-300 leading-relaxed text-sm sm:text-base">
-                When you tap your card against someone's phone, it instantly opens your live digital page. They can view your work, follow your social channels, or click &ldquo;Save Contact&rdquo; to add your complete vCard directly to their phonebook with one tap.
+                When you tap your card against someone&apos;s phone, it instantly opens your live digital page. They can view your work, follow your social channels, or click &ldquo;Save Contact&rdquo; to add your complete vCard directly to their phonebook with one tap.
               </p>
             </div>
 
@@ -96,13 +96,13 @@ export default function AboutPage() {
             </div>
 
             {/* Brand Quote */}
-            <div className="p-8 rounded-3xl bg-gradient-to-r from-[#087CF0]/10 via-[#FF7900]/10 to-transparent border border-slate-200 text-center">
+            <div className="p-8 rounded-3xl bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-transparent border border-purple-200/50 text-center">
               <Logo theme="light" size="sm" className="justify-center mb-3" />
               <blockquote className="text-lg font-medium text-slate-800 italic">
                 &ldquo;Your Identity. One Tap Away.&rdquo;
               </blockquote>
-              <p className="text-xs text-slate-500 mt-2">
-                SignBridge ID · Official Platform at signbridge.click
+              <p className="text-xs text-slate-500 mt-2 font-mono">
+                SignTap NFC Platform
               </p>
             </div>
 

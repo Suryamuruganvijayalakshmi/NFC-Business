@@ -4,8 +4,11 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  cacheComponents: true,
-  partialPrefetching: true,
+  experimental: {
+    staticGenerationRetryCount: 3,
+    staticGenerationMaxConcurrency: 1,
+    staticGenerationMinPagesPerWorker: 100,
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -37,7 +37,7 @@ function CallbackContent() {
           }
 
           const processUser = (user: any) => {
-            const fullName = user.user_metadata?.full_name || user.user_metadata?.name || 'SignBridge Member';
+            const fullName = user.user_metadata?.full_name || user.user_metadata?.name || 'SignTap Member';
             const email = user.email || '';
             const username = user.user_metadata?.username || email.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user${Date.now().toString().slice(-4)}`;
 
