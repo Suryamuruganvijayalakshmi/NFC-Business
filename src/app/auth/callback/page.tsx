@@ -36,7 +36,7 @@ function CallbackContent() {
             return;
           }
 
-          const processUser = (user: any) => {
+          const processUser = async (user: any) => {
             const fullName = user.user_metadata?.full_name || user.user_metadata?.name || 'SignTap Member';
             const email = user.email || '';
             const username = user.user_metadata?.username || email.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user${Date.now().toString().slice(-4)}`;
@@ -53,10 +53,30 @@ function CallbackContent() {
 
             setCurrentUser(sessionUser);
 
-            // Check if profile exists for this user
+            // Fetch profile from Supabase if available
+            try {
+              if (supabase) {
+                const { data: dbProfile } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .or(`user_id.eq.${user.id},email.eq.${email}`)
+                  .maybeSingle();
+
+                if (dbProfile) {
+                  saveProfile(dbProfile);
+                  if (isMounted) setStatus('Welcome back! Loading your dashboard...');
+                  setTimeout(() => router.replace('/dashboard'), 300);
+                  return;
+                }
+              }
+            } catch (err) {
+              console.warn('Profile fetch notice:', err);
+            }
+
+            // Fallback to local check
             const existing = getProfileByUserId(user.id);
             if (!existing) {
-              if (isMounted) setStatus('Welcome to SignBridge! Setting up your workspace...');
+              if (isMounted) setStatus('Welcome to SignTap! Setting up your digital identity...');
               setTimeout(() => router.replace('/onboarding'), 400);
             } else {
               if (isMounted) setStatus('Success! Loading your personalized dashboard...');
