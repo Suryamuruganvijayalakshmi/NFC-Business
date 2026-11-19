@@ -4,66 +4,39 @@ import React, { useState, useEffect, useRef } from 'react';
 import Signature from '@/components/originkit/ui/signature';
 
 interface SignTapLoaderProps {
-  forceShow?: boolean;
   onFinish?: () => void;
 }
 
-export default function SignTapLoader({ forceShow = false, onFinish }: SignTapLoaderProps) {
-  const [visible, setVisible] = useState(false);
+export default function SignTapLoader({ onFinish }: SignTapLoaderProps) {
+  const [visible, setVisible] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const hasFinishedRef = useRef(false);
   const onFinishRef = useRef(onFinish);
   onFinishRef.current = onFinish;
 
   useEffect(() => {
-    // Only load once per session unless forceShow is specified
-    if (!forceShow) {
-      try {
-        const seen = sessionStorage.getItem('signtap_loader_seen');
-        if (seen === '1') {
-          if (onFinishRef.current) onFinishRef.current();
-          return;
-        }
-      } catch {
-        // Fallback for restricted storage environments
-      }
-    }
-
-    setVisible(true);
-
-    // Duration: 1.6s signature drawing + 250ms hold = 1.85s, then smooth 400ms fade
+    // 1.5s signature writing + 200ms hold = 1.7s, then smoothly reveal the site
     const timer = setTimeout(() => {
-      if (!hasFinishedRef.current) {
-        hasFinishedRef.current = true;
-        setIsExiting(true);
-        try {
-          sessionStorage.setItem('signtap_loader_seen', '1');
-        } catch {
-          // Fallback
-        }
-        setTimeout(() => {
-          setVisible(false);
-          if (onFinishRef.current) onFinishRef.current();
-        }, 400);
-      }
-    }, 1850);
+      triggerExit();
+    }, 1700);
 
     return () => clearTimeout(timer);
-  }, [forceShow]);
+  }, []);
 
-  const handleDismiss = () => {
+  const triggerExit = () => {
     if (hasFinishedRef.current) return;
     hasFinishedRef.current = true;
     setIsExiting(true);
-    try {
-      sessionStorage.setItem('signtap_loader_seen', '1');
-    } catch {
-      // Fallback
+    if (onFinishRef.current) {
+      onFinishRef.current();
     }
     setTimeout(() => {
       setVisible(false);
-      if (onFinishRef.current) onFinishRef.current();
-    }, 300);
+    }, 450);
+  };
+
+  const handleDismiss = () => {
+    triggerExit();
   };
 
   if (!visible) return null;
@@ -81,8 +54,8 @@ export default function SignTapLoader({ forceShow = false, onFinish }: SignTapLo
           text="SignTap"
           ink="#0D0D0D"
           size={136}
-          duration={1.6}
-          outline={true}
+          duration={1.5}
+          outline={false}
           inset={16}
           background="transparent"
         />

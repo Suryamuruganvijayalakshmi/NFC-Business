@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const [siteReady, setSiteReady] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activePreviewProfile, setActivePreviewProfile] = useState<string>('surya');
@@ -36,6 +37,9 @@ export default function HomePage() {
   useEffect(() => {
     setProducts(getAllProducts());
     setProfiles(getAllProfiles());
+    // Safe fallback so site is always revealed within 2.1s
+    const timer = setTimeout(() => setSiteReady(true), 2100);
+    return () => clearTimeout(timer);
   }, []);
 
   const currentProfile = profiles.find(p => p.username === activePreviewProfile) || profiles[0] || {
@@ -139,10 +143,16 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFB] overflow-x-hidden relative">
       {/* Light Theme Futuristic NFC Contactless Loader */}
-      <SignTapLoader />
+      <SignTapLoader onFinish={() => setSiteReady(true)} />
 
-      {/* Main page content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main page content smoothly reveals after loader completes */}
+      <div 
+        className={`flex-1 flex flex-col transition-all duration-700 ease-out will-change-transform ${
+          siteReady
+            ? 'opacity-100 translate-y-0 filter blur-0'
+            : 'opacity-0 translate-y-3 filter blur-[2px]'
+        }`}
+      >
         {/* =====================================================================
             ORIGINKIT HERO 02 SECTION ADAPTED FOR SIGNTAP
         ===================================================================== */}
