@@ -5,7 +5,7 @@
 // Delivered by Originkit · stack: framer
 // Paste into a Framer code component. Property controls included.
 import * as React from "react"
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, useEffect } from "react"
 import { motion, useInView, useReducedMotion } from "framer-motion"
 
 /**
@@ -297,20 +297,25 @@ export default function Signature(props: Partial<SignatureProps> = {}) {
     const {
         text = "SignTap",
         size = BASE_SIZE,
-        duration = 3,
+        duration = 1.9,
         stagger = 0,
         delay = 0,
         outline = true,
-        inset = 32,
+        inset = 16,
         style
     } = props
-    const ink = props.ink || "#f5f5f4"
+    const ink = props.ink || "#0D0D0D"
     const ground = props.background || "transparent"
     const reduce = useReducedMotion()
     const rootRef = useRef<HTMLDivElement>(null)
-    const inView = useInView(rootRef, { once: true, amount: 0.4 })
+    const inView = useInView(rootRef, { once: true, amount: 0.1 })
+    const [mounted, setMounted] = useState(false)
     const [take, setTake] = useState(0)
     const maskId = `sig-${React.useId().replace(/:/g, "")}`
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const { placed, box } = useMemo(() => layout(text || " "), [text])
     // The pen's route: every stroke of every letter in writing order, with how far along the whole
@@ -332,19 +337,8 @@ export default function Signature(props: Partial<SignatureProps> = {}) {
     // The drawing's box (ink plus that pad) in ems.
     const a = (box.w + pad * 2) / EM
     const b = (box.h + pad * 2) / EM
-    // px per em is the least of: Size itself; Size scaled by how far the
-    // frame (inside Inset) falls short of fitting it at 96 px; and what the
-    // frame's edges allow, so nothing spills out of it. Container units read
-    // the frame, so this holds from the first paint with nothing to measure.
-    // Each term below is that em times the box's width (or height) in ems.
-    const r = size / BASE_SIZE
-    const extent = (e: number) =>
-        `min(${(e * size).toFixed(3)}px, ` +
-        `(100cqw - ${2 * inset}px) * ${((r * e) / a).toFixed(5)}, ` +
-        `(100cqh - ${2 * inset}px) * ${((r * e) / b).toFixed(5)}, ` +
-        `100cqw * ${(e / a).toFixed(5)}, ` +
-        `100cqh * ${(e / b).toFixed(5)})`
-    const play = reduce || inView
+
+    const play = reduce || inView || mounted
 
     const replay = () => !reduce && setTake((t) => t + 1)
 
@@ -373,6 +367,8 @@ export default function Signature(props: Partial<SignatureProps> = {}) {
         return { len: 0, at: last ? last.at + last.len : 0 }
     }
 
+    const targetW = Math.round(a * size)
+
     return (
         <div
             ref={rootRef}
@@ -389,9 +385,7 @@ export default function Signature(props: Partial<SignatureProps> = {}) {
             style={{
                 width: "100%",
                 height: "100%",
-                ...style,
                 boxSizing: "border-box",
-                containerType: "size",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -400,11 +394,21 @@ export default function Signature(props: Partial<SignatureProps> = {}) {
                 outline: "none",
                 userSelect: "none",
                 WebkitTapHighlightColor: "transparent",
+                ...style,
             }}
         >
-            {/* The size sits on a plain box: a motion.svg keeps the style it mounted with, so Size
-                would only take effect on the next replay. */}
-            <div style={{ flex: "none", width: extent(a), height: extent(b) }}>
+            <div
+                style={{
+                    flex: "none",
+                    width: "100%",
+                    maxWidth: `${targetW}px`,
+                    aspectRatio: `${a} / ${b}`,
+                    maxHeight: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
                 <motion.svg
                     key={take}
                     viewBox={vb}
@@ -482,14 +486,14 @@ export default function Signature(props: Partial<SignatureProps> = {}) {
 }
 
 Signature.defaultProps = {
-    text: "Ada Lovelace",
-    ink: "#f5f5f4",
+    text: "SignTap",
+    ink: "#0D0D0D",
     size: BASE_SIZE,
-    duration: 3,
+    duration: 1.9,
     stagger: 0,
     delay: 0,
     outline: true,
-    inset: 32,
+    inset: 16,
     background: "transparent",
 }
 

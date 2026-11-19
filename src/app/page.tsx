@@ -27,16 +27,6 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const [isSiteLoaded, setIsSiteLoaded] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return sessionStorage.getItem('signtap_loader_seen') === '1';
-      } catch {
-        return false;
-      }
-    }
-    return false;
-  });
   const [products, setProducts] = useState<Product[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activePreviewProfile, setActivePreviewProfile] = useState<string>('surya');
@@ -149,16 +139,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFB] overflow-x-hidden relative">
       {/* Light Theme Futuristic NFC Contactless Loader */}
-      <SignTapLoader onFinish={() => setIsSiteLoaded(true)} />
+      <SignTapLoader />
 
-      {/* Main page content smoothly reveals after loader completes */}
-      <div 
-        className={`flex-1 flex flex-col transition-all duration-700 ease-out will-change-transform ${
-          isSiteLoaded
-            ? 'opacity-100 translate-y-0 filter blur-0'
-            : 'opacity-0 translate-y-4 filter blur-sm pointer-events-none'
-        }`}
-      >
+      {/* Main page content */}
+      <div className="flex-1 flex flex-col">
         {/* =====================================================================
             ORIGINKIT HERO 02 SECTION ADAPTED FOR SIGNTAP
         ===================================================================== */}
