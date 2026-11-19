@@ -539,7 +539,36 @@ export function createOrder(orderData: Omit<Order, 'id' | 'order_number' | 'crea
   };
   saveNFCCard(newCard);
 
-  logAdminActivity('New Order Placed', `Order ${newOrder.order_number} received from ${newOrder.customer_name} ($${newOrder.total_amount})`);
+  // Sync order to Supabase orders table if configured
+  if (isSupabaseConfigured && supabase) {
+    const shippingStr = typeof newOrder.shipping_address === 'string'
+      ? newOrder.shipping_address
+      : `${newOrder.shipping_address.street || ''}, ${newOrder.shipping_address.city || ''} ${newOrder.shipping_address.state || ''}`.trim();
+    const pincodeStr = typeof newOrder.shipping_address === 'object'
+      ? newOrder.shipping_address.postalCode || ''
+      : '';
+
+    supabase.from('orders').insert({
+      order_number: newOrder.order_number,
+      customer_name: newOrder.customer_name,
+      customer_email: newOrder.customer_email,
+      customer_phone: newOrder.customer_phone || '',
+      shipping_address: shippingStr,
+      shipping_pincode: pincodeStr,
+      product_name: newOrder.items[0]?.product_name || 'SignBridge NFC Smart Card',
+      quantity: newOrder.items[0]?.quantity || 1,
+      laser_engraved_name: newOrder.items[0]?.custom_name_to_print || newOrder.customer_name,
+      amount: newOrder.total_amount,
+      currency: newOrder.currency || 'INR',
+      order_status: newOrder.status || 'order_received',
+      payment_status: newOrder.payment_status || 'pending',
+      internal_notes: newOrder.notes || '',
+    }).then(({ error }) => {
+      if (error) console.warn('Supabase orders sync notice:', error.message);
+    });
+  }
+
+  logAdminActivity('New Order Placed', `Order ${newOrder.order_number} received from ${newOrder.customer_name} (₹${newOrder.total_amount})`);
 
   return newOrder;
 }
