@@ -41,6 +41,14 @@
   box-sizing: border-box;
 }
 
+/* Hide Next.js dev indicator badges and overlays */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dev-indicator],
+#__next-build-watcher {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
   text-rendering: optimizeLegibility;

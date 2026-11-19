@@ -14,7 +14,7 @@ export default function SignTapLoader({ forceShow = false, onFinish }: SignTapLo
   const hasFinishedRef = useRef(false);
 
   useEffect(() => {
-    // Only load once per session
+    // Only load once per session unless forceShow is specified
     if (!forceShow) {
       try {
         const seen = sessionStorage.getItem('signtap_loader_seen');
@@ -69,15 +69,15 @@ export default function SignTapLoader({ forceShow = false, onFinish }: SignTapLo
   return (
     <div
       onClick={handleDismiss}
-      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-[#07090e] transition-opacity duration-500 ease-out select-none cursor-default ${
+      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-[#FAFAFB] transition-opacity duration-500 ease-out select-none cursor-default ${
         isExiting ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
-      {/* Centered signature box with responsive container units */}
+      {/* Centered signature box on clean light theme background */}
       <div className="w-full max-w-xl h-56 sm:h-72 md:h-80 flex items-center justify-center p-4">
         <Signature
           text="SignTap"
-          ink="#ffffff"
+          ink="#0D0D0D"
           size={132}
           duration={1.9}
           outline={true}
