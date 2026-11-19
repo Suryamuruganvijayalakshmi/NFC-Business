@@ -74,8 +74,7 @@ export default function Hero02SignTap({
 
   const handleReplayLoader = () => {
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('signtap_loader_seen');
-      window.location.reload();
+      window.dispatchEvent(new CustomEvent('signtap:play-loader'));
     }
   };
 
@@ -201,10 +200,10 @@ export default function Hero02SignTap({
                   type="button"
                   onClick={handleReplayLoader}
                   className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50/80 hover:bg-purple-100 text-purple-700 py-1.5 px-3.5 text-xs font-semibold shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                  title="Replay the NFC Contactless Boot Animation"
+                  title="Replay the SignTap Signature Animation"
                 >
                   <Wifi className="w-3.5 h-3.5 text-[#923cf6] animate-pulse" />
-                  <span>Replay Intro Loader</span>
+                  <span>Replay SignTap Signature</span>
                 </button>
               </div>
 
