@@ -1,15 +1,12 @@
 -- ==============================================================================
--- SignBridge NFC — Non-Destructive Supabase PostgreSQL Database Schema
+-- SignTap NFC — Separate Digital Identity Tables
 -- Project ID: tzqpsxtjfgkmqsxrtlgx
--- Website: signbridge.click | Brand: SignTap NFC
--- Tagline: Your Identity. One Tap Away.
---
--- SAFETY GUARANTEE:
--- This script NEVER drops, truncates, or deletes any existing tables or data.
--- Every statement uses "IF NOT EXISTS" and safe column additions.
+-- 
+-- GUARANTEE: Does NOT touch, alter, or delete existing 'products', 'orders', or 'customers' tables.
+-- Creates only the new separate tables required for Digital Profiles & NFC Cards.
 -- ==============================================================================
 
--- 0. Enable UUID Extension safely
+-- 0. Enable UUID Extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ------------------------------------------------------------------------------
@@ -48,37 +45,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Safe column additions if profiles table already exists
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_type TEXT DEFAULT 'personal';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS title TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS bio TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_image TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cover_image TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS location TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS website TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS company TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS business_name TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS business_description TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS whatsapp_number TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS portfolio_url TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS resume_url TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS skills TEXT[] DEFAULT '{}';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'signature';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS accent_color TEXT DEFAULT '#087CF0';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS button_style TEXT DEFAULT 'rounded';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS font_family TEXT DEFAULT 'sans';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS background_style TEXT DEFAULT 'clean';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS published BOOLEAN DEFAULT true;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS section_visibility JSONB DEFAULT '{"bio":true,"contact":true,"socials":true,"skills":true,"services":true,"portfolio":true,"experience":true}'::jsonb;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
@@ -96,13 +62,6 @@ CREATE TABLE IF NOT EXISTS public.social_links (
   visible BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-ALTER TABLE public.social_links ADD COLUMN IF NOT EXISTS profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE;
-ALTER TABLE public.social_links ADD COLUMN IF NOT EXISTS platform TEXT;
-ALTER TABLE public.social_links ADD COLUMN IF NOT EXISTS label TEXT;
-ALTER TABLE public.social_links ADD COLUMN IF NOT EXISTS url TEXT;
-ALTER TABLE public.social_links ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
-ALTER TABLE public.social_links ADD COLUMN IF NOT EXISTS visible BOOLEAN DEFAULT true;
 
 CREATE INDEX IF NOT EXISTS idx_social_links_profile_id ON public.social_links(profile_id);
 
@@ -123,135 +82,7 @@ CREATE TABLE IF NOT EXISTS public.profile_sections (
 CREATE INDEX IF NOT EXISTS idx_profile_sections_profile_id ON public.profile_sections(profile_id);
 
 -- ------------------------------------------------------------------------------
--- 4. PRODUCTS TABLE (2 Exclusive SignTap Cards: Business & Personal)
--- ------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.products (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  category TEXT NOT NULL,
-  short_description TEXT NOT NULL,
-  price NUMERIC(10, 2) NOT NULL,
-  currency TEXT NOT NULL DEFAULT 'INR',
-  features TEXT[] NOT NULL DEFAULT '{}',
-  image_url TEXT NOT NULL,
-  material TEXT NOT NULL,
-  badge TEXT,
-  in_stock BOOLEAN NOT NULL DEFAULT true,
-  display_order INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Seed products non-destructively
-INSERT INTO public.products (id, name, category, short_description, price, currency, features, image_url, material, badge, in_stock, display_order)
-VALUES 
-  (
-    'prod-business',
-    'Business NFC Card',
-    'business',
-    'Tailored for founders, consultants, and corporate leaders. Showcase company catalog, instant WhatsApp business connection, and lead generation.',
-    199.00,
-    'INR',
-    ARRAY[
-      'High-grade NTAG216 contactless microchip (888 bytes)',
-      '1-tap instant phonebook contact save (.vcf vCard)',
-      'Direct WhatsApp 1-click business chat button',
-      'High-contrast dynamic backup QR code on back',
-      'Zero monthly subscriptions — Lifetime cloud hosting'
-    ],
-    '/images/nfc-smart-card.webp',
-    'Matte Jet Black Acrylic · NTAG216',
-    'Most Popular',
-    true,
-    1
-  ),
-  (
-    'prod-personal',
-    'Personal NFC Card',
-    'personal',
-    'Sleek, minimalist NFC card designed for creators, developers, and modern professionals. Share your portfolio, socials, and contact in a single tap.',
-    199.00,
-    'INR',
-    ARRAY[
-      'High-grade NTAG216 contactless microchip (888 bytes)',
-      'Personal portfolio, socials & custom links hub',
-      'Dynamic backup QR code for universal compatibility',
-      'No app or battery needed for visitors',
-      'Instant real-time profile updates from cloud'
-    ],
-    '/images/nfc-smart-card.webp',
-    'Minimalist Matte Ceramic White · NTAG216',
-    'Special Edition',
-    true,
-    2
-  )
-ON CONFLICT (id) DO UPDATE SET 
-  name = EXCLUDED.name,
-  category = EXCLUDED.category,
-  price = EXCLUDED.price,
-  currency = EXCLUDED.currency,
-  features = EXCLUDED.features,
-  material = EXCLUDED.material,
-  badge = EXCLUDED.badge,
-  updated_at = NOW();
-
--- ------------------------------------------------------------------------------
--- 5. ORDERS TABLE (Razorpay & Hardware Orders)
--- ------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.orders (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  order_number TEXT UNIQUE NOT NULL,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  customer_name TEXT NOT NULL,
-  customer_email TEXT NOT NULL,
-  customer_phone TEXT,
-  shipping_address JSONB NOT NULL DEFAULT '{}'::jsonb,
-  total_amount NUMERIC(10, 2) NOT NULL,
-  currency TEXT NOT NULL DEFAULT 'INR',
-  status TEXT NOT NULL DEFAULT 'order_received',
-  payment_method TEXT NOT NULL DEFAULT 'Razorpay / UPI',
-  payment_status TEXT NOT NULL DEFAULT 'pending',
-  tracking_number TEXT,
-  notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_email TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_phone TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shipping_address JSONB DEFAULT '{}'::jsonb;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total_amount NUMERIC(10, 2);
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'INR';
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'order_received';
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'Razorpay / UPI';
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending';
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS tracking_number TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS notes TEXT;
-
-CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
-CREATE INDEX IF NOT EXISTS idx_orders_order_number ON public.orders(order_number);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
-
--- ------------------------------------------------------------------------------
--- 6. ORDER ITEMS TABLE
--- ------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.order_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
-  product_id TEXT NOT NULL REFERENCES public.products(id),
-  product_name TEXT NOT NULL,
-  quantity INTEGER NOT NULL DEFAULT 1,
-  unit_price NUMERIC(10, 2) NOT NULL,
-  custom_name_to_print TEXT,
-  custom_notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
-
--- ------------------------------------------------------------------------------
--- 7. NFC CARDS TABLE
+-- 4. NFC CARDS TABLE (Hardware Chip Mapping)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.nfc_cards (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -267,22 +98,13 @@ CREATE TABLE IF NOT EXISTS public.nfc_cards (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS card_uid TEXT;
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS activation_code TEXT;
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS profile_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL;
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS card_name TEXT DEFAULT 'SignTap NFC Smart Card';
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'in_production';
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS order_reference TEXT;
-ALTER TABLE public.nfc_cards ADD COLUMN IF NOT EXISTS tap_count INTEGER DEFAULT 0;
-
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_uid ON public.nfc_cards(card_uid);
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_activation ON public.nfc_cards(activation_code);
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_owner ON public.nfc_cards(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_profile ON public.nfc_cards(profile_id);
 
 -- ------------------------------------------------------------------------------
--- 8. ANALYTICS EVENTS TABLE (Real-time NFC Tap & QR Tracking)
+-- 5. ANALYTICS EVENTS TABLE (Real-time Tap & Scan Tracking)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.analytics_events (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -294,30 +116,12 @@ CREATE TABLE IF NOT EXISTS public.analytics_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE public.analytics_events ADD COLUMN IF NOT EXISTS profile_id TEXT;
-ALTER TABLE public.analytics_events ADD COLUMN IF NOT EXISTS event_type TEXT;
-ALTER TABLE public.analytics_events ADD COLUMN IF NOT EXISTS link_id TEXT;
-ALTER TABLE public.analytics_events ADD COLUMN IF NOT EXISTS ip_hash TEXT;
-ALTER TABLE public.analytics_events ADD COLUMN IF NOT EXISTS user_agent TEXT;
-ALTER TABLE public.analytics_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
-
 CREATE INDEX IF NOT EXISTS idx_analytics_events_profile ON public.analytics_events(profile_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON public.analytics_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_created ON public.analytics_events(created_at);
 
--- Compatibility alias for profile_analytics
-CREATE TABLE IF NOT EXISTS public.profile_analytics (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  profile_id TEXT NOT NULL,
-  event_type TEXT NOT NULL,
-  link_id TEXT,
-  ip_hash TEXT,
-  user_agent TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 -- ------------------------------------------------------------------------------
--- 9. ADMIN ACTIVITY AUDIT LOG TABLE
+-- 6. ADMIN ACTIVITY AUDIT LOG TABLE
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.admin_activity (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -330,20 +134,15 @@ CREATE TABLE IF NOT EXISTS public.admin_activity (
 CREATE INDEX IF NOT EXISTS idx_admin_activity_created ON public.admin_activity(created_at);
 
 -- ------------------------------------------------------------------------------
--- 10. ROW LEVEL SECURITY (RLS) POLICIES
+-- 7. ROW LEVEL SECURITY (RLS) POLICIES
 -- ------------------------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.social_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profile_sections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nfc_cards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profile_analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_activity ENABLE ROW LEVEL SECURITY;
 
--- Helper function: is current user an admin?
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -354,7 +153,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Safe Policy Configuration (Does NOT delete tables or data)
+-- Safe policy creation
 DROP POLICY IF EXISTS "Public profiles are viewable by anyone" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by anyone" 
   ON public.profiles FOR SELECT 
@@ -370,30 +169,37 @@ CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE 
   USING (auth.uid() = user_id OR public.is_admin());
 
-DROP POLICY IF EXISTS "Anyone can view products" ON public.products;
-CREATE POLICY "Anyone can view products" 
-  ON public.products FOR SELECT 
+DROP POLICY IF EXISTS "Public can view social links" ON public.social_links;
+CREATE POLICY "Public can view social links" 
+  ON public.social_links FOR SELECT 
   USING (true);
 
-DROP POLICY IF EXISTS "Admins can manage products" ON public.products;
-CREATE POLICY "Admins can manage products" 
-  ON public.products FOR ALL 
-  USING (public.is_admin());
+DROP POLICY IF EXISTS "Users can manage their social links" ON public.social_links;
+CREATE POLICY "Users can manage their social links" 
+  ON public.social_links FOR ALL 
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE profiles.id = social_links.profile_id 
+      AND (profiles.user_id = auth.uid() OR public.is_admin())
+    )
+  );
 
-DROP POLICY IF EXISTS "Users can view their own orders" ON public.orders;
-CREATE POLICY "Users can view their own orders" 
-  ON public.orders FOR SELECT 
-  USING (auth.uid() = user_id OR public.is_admin());
+DROP POLICY IF EXISTS "Public can view profile sections" ON public.profile_sections;
+CREATE POLICY "Public can view profile sections" 
+  ON public.profile_sections FOR SELECT 
+  USING (true);
 
-DROP POLICY IF EXISTS "Users can create orders" ON public.orders;
-CREATE POLICY "Users can create orders" 
-  ON public.orders FOR INSERT 
-  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
-
-DROP POLICY IF EXISTS "Admins can update orders" ON public.orders;
-CREATE POLICY "Admins can update orders" 
-  ON public.orders FOR UPDATE 
-  USING (public.is_admin());
+DROP POLICY IF EXISTS "Users can manage their profile sections" ON public.profile_sections;
+CREATE POLICY "Users can manage their profile sections" 
+  ON public.profile_sections FOR ALL 
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE profiles.id = profile_sections.profile_id 
+      AND (profiles.user_id = auth.uid() OR public.is_admin())
+    )
+  );
 
 DROP POLICY IF EXISTS "Public can lookup active card for redirection" ON public.nfc_cards;
 CREATE POLICY "Public can lookup active card for redirection" 
@@ -420,11 +226,6 @@ CREATE POLICY "Profile owners can view analytics events"
   ON public.analytics_events FOR SELECT 
   USING (true);
 
-DROP POLICY IF EXISTS "Anyone can insert profile analytics" ON public.profile_analytics;
-CREATE POLICY "Anyone can insert profile analytics" 
-  ON public.profile_analytics FOR INSERT 
-  WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Admins can view admin activity" ON public.admin_activity;
 CREATE POLICY "Admins can view admin activity" 
   ON public.admin_activity FOR SELECT 
@@ -436,7 +237,7 @@ CREATE POLICY "Admins can log activity"
   WITH CHECK (public.is_admin());
 
 -- ------------------------------------------------------------------------------
--- 11. AUTOMATIC PROFILE CREATION TRIGGER ON AUTH SIGNUP
+-- 8. AUTOMATIC PROFILE CREATION TRIGGER ON SIGNUP
 -- ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
@@ -483,7 +284,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Safe trigger installation
 DO $$
 BEGIN
   IF NOT EXISTS (
