@@ -27,7 +27,16 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const [isSiteLoaded, setIsSiteLoaded] = useState(false);
+  const [isSiteLoaded, setIsSiteLoaded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return sessionStorage.getItem('signtap_loader_seen') === '1';
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
   const [products, setProducts] = useState<Product[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activePreviewProfile, setActivePreviewProfile] = useState<string>('surya');

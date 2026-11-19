@@ -72,12 +72,6 @@ export default function Hero02SignTap({
     setTimeout(() => setIsSimulatingTap(false), 3000);
   };
 
-  const handleReplayLoader = () => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('signtap:play-loader'));
-    }
-  };
-
   return (
     <section
       id="top"
@@ -194,17 +188,6 @@ export default function Hero02SignTap({
                     className="ml-1 group-hover:translate-x-1 transition-transform"
                   />
                 </Link>
-
-                {/* Replay NFC Boot Loader Pill */}
-                <button
-                  type="button"
-                  onClick={handleReplayLoader}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50/80 hover:bg-purple-100 text-purple-700 py-1.5 px-3.5 text-xs font-semibold shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                  title="Replay the SignTap Signature Animation"
-                >
-                  <Wifi className="w-3.5 h-3.5 text-[#923cf6] animate-pulse" />
-                  <span>Replay SignTap Signature</span>
-                </button>
               </div>
 
               {/* Urbanist Main Title with Kinetic Gradient Flow */}
