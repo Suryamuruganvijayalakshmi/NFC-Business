@@ -455,7 +455,13 @@ export function deleteLink(linkId: string): void {
 // Products
 // -----------------------------------------------------------------------------
 export function getAllProducts(): Product[] {
-  return getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+  const prods = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+  const valid = prods.filter(p => p.id === 'prod-business' || p.id === 'prod-personal');
+  if (valid.length !== 2) {
+    setLocalItem(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    return INITIAL_PRODUCTS;
+  }
+  return valid;
 }
 
 export function getProductById(productId: string): Product | null {

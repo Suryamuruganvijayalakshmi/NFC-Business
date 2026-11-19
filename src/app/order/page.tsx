@@ -26,7 +26,7 @@ import {
 function OrderWorkflowContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialProductId = searchParams.get('product') || 'prod-professional';
+  const initialProductId = searchParams.get('product') || 'prod-business';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -48,7 +48,7 @@ function OrderWorkflowContent() {
   const [city, setCity] = useState<string>('');
   const [state, setState] = useState<string>('');
   const [postalCode, setPostalCode] = useState<string>('');
-  const [country, setCountry] = useState<string>('United States');
+  const [country, setCountry] = useState<string>('India');
 
   // Confirmation result
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
@@ -68,14 +68,14 @@ function OrderWorkflowContent() {
   }, []);
 
   const selectedProduct = products.find(p => p.id === selectedProductId) || products[0] || {
-    id: 'prod-professional',
-    name: 'Professional NFC Card',
-    price: 49,
-    currency: 'USD',
-    material: 'Brushed Titanium Hybrid',
+    id: 'prod-business',
+    name: 'Business NFC Card',
+    price: 199,
+    currency: 'INR',
+    material: 'Matte Jet Black Acrylic · NTAG216',
   };
 
-  const unitPrice = selectedProduct.price || 49;
+  const unitPrice = selectedProduct.price || 199;
   const subtotal = unitPrice * quantity;
   const shippingCost = 0; // Free shipping
   const totalAmount = subtotal + shippingCost;
@@ -217,7 +217,7 @@ function OrderWorkflowContent() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
               {products.map(prod => {
                 const isSelected = selectedProductId === prod.id;
                 return (
@@ -247,7 +247,7 @@ function OrderWorkflowContent() {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-100 flex items-baseline justify-between">
-                      <span className="text-xl font-extrabold text-[#101828]">${prod.price}</span>
+                      <span className="text-xl font-extrabold text-[#101828]">₹{prod.price}</span>
                       <span className="text-[10px] text-slate-400 font-mono">{prod.material}</span>
                     </div>
                   </div>
@@ -543,8 +543,8 @@ function OrderWorkflowContent() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-base">${unitPrice} &times; {quantity}</span>
-                      <p className="text-xs text-slate-400 font-mono">${subtotal}</p>
+                      <span className="font-bold text-base">₹{unitPrice} &times; {quantity}</span>
+                      <p className="text-xs text-slate-400 font-mono">₹{subtotal}</p>
                     </div>
                   </div>
 
@@ -561,9 +561,9 @@ function OrderWorkflowContent() {
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="font-bold">Initial MVP Notice: Manual Payment Verification</h5>
+                    <h5 className="font-bold">Official Razorpay & UPI Enabled</h5>
                     <p className="mt-0.5 text-amber-800 leading-relaxed">
-                      To keep initial platform fees zero, our MVP supports manual payment verification via direct bank transfer, UPI, or corporate invoice. You will receive transfer instructions immediately upon submission.
+                      Instant contactless checkout powered by SignBridge Technologies. Supports Google Pay, PhonePe, Paytm, BHIM UPI, Cards, and Netbanking.
                     </p>
                   </div>
                 </div>
@@ -579,7 +579,7 @@ function OrderWorkflowContent() {
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between text-slate-300">
                       <span>Items Subtotal ({quantity}x)</span>
-                      <span>${subtotal}.00</span>
+                      <span>₹{subtotal}.00</span>
                     </div>
                     <div className="flex justify-between text-slate-300">
                       <span>Express Courier Shipping</span>
@@ -594,8 +594,8 @@ function OrderWorkflowContent() {
                   <div className="pt-4 border-t border-white/10 flex items-baseline justify-between">
                     <span className="font-bold text-sm">Total Due</span>
                     <div className="text-right">
-                      <span className="text-2xl font-black text-white">${totalAmount}.00</span>
-                      <p className="text-[10px] text-slate-400 font-mono">USD</p>
+                      <span className="text-2xl font-black text-white">₹{totalAmount}.00</span>
+                      <p className="text-[10px] text-slate-400 font-mono">INR</p>
                     </div>
                   </div>
 
@@ -666,7 +666,7 @@ function OrderWorkflowContent() {
                     Total Amount
                   </span>
                   <p className="text-lg font-black text-[#101828]">
-                    ${placedOrder.total_amount}.00 USD
+                    ₹{placedOrder.total_amount}.00 INR
                   </p>
                 </div>
               </div>

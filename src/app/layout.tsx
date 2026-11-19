@@ -31,6 +31,29 @@ export default function RootLayout({
       lang="en"
       className="h-full antialiased font-sans"
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function hideDevPortal() {
+                  var portals = document.querySelectorAll('nextjs-portal, [data-nextjs-toast], #__next-build-watcher');
+                  portals.forEach(function(el) {
+                    try { el.remove(); } catch(e) { el.style.display = 'none'; }
+                  });
+                }
+                if (typeof window !== 'undefined') {
+                  hideDevPortal();
+                  var obs = new MutationObserver(hideDevPortal);
+                  if (document.documentElement) {
+                    obs.observe(document.documentElement, { childList: true, subtree: true });
+                  }
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-[#FAFAFB] text-[#101828]">
         {children}
       </body>

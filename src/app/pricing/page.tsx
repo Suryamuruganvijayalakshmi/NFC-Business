@@ -1,19 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SignBridgeCard from '@/components/SignBridgeCard';
+import RazorpayBuyModal from '@/components/RazorpayBuyModal';
 import { getAllProducts } from '@/lib/store';
 import { Product } from '@/lib/types';
-import { Check, Sparkles, ArrowRight, CreditCard, ShieldCheck } from 'lucide-react';
+import { Sparkles, ShieldCheck } from 'lucide-react';
 
 export default function PricingPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [selectedBuyCardType, setSelectedBuyCardType] = useState<'business' | 'personal'>('business');
 
   useEffect(() => {
     setProducts(getAllProducts());
   }, []);
+
+  const handleOpenBuy = (product: Product) => {
+    setSelectedBuyCardType(product.category === 'business' ? 'business' : 'personal');
+    setIsBuyModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFB]">
@@ -33,7 +41,7 @@ export default function PricingPage() {
           <div className="max-w-3xl mx-auto space-y-4 relative z-10">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#dee5ed] shadow-xs text-xs font-semibold text-slate-800">
               <Sparkles className="w-3.5 h-3.5 text-[#923cf6]" />
-              <span>Transparent SignTap Hardware Pricing</span>
+              <span>Transparent Hardware Pricing</span>
               <span className="text-slate-300">•</span>
               <span className="text-slate-600">Zero Monthly Subscriptions</span>
             </div>
@@ -48,96 +56,47 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* Pricing Cards Grid in Rounded Container */}
-        <section className="max-w-7xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-14 shadow-xs">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product) => {
-              const isPopular = product.category === 'professional';
-              return (
-                <div
-                  key={product.id}
-                  className={`rounded-2xl md:rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 ${
-                    isPopular
-                      ? 'bg-[#101828] text-white shadow-2xl ring-2 ring-[#923cf6] -translate-y-2'
-                      : 'bg-[#f8fafc] text-[#101828] border border-[#dee5ed] hover:shadow-lg'
-                  }`}
-                >
-                  <div>
-                    {/* Top Badges */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                        isPopular 
-                          ? 'bg-[#923cf6] text-white' 
-                          : 'bg-slate-200 text-slate-700'
-                      }`}>
-                        {product.badge || product.category}
-                      </span>
-                      <span className="text-[11px] font-mono opacity-60">
-                        {product.material}
-                      </span>
-                    </div>
-
-                    <h3 className="font-urbanist text-lg sm:text-xl font-bold tracking-tight">
-                      {product.name}
-                    </h3>
-                    <p className={`text-xs mt-2 leading-relaxed ${isPopular ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {product.short_description}
-                    </p>
-
-                    {/* Price */}
-                    <div className="mt-5 pb-5 border-b border-slate-200/30">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl sm:text-4xl font-extrabold font-sans">
-                          ${product.price}
-                        </span>
-                        <span className="text-xs uppercase font-mono opacity-60">
-                          {product.currency}
-                        </span>
-                      </div>
-                      <span className="text-[11px] opacity-70">
-                        One-time purchase · Lifetime profile hosting
-                      </span>
-                    </div>
-
-                    {/* Features checklist */}
-                    <div className="mt-5 space-y-2 text-xs">
-                      <p className="font-semibold uppercase tracking-wider text-[10px] opacity-60">
-                        Included with SignTap hardware:
-                      </p>
-                      {product.features.map((feat, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isPopular ? 'text-[#923cf6]' : 'text-[#923cf6]'}`} />
-                          <span className={isPopular ? 'text-slate-200' : 'text-slate-700'}>{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Order Button in Hero 02 style */}
-                  <div className="mt-8 pt-4">
-                    <Link
-                      href={`/order?product=${product.id}`}
-                      className={`w-full py-2.5 px-4 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-xs active:scale-95 ${
-                        isPopular
-                          ? 'bg-[#923cf6] hover:bg-[#8129e0] hover:scale-[1.02] text-white shadow-purple-500/25'
-                          : 'bg-[#101828] hover:bg-[#923cf6] text-white'
-                      }`}
-                    >
-                      <span>Order SignTap Card</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Pricing Cards Grid */}
+        <section className="max-w-6xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-12 shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {products.map((product, idx) => (
+              <SignBridgeCard
+                key={product.id}
+                product={product}
+                productNumber={idx === 0 ? '01' : '02'}
+                onBuy={handleOpenBuy}
+              />
+            ))}
           </div>
+        </section>
 
+        {/* Value Proposition Note */}
+        <section className="max-w-4xl mx-auto text-center px-4">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-left">
+              <div className="w-10 h-10 rounded-full bg-purple-50 text-[#923cf6] flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">100% Risk-Free Guarantee</h4>
+                <p className="text-xs text-slate-500">Fast pan-India dispatch with live tracking and replacement guarantee.</p>
+              </div>
+            </div>
+            <div className="text-xs font-mono text-slate-400">
+              Instant Razorpay Checkout · UPI / Cards / Netbanking
+            </div>
+          </div>
         </section>
 
       </main>
 
       <Footer />
+
+      <RazorpayBuyModal
+        isOpen={isBuyModalOpen}
+        onClose={() => setIsBuyModalOpen(false)}
+        initialCardType={selectedBuyCardType}
+      />
     </div>
   );
 }

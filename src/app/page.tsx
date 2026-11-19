@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import Hero02SignTap from '@/components/Hero02SignTap';
 import SignTapLoader from '@/components/SignTapLoader';
+import SignBridgeCard from '@/components/SignBridgeCard';
+import RazorpayBuyModal from '@/components/RazorpayBuyModal';
 import { getAllProducts, getAllProfiles } from '@/lib/store';
 import { Product, Profile } from '@/lib/types';
 import { 
@@ -33,6 +35,13 @@ export default function HomePage() {
   const [activePreviewProfile, setActivePreviewProfile] = useState<string>('surya');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [tapSuccess, setTapSuccess] = useState(false);
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [selectedBuyCardType, setSelectedBuyCardType] = useState<'business' | 'personal'>('business');
+
+  const handleOpenBuy = (product: Product) => {
+    setSelectedBuyCardType(product.category === 'business' ? 'business' : 'personal');
+    setIsBuyModalOpen(true);
+  };
 
   useEffect(() => {
     setProducts(getAllProducts());
@@ -280,77 +289,14 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <div
+          <div className="grid grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto gap-6 sm:gap-8">
+            {products.map((product, idx) => (
+              <SignBridgeCard
                 key={product.id}
-                className="rounded-2xl md:rounded-3xl bg-[#f8fafc] border border-[#dee5ed] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
-              >
-                <div>
-                  {/* Card Visual Banner */}
-                  <div className="relative h-44 overflow-hidden bg-slate-900">
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                    
-                    {product.badge && (
-                      <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#101828]/80 backdrop-blur-md text-[10px] font-bold text-white border border-white/20">
-                        {product.badge}
-                      </span>
-                    )}
-
-                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-white text-xs font-mono">
-                      <Wifi className="w-3.5 h-3.5 text-[#923cf6]" />
-                      <span>{product.material}</span>
-                    </div>
-                  </div>
-
-                  {/* Body Content */}
-                  <div className="p-5 sm:p-6">
-                    <h3 className="font-urbanist text-base sm:text-lg font-bold text-[#101828] group-hover:text-[#923cf6] transition-colors">
-                      {product.name}
-                    </h3>
-
-                    {/* Price */}
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="text-2xl sm:text-3xl font-extrabold text-[#101828] font-sans">
-                        ${product.price}
-                      </span>
-                      <span className="text-[11px] text-slate-500 uppercase font-mono">
-                        {product.currency} · Lifetime updates
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-slate-600 mt-2.5 leading-relaxed">
-                      {product.short_description}
-                    </p>
-
-                    {/* Feature bullet list */}
-                    <div className="mt-4 space-y-2 pt-3 border-t border-slate-200/60">
-                      {product.features.slice(0, 4).map((feat, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-xs text-slate-600">
-                          <Check className="w-3.5 h-3.5 text-[#923cf6] shrink-0 mt-0.5" />
-                          <span>{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pill Order Button in Hero 02 style */}
-                <div className="p-5 sm:p-6 pt-0">
-                  <Link
-                    href={`/order?product=${product.id}`}
-                    className="w-full py-2.5 px-4 rounded-full bg-[#923cf6] hover:bg-[#8129e0] hover:scale-[1.02] text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-xs group-hover:shadow-md active:scale-95"
-                  >
-                    <span>Customize & Order</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
+                product={product}
+                productNumber={idx === 0 ? '01' : '02'}
+                onBuy={handleOpenBuy}
+              />
             ))}
           </div>
 
@@ -697,6 +643,12 @@ export default function HomePage() {
 
       <Footer />
       </div>
+
+      <RazorpayBuyModal
+        isOpen={isBuyModalOpen}
+        onClose={() => setIsBuyModalOpen(false)}
+        initialCardType={selectedBuyCardType}
+      />
     </div>
   );
 }

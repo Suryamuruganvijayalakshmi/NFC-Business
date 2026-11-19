@@ -41,12 +41,22 @@
   box-sizing: border-box;
 }
 
-/* Hide Next.js dev indicator badges and overlays */
+/* Hide Next.js dev indicator badges and overlays completely */
 nextjs-portal,
 [data-nextjs-toast],
 [data-nextjs-dev-indicator],
 #__next-build-watcher {
   display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  bottom: -9999px !important;
+  z-index: -9999 !important;
 }
 
 html {
