@@ -2237,3 +2237,4 @@ export default function SmartNetworkingPage() {
     </div>
   );
 }
+

@@ -429,35 +429,53 @@ export function saveProfile(profile: Profile): void {
 
   // Sync to live Supabase if configured
   if (isSupabaseConfigured && supabase) {
-    supabase.from('profiles').upsert({
-      username: updatedProfile.username,
-      full_name: updatedProfile.full_name,
-      profile_type: updatedProfile.profile_type,
-      title: updatedProfile.title,
-      bio: updatedProfile.bio,
-      profile_image: updatedProfile.profile_image,
-      cover_image: updatedProfile.cover_image,
-      location: updatedProfile.location,
-      email: updatedProfile.email,
-      phone: updatedProfile.phone,
-      website: updatedProfile.website,
-      company: updatedProfile.company,
-      business_name: updatedProfile.business_name,
-      business_description: updatedProfile.business_description,
-      whatsapp_number: updatedProfile.whatsapp_number,
-      portfolio_url: updatedProfile.portfolio_url,
-      resume_url: updatedProfile.resume_url,
-      skills: updatedProfile.skills,
-      services: updatedProfile.services,
-      theme: updatedProfile.theme,
-      accent_color: updatedProfile.accent_color,
-      button_style: updatedProfile.button_style,
-      font_family: updatedProfile.font_family,
-      background_style: updatedProfile.background_style,
-      published: updatedProfile.published,
-      updated_at: updatedProfile.updated_at,
-    }, { onConflict: 'username' }).then(({ error }) => {
-      if (error) console.warn('Supabase profile sync notice:', error.message);
+    const packedVisibility = {
+      ...(updatedProfile.section_visibility || {}),
+      _extended: {
+        headline: updatedProfile.headline,
+        about: updatedProfile.about,
+        experiences: updatedProfile.experiences,
+        education: updatedProfile.education,
+        certifications: updatedProfile.certifications,
+        achievements: updatedProfile.achievements,
+        businesses: updatedProfile.businesses,
+        services: updatedProfile.services,
+        languages: updatedProfile.languages,
+        custom_links: updatedProfile.custom_links,
+      }
+    };
+
+    Promise.resolve(
+      supabase.from('profiles').upsert({
+        username: updatedProfile.username,
+        full_name: updatedProfile.full_name,
+        profile_type: updatedProfile.profile_type,
+        title: updatedProfile.title,
+        bio: updatedProfile.bio,
+        profile_image: updatedProfile.profile_image,
+        cover_image: updatedProfile.cover_image,
+        location: updatedProfile.location,
+        email: updatedProfile.email,
+        phone: updatedProfile.phone,
+        website: updatedProfile.website,
+        company: updatedProfile.company,
+        business_name: updatedProfile.business_name,
+        business_description: updatedProfile.business_description,
+        whatsapp_number: updatedProfile.whatsapp_number,
+        portfolio_url: updatedProfile.portfolio_url,
+        resume_url: updatedProfile.resume_url,
+        skills: updatedProfile.skills,
+        theme: updatedProfile.theme,
+        accent_color: updatedProfile.accent_color,
+        button_style: updatedProfile.button_style,
+        font_family: updatedProfile.font_family,
+        background_style: updatedProfile.background_style,
+        published: updatedProfile.published,
+        section_visibility: packedVisibility,
+        updated_at: updatedProfile.updated_at,
+      }, { onConflict: 'username' })
+    ).catch(err => {
+      console.warn('Supabase profile sync notice:', err);
     });
   }
 }

@@ -175,30 +175,46 @@ export default function SignatureTemplate({
       <div className="relative max-w-2xl mx-auto rounded-3xl bg-[#131B2E]/95 backdrop-blur-xl border border-white/10 p-5 sm:p-9 shadow-2xl space-y-6">
         
         {/* Cover Header Banner */}
-        {profile.cover_image && (
-          <div className="relative h-44 sm:h-56 -mx-5 sm:-mx-9 -mt-5 sm:-mt-9 rounded-t-3xl overflow-hidden">
+        <div className="relative h-44 sm:h-56 -mx-5 sm:-mx-9 -mt-5 sm:-mt-9 rounded-t-3xl overflow-hidden bg-gradient-to-r from-[#0C121E] via-[#162035] to-[#0C121E]">
+          {profile.cover_image ? (
             <img 
               src={profile.cover_image} 
               alt="Cover" 
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#131B2E] via-transparent to-transparent" />
-            <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] text-white font-mono flex items-center gap-1.5 shadow-md">
-              <Wifi className="w-3 h-3 text-[#087CF0] rotate-90" />
-              <span>NFC Hardware Synced</span>
+          ) : (
+            <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+              <div 
+                className="absolute inset-0 opacity-20 pointer-events-none"
+                style={{
+                  backgroundImage: `radial-gradient(circle at 30% 50%, rgba(8, 124, 240, 0.4) 0%, transparent 60%), linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+                  backgroundSize: '100% 100%, 28px 28px, 28px 28px'
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#131B2E] via-transparent to-transparent" />
             </div>
+          )}
+          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] text-white font-mono flex items-center gap-1.5 shadow-md">
+            <Wifi className="w-3 h-3 text-[#087CF0] rotate-90" />
+            <span>NFC Hardware Synced</span>
           </div>
-        )}
+        </div>
 
         {/* Profile Identity Header */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="relative group">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden ring-2 ring-[#087CF0]/40 p-1 bg-gradient-to-br from-[#087CF0] to-[#FF7900] shadow-lg">
-              <img 
-                src={profile.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'} 
-                alt={profile.full_name} 
-                className="w-full h-full object-cover rounded-xl"
-              />
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden ring-2 ring-[#087CF0]/40 p-1 bg-gradient-to-br from-[#087CF0] to-[#FF7900] shadow-lg flex-shrink-0">
+              {profile.profile_image ? (
+                <img 
+                  src={profile.profile_image} 
+                  alt={profile.full_name} 
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              ) : (
+                <div className="w-full h-full rounded-xl bg-gradient-to-tr from-[#087CF0] via-[#15233e] to-[#FF7900] flex items-center justify-center text-white text-3xl font-black shadow-inner">
+                  {profile.full_name?.charAt(0) || profile.username?.charAt(0) || 'S'}
+                </div>
+              )}
             </div>
             {/* NFC Contactless Badge */}
             <div 
@@ -221,7 +237,7 @@ export default function SignatureTemplate({
             </div>
 
             <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1 leading-relaxed">
-              {profile.headline || profile.title}
+              {profile.headline || profile.title || 'Digital Identity & Professional'}
             </p>
 
             <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-slate-400">
@@ -243,11 +259,15 @@ export default function SignatureTemplate({
             {/* Network Count Stats (LinkedIn-style) */}
             <div className="mt-2.5 flex items-center justify-center sm:justify-start gap-3 text-xs">
               <span className="text-[#087CF0] font-bold">
-                {profile.connections_count ? `${profile.connections_count}+ connections` : '500+ connections'}
+                {profile.connections_count !== undefined 
+                  ? `${profile.connections_count} connections` 
+                  : '0 connections'}
               </span>
               <span className="text-slate-500">·</span>
               <span className="text-slate-300">
-                {profile.followers_count || 1290} followers
+                {profile.followers_count !== undefined 
+                  ? `${profile.followers_count} followers` 
+                  : '0 followers'}
               </span>
             </div>
           </div>
@@ -386,6 +406,56 @@ export default function SignatureTemplate({
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line bg-white/[0.03] p-4 rounded-2xl border border-white/5">
                   {profile.about}
                 </p>
+              </div>
+            )}
+
+            {/* Public Contact Information */}
+            {visibility.contact && (profile.email || profile.phone || profile.website || profile.location) && (
+              <div className="space-y-2 pt-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-[#087CF0]" />
+                  Contact Information
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {profile.email && (
+                    <a 
+                      href={`mailto:${profile.email}`}
+                      className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/15 text-slate-300 hover:text-white transition-colors"
+                    >
+                      <Mail className="w-4 h-4 text-[#087CF0] flex-shrink-0" />
+                      <span className="truncate">{profile.email}</span>
+                    </a>
+                  )}
+                  {profile.phone && (
+                    <a 
+                      href={`tel:${profile.phone}`}
+                      className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/15 text-slate-300 hover:text-white transition-colors"
+                    >
+                      <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      <span>{profile.phone}</span>
+                    </a>
+                  )}
+                  {profile.website && (
+                    <a 
+                      href={profile.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/15 text-slate-300 hover:text-white transition-colors"
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        <Globe className="w-4 h-4 text-[#FF7900] flex-shrink-0" />
+                        <span className="truncate">{profile.website.replace(/^https?:\/\//, '')}</span>
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-500 flex-shrink-0 ml-1" />
+                    </a>
+                  )}
+                  {profile.location && (
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5 text-slate-300">
+                      <MapPin className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                      <span className="truncate">{profile.location}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
