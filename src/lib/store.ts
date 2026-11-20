@@ -27,7 +27,13 @@ import {
   AchievementItem,
   BusinessEntity,
   LanguageItem,
-  CustomLinkItem
+  CustomLinkItem,
+  SmartContact,
+  ContactFollowUp,
+  ContactInteraction,
+  FollowUpPriority,
+  FollowUpStatus,
+  InteractionType
 } from './types';
 import { 
   INITIAL_PROFILES, 
@@ -41,7 +47,11 @@ import {
   INITIAL_ADMIN_ACTIVITIES,
   INITIAL_CONNECTIONS,
   INITIAL_POSTS,
-  INITIAL_POST_COMMENTS
+  INITIAL_POST_COMMENTS,
+  DEFAULT_CONTACT_CATEGORIES,
+  INITIAL_SMART_CONTACTS,
+  INITIAL_CONTACT_INTERACTIONS,
+  INITIAL_FOLLOW_UPS
 } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
@@ -60,6 +70,10 @@ const STORAGE_KEYS = {
   FOLLOWS: 'sb_follows',
   POSTS: 'sb_posts',
   POST_COMMENTS: 'sb_post_comments',
+  CRM_CONTACTS: 'sb_crm_contacts',
+  CRM_FOLLOWUPS: 'sb_crm_followups',
+  CRM_INTERACTIONS: 'sb_crm_interactions',
+  CRM_CATEGORIES: 'sb_crm_categories',
 };
 
 // Helper to access localStorage safely
@@ -1340,3 +1354,532 @@ export function deleteLanguageFromProfile(userId: string, langId: string): void 
   profile.languages = (profile.languages || []).filter(l => l.id !== langId);
   saveProfile(profile);
 }
+
+// -----------------------------------------------------------------------------
+// Smart Networking & Contact Relationship Management (CRM)
+// -----------------------------------------------------------------------------
+
+export function getStoredContacts(): SmartContact[] {
+  return getLocalItem<SmartContact[]>(STORAGE_KEYS.CRM_CONTACTS, INITIAL_SMART_CONTACTS);
+}
+
+export function setStoredContacts(contacts: SmartContact[]): void {
+  setLocalItem(STORAGE_KEYS.CRM_CONTACTS, contacts);
+}
+
+export function getContactsByUserId(userId: string): SmartContact[] {
+  const contacts = getStoredContacts();
+  return contacts.filter(c => c.owner_user_id === userId);
+}
+
+export function getContactById(contactId: string, userId?: string): SmartContact | null {
+  const contacts = getStoredContacts();
+  const contact = contacts.find(c => c.id === contactId);
+  if (!contact) return null;
+  if (userId && contact.owner_user_id !== userId) return null;
+  return contact;
+}
+
+export function saveContact(contact: SmartContact): void {
+  const contacts = getStoredContacts();
+  const idx = contacts.findIndex(c => c.id === contact.id);
+  const updatedContact = {
+    ...contact,
+    updated_at: new Date().toISOString()
+  };
+
+  if (idx >= 0) {
+    contacts[idx] = updatedContact;
+  } else {
+    contacts.unshift(updatedContact);
+  }
+  setStoredContacts(contacts);
+
+  // Sync to Supabase if configured (async fire-and-forget)
+  if (isSupabaseConfigured && supabase) {
+    try {
+      Promise.resolve(supabase.from('smart_contacts').upsert(updatedContact)).catch(() => {});
+    } catch {
+      // Supabase table optional fallback
+    }
+  }
+}
+
+export function deleteContact(contactId: string, userId: string): void {
+  const contacts = getStoredContacts().filter(c => !(c.id === contactId && c.owner_user_id === userId));
+  setStoredContacts(contacts);
+
+  // Clean up associated follow-ups
+  const followUps = getStoredFollowUps().filter(f => !(f.contact_id === contactId && f.owner_user_id === userId));
+  setStoredFollowUps(followUps);
+
+  // Clean up associated interactions
+  const interactions = getStoredInteractions().filter(i => !(i.contact_id === contactId && i.owner_user_id === userId));
+  setStoredInteractions(interactions);
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      Promise.resolve(supabase.from('smart_contacts').delete().match({ id: contactId, owner_user_id: userId })).catch(() => {});
+    } catch {}
+  }
+}
+
+export function toggleContactImportant(contactId: string, userId: string): boolean {
+  const contacts = getStoredContacts();
+  const idx = contacts.findIndex(c => c.id === contactId && c.owner_user_id === userId);
+  if (idx === -1) return false;
+
+  contacts[idx].is_important = !contacts[idx].is_important;
+  contacts[idx].updated_at = new Date().toISOString();
+  setStoredContacts(contacts);
+  return contacts[idx].is_important;
+}
+
+export function updateContactNotes(
+  contactId: string, 
+  userId: string, 
+  notes: Partial<Pick<SmartContact, 'met_at' | 'met_date' | 'discussion_notes' | 'interests' | 'opportunities' | 'collaboration_ideas' | 'private_notes' | 'tags' | 'category'>>
+): SmartContact | null {
+  const contacts = getStoredContacts();
+  const idx = contacts.findIndex(c => c.id === contactId && c.owner_user_id === userId);
+  if (idx === -1) return null;
+
+  contacts[idx] = {
+    ...contacts[idx],
+    ...notes,
+    updated_at: new Date().toISOString()
+  };
+  setStoredContacts(contacts);
+  return contacts[idx];
+}
+
+// -----------------------------------------------------------------------------
+// Contact Categories
+// -----------------------------------------------------------------------------
+
+export function getContactCategories(userId: string): string[] {
+  const key = `${STORAGE_KEYS.CRM_CATEGORIES}_${userId}`;
+  const custom = getLocalItem<string[]>(key, []);
+  const combined = Array.from(new Set([...DEFAULT_CONTACT_CATEGORIES, ...custom]));
+  return combined;
+}
+
+export function addContactCategory(userId: string, category: string): string[] {
+  const clean = category.trim();
+  if (!clean) return getContactCategories(userId);
+  const key = `${STORAGE_KEYS.CRM_CATEGORIES}_${userId}`;
+  const custom = getLocalItem<string[]>(key, []);
+  if (!custom.includes(clean)) {
+    custom.push(clean);
+    setLocalItem(key, custom);
+  }
+  return getContactCategories(userId);
+}
+
+// -----------------------------------------------------------------------------
+// Contact Timeline & Interaction History
+// -----------------------------------------------------------------------------
+
+export function getStoredInteractions(): ContactInteraction[] {
+  return getLocalItem<ContactInteraction[]>(STORAGE_KEYS.CRM_INTERACTIONS, INITIAL_CONTACT_INTERACTIONS);
+}
+
+export function setStoredInteractions(interactions: ContactInteraction[]): void {
+  setLocalItem(STORAGE_KEYS.CRM_INTERACTIONS, interactions);
+}
+
+export function getContactInteractions(contactId: string, userId: string): ContactInteraction[] {
+  const interactions = getStoredInteractions();
+  return interactions
+    .filter(i => i.contact_id === contactId && i.owner_user_id === userId)
+    .sort((a, b) => new Date(b.occurred_at || b.created_at).getTime() - new Date(a.occurred_at || a.created_at).getTime());
+}
+
+export function addContactInteraction(interaction: Omit<ContactInteraction, 'id' | 'created_at'>): ContactInteraction {
+  const interactions = getStoredInteractions();
+  const newInteraction: ContactInteraction = {
+    ...interaction,
+    id: `crm-int-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    created_at: new Date().toISOString()
+  };
+  interactions.unshift(newInteraction);
+  setStoredInteractions(interactions);
+  return newInteraction;
+}
+
+export function deleteContactInteraction(interactionId: string, userId: string): void {
+  const interactions = getStoredInteractions().filter(i => !(i.id === interactionId && i.owner_user_id === userId));
+  setStoredInteractions(interactions);
+}
+
+// -----------------------------------------------------------------------------
+// Follow-up Reminder System
+// -----------------------------------------------------------------------------
+
+export function getStoredFollowUps(): ContactFollowUp[] {
+  return getLocalItem<ContactFollowUp[]>(STORAGE_KEYS.CRM_FOLLOWUPS, INITIAL_FOLLOW_UPS);
+}
+
+export function setStoredFollowUps(followUps: ContactFollowUp[]): void {
+  setLocalItem(STORAGE_KEYS.CRM_FOLLOWUPS, followUps);
+}
+
+export function getFollowUpsByUserId(userId: string): { 
+  upcoming: ContactFollowUp[]; 
+  overdue: ContactFollowUp[]; 
+  completed: ContactFollowUp[];
+  all: ContactFollowUp[];
+} {
+  const allFollowUps = getStoredFollowUps().filter(f => f.owner_user_id === userId);
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const completed: ContactFollowUp[] = [];
+  const overdue: ContactFollowUp[] = [];
+  const upcoming: ContactFollowUp[] = [];
+
+  for (const f of allFollowUps) {
+    if (f.status === 'completed') {
+      completed.push(f);
+    } else {
+      const dueDatePart = f.due_date ? f.due_date.split('T')[0] : '';
+      if (dueDatePart && dueDatePart < todayStr) {
+        overdue.push(f);
+      } else {
+        upcoming.push(f);
+      }
+    }
+  }
+
+  // Sort upcoming by due date ascending
+  upcoming.sort((a, b) => a.due_date.localeCompare(b.due_date));
+  // Sort overdue by due date ascending (most overdue first)
+  overdue.sort((a, b) => a.due_date.localeCompare(b.due_date));
+  // Sort completed by completion date descending
+  completed.sort((a, b) => (b.completed_at || b.created_at).localeCompare(a.completed_at || a.created_at));
+
+  return { upcoming, overdue, completed, all: allFollowUps };
+}
+
+export function getFollowUpsForContact(contactId: string, userId: string): ContactFollowUp[] {
+  return getStoredFollowUps()
+    .filter(f => f.contact_id === contactId && f.owner_user_id === userId)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date));
+}
+
+export function addFollowUp(followUp: Omit<ContactFollowUp, 'id' | 'created_at'>): ContactFollowUp {
+  const followUps = getStoredFollowUps();
+  const newFollowUp: ContactFollowUp = {
+    ...followUp,
+    id: `crm-fup-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    created_at: new Date().toISOString()
+  };
+  followUps.unshift(newFollowUp);
+  setStoredFollowUps(followUps);
+
+  // Automatically log a timeline interaction for this follow-up creation
+  addContactInteraction({
+    contact_id: followUp.contact_id,
+    owner_user_id: followUp.owner_user_id,
+    type: 'note',
+    title: `Follow-up created: ${followUp.title}`,
+    details: `Due on ${followUp.due_date} (Priority: ${followUp.priority.toUpperCase()})`,
+    occurred_at: new Date().toISOString()
+  });
+
+  return newFollowUp;
+}
+
+export function toggleFollowUpComplete(followUpId: string, userId: string): ContactFollowUp | null {
+  const followUps = getStoredFollowUps();
+  const idx = followUps.findIndex(f => f.id === followUpId && f.owner_user_id === userId);
+  if (idx === -1) return null;
+
+  const current = followUps[idx];
+  const isNowCompleted = current.status !== 'completed';
+  
+  current.status = isNowCompleted ? 'completed' : 'pending';
+  current.completed_at = isNowCompleted ? new Date().toISOString() : undefined;
+  
+  setStoredFollowUps(followUps);
+
+  if (isNowCompleted) {
+    addContactInteraction({
+      contact_id: current.contact_id,
+      owner_user_id: current.owner_user_id,
+      type: 'note',
+      title: `Follow-up completed: ${current.title}`,
+      details: current.description || 'Completed follow-up action item',
+      occurred_at: new Date().toISOString()
+    });
+  }
+
+  return current;
+}
+
+export function deleteFollowUp(followUpId: string, userId: string): void {
+  const followUps = getStoredFollowUps().filter(f => !(f.id === followUpId && f.owner_user_id === userId));
+  setStoredFollowUps(followUps);
+}
+
+// -----------------------------------------------------------------------------
+// CSV Export & Import System
+// -----------------------------------------------------------------------------
+
+function escapeCSV(val: string | number | boolean | undefined | null): string {
+  if (val === undefined || val === null) return '""';
+  const str = String(val);
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
+export function exportContactsToCSV(userId: string): string {
+  const contacts = getContactsByUserId(userId);
+  const headers = [
+    'Full Name',
+    'Headline',
+    'Company',
+    'Role',
+    'Email',
+    'Phone',
+    'Location',
+    'Category',
+    'Tags',
+    'Important',
+    'Met At',
+    'Met Date',
+    'Discussion Notes',
+    'Interests',
+    'Opportunities',
+    'Collaboration Ideas',
+    'Private Notes',
+    'Website',
+    'LinkedIn',
+    'Twitter',
+    'GitHub',
+    'Source',
+    'Created At'
+  ];
+
+  const rows = contacts.map(c => [
+    escapeCSV(c.full_name),
+    escapeCSV(c.headline || ''),
+    escapeCSV(c.company || ''),
+    escapeCSV(c.role || ''),
+    escapeCSV(c.email || ''),
+    escapeCSV(c.phone || ''),
+    escapeCSV(c.location || ''),
+    escapeCSV(c.category || 'General'),
+    escapeCSV(Array.isArray(c.tags) ? c.tags.join(';') : ''),
+    escapeCSV(c.is_important ? 'Yes' : 'No'),
+    escapeCSV(c.met_at || ''),
+    escapeCSV(c.met_date || ''),
+    escapeCSV(c.discussion_notes || ''),
+    escapeCSV(c.interests || ''),
+    escapeCSV(c.opportunities || ''),
+    escapeCSV(c.collaboration_ideas || ''),
+    escapeCSV(c.private_notes || ''),
+    escapeCSV(c.website || ''),
+    escapeCSV(c.linkedin_url || ''),
+    escapeCSV(c.twitter_url || ''),
+    escapeCSV(c.github_url || ''),
+    escapeCSV(c.source || 'manual'),
+    escapeCSV(c.created_at || '')
+  ].join(','));
+
+  return [headers.join(','), ...rows].join('\r\n');
+}
+
+export function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++; // skip escaped quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+export function importContactsFromCSV(
+  userId: string, 
+  csvText: string, 
+  skipDuplicates: boolean = true
+): { imported: number; duplicates: number; skipped: number; errors: string[] } {
+  const lines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length < 2) {
+    return { imported: 0, duplicates: 0, skipped: 0, errors: ['CSV file is empty or missing headers.'] };
+  }
+
+  const rawHeaders = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const existingContacts = getContactsByUserId(userId);
+  const existingEmails = new Set(existingContacts.map(c => c.email?.toLowerCase().trim()).filter(Boolean));
+  const existingPhones = new Set(existingContacts.map(c => c.phone?.replace(/[^0-9]/g, '')).filter(Boolean));
+
+  let imported = 0;
+  let duplicates = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const row = parseCSVLine(lines[i]);
+    if (!row || row.length === 0 || (row.length === 1 && !row[0])) continue;
+
+    const rowObj: Record<string, string> = {};
+    rawHeaders.forEach((h, idx) => {
+      rowObj[h] = row[idx] || '';
+    });
+
+    const fullName = 
+      rowObj['fullname'] || 
+      rowObj['name'] || 
+      rowObj['contactname'] || 
+      (rowObj['firstname'] ? `${rowObj['firstname']} ${rowObj['lastname'] || ''}`.trim() : '');
+
+    if (!fullName) {
+      skipped++;
+      continue;
+    }
+
+    const email = (rowObj['email'] || rowObj['emailaddress'] || '').trim();
+    const phone = (rowObj['phone'] || rowObj['phonenumber'] || rowObj['mobile'] || '').trim();
+    const normalizedPhone = phone.replace(/[^0-9]/g, '');
+
+    const isDuplicate = 
+      (email && existingEmails.has(email.toLowerCase())) || 
+      (normalizedPhone && existingPhones.has(normalizedPhone));
+
+    if (isDuplicate) {
+      duplicates++;
+      if (skipDuplicates) {
+        continue;
+      }
+    }
+
+    const tagsRaw = rowObj['tags'] || rowObj['tag'] || '';
+    const tags = tagsRaw ? tagsRaw.split(/[;,]/).map(t => t.trim()).filter(Boolean) : [];
+
+    const newContact: SmartContact = {
+      id: `crm-cont-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      owner_user_id: userId,
+      full_name: fullName,
+      headline: rowObj['headline'] || rowObj['title'] || rowObj['position'] || '',
+      company: rowObj['company'] || rowObj['organization'] || '',
+      role: rowObj['role'] || '',
+      email: email || undefined,
+      phone: phone || undefined,
+      location: rowObj['location'] || rowObj['city'] || '',
+      category: rowObj['category'] || rowObj['group'] || 'Entrepreneurs',
+      tags: tags,
+      is_important: (rowObj['important'] || '').toLowerCase() === 'yes' || (rowObj['important'] || '') === 'true',
+      met_at: rowObj['metat'] || rowObj['wheremet'] || rowObj['locationmet'] || '',
+      met_date: rowObj['metdate'] || rowObj['whenmet'] || '',
+      discussion_notes: rowObj['discussionnotes'] || rowObj['whatdiscussed'] || '',
+      interests: rowObj['interests'] || '',
+      opportunities: rowObj['opportunities'] || '',
+      collaboration_ideas: rowObj['collaborationideas'] || '',
+      private_notes: rowObj['privatenotes'] || rowObj['notes'] || '',
+      website: rowObj['website'] || '',
+      linkedin_url: rowObj['linkedin'] || rowObj['linkedinurl'] || '',
+      twitter_url: rowObj['twitter'] || rowObj['x'] || '',
+      github_url: rowObj['github'] || '',
+      source: 'csv_import',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    saveContact(newContact);
+    if (email) existingEmails.add(email.toLowerCase());
+    if (normalizedPhone) existingPhones.add(normalizedPhone);
+    imported++;
+  }
+
+  return { imported, duplicates, skipped, errors };
+}
+
+// -----------------------------------------------------------------------------
+// 1-Click Save Public Profile as Smart CRM Contact (from NFC Tap or /u/ page)
+// -----------------------------------------------------------------------------
+
+export function savePublicProfileAsContact(
+  userId: string, 
+  targetProfile: Profile, 
+  metLocation: string = 'SignTap NFC Contactless Tap'
+): { contact: SmartContact; isNew: boolean } {
+  const existing = getContactsByUserId(userId);
+  const found = existing.find(c => 
+    (c.signtap_username && c.signtap_username === targetProfile.username) ||
+    (targetProfile.email && c.email && c.email.toLowerCase() === targetProfile.email.toLowerCase())
+  );
+
+  if (found) {
+    // Log an NFC tap interaction on the existing contact
+    addContactInteraction({
+      contact_id: found.id,
+      owner_user_id: userId,
+      type: 'nfc_tap',
+      title: 'Contactless Profile Re-tapped',
+      details: `Scanned profile /u/${targetProfile.username} again`,
+      location: metLocation,
+      occurred_at: new Date().toISOString()
+    });
+    return { contact: found, isNew: false };
+  }
+
+  const socialLinks: SocialLink[] = getLinksByProfileId(targetProfile.id);
+
+  const newContact: SmartContact = {
+    id: `crm-cont-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    owner_user_id: userId,
+    full_name: targetProfile.full_name,
+    headline: targetProfile.headline || targetProfile.title || '',
+    company: targetProfile.company || targetProfile.business_name || '',
+    email: targetProfile.email || undefined,
+    phone: targetProfile.phone || undefined,
+    avatar_url: targetProfile.profile_image || undefined,
+    location: targetProfile.location || '',
+    website: targetProfile.website || '',
+    linkedin_url: socialLinks.find((l: SocialLink) => l.platform === 'linkedin')?.url,
+    twitter_url: socialLinks.find((l: SocialLink) => l.platform === 'x')?.url,
+    github_url: socialLinks.find((l: SocialLink) => l.platform === 'github')?.url,
+    category: targetProfile.profile_type === 'business' ? 'Clients' : 'Entrepreneurs',
+    tags: ['NFC Tap', targetProfile.profile_type || 'Professional'],
+    is_important: false,
+    met_at: metLocation,
+    met_date: new Date().toISOString().split('T')[0],
+    discussion_notes: `Exchanged professional details via SignTap digital contactless profile (/u/${targetProfile.username}).`,
+    private_notes: targetProfile.bio || '',
+    signtap_username: targetProfile.username,
+    source: 'nfc_tap',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  saveContact(newContact);
+
+  // Add initial timeline interaction
+  addContactInteraction({
+    contact_id: newContact.id,
+    owner_user_id: userId,
+    type: 'nfc_tap',
+    title: 'Exchanged contact via SignTap NFC Tap',
+    details: `Met via digital profile /u/${targetProfile.username}`,
+    location: metLocation,
+    occurred_at: new Date().toISOString()
+  });
+
+  return { contact: newContact, isNew: true };
+}
+

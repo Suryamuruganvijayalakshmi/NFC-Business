@@ -419,3 +419,82 @@ export interface UserSession {
     [key: string]: any;
   };
 }
+
+// -----------------------------------------------------------------------------
+// Smart Networking & Contact Relationship Management (CRM)
+// -----------------------------------------------------------------------------
+export type FollowUpPriority = 'low' | 'medium' | 'high';
+export type FollowUpStatus = 'pending' | 'completed';
+
+export interface ContactFollowUp {
+  id: string;
+  contact_id: string;
+  contact_name: string;
+  owner_user_id: string;
+  title: string;
+  description?: string;
+  due_date: string; // ISO date 'YYYY-MM-DD'
+  priority: FollowUpPriority;
+  status: FollowUpStatus;
+  completed_at?: string;
+  created_at: string;
+}
+
+export type InteractionType = 
+  | 'nfc_tap' 
+  | 'meeting' 
+  | 'call' 
+  | 'email' 
+  | 'whatsapp' 
+  | 'note' 
+  | 'connection' 
+  | 'other';
+
+export interface ContactInteraction {
+  id: string;
+  contact_id: string;
+  owner_user_id: string;
+  type: InteractionType;
+  title: string;
+  details?: string;
+  location?: string;
+  occurred_at: string;
+  created_at: string;
+}
+
+export interface SmartContact {
+  id: string;
+  owner_user_id: string; // Private to this user only
+  full_name: string;
+  headline?: string;
+  company?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  avatar_url?: string;
+  location?: string;
+  website?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  github_url?: string;
+  category: string; // 'Entrepreneurs', 'Clients', 'Investors', etc.
+  tags: string[]; // Custom tags e.g. ['AI', 'Bengaluru Meetup']
+  is_important: boolean; // Starred
+  
+  // Private Networking Notes (Never visible on public profiles)
+  met_at?: string; // Where we met, e.g. "TechSparks 2026"
+  met_date?: string; // YYYY-MM-DD
+  discussion_notes?: string; // What was discussed
+  interests?: string; // Their hobbies, professional interests
+  opportunities?: string; // Business opportunities identified
+  collaboration_ideas?: string; // Future collaboration possibilities
+  private_notes?: string; // Additional private scratchpad
+  
+  // Linked user ID if contact is also a SignTap member
+  signtap_username?: string;
+  source: 'nfc_tap' | 'manual' | 'qr_scan' | 'profile_save' | 'csv_import';
+  
+  created_at: string;
+  updated_at: string;
+}
+

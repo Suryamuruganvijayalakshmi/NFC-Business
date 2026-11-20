@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
-import { logoutUser, getCurrentUser, getProfileByUserId, getPendingRequests } from '@/lib/store';
+import { logoutUser, getCurrentUser, getProfileByUserId, getPendingRequests, getFollowUpsByUserId } from '@/lib/store';
 import { 
   LayoutDashboard, 
   User, 
@@ -20,7 +20,8 @@ import {
   Users2,
   Newspaper,
   Building,
-  Compass
+  Compass,
+  Contact
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -32,6 +33,8 @@ export default function Sidebar({ onNavigate, username }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [pendingCount, setPendingCount] = useState(0);
+  const [followUpDueCount, setFollowUpDueCount] = useState(0);
+  const [hasOverdue, setHasOverdue] = useState(false);
   const [activeUsername, setActiveUsername] = useState(username || 'member');
 
   useEffect(() => {
@@ -44,6 +47,10 @@ export default function Sidebar({ onNavigate, username }: SidebarProps) {
 
       const pending = getPendingRequests(user.id);
       setPendingCount(pending.length);
+
+      const { upcoming, overdue } = getFollowUpsByUserId(user.id);
+      setFollowUpDueCount(overdue.length + upcoming.length);
+      setHasOverdue(overdue.length > 0);
     } else if (username) {
       setActiveUsername(username);
     }
@@ -52,6 +59,13 @@ export default function Sidebar({ onNavigate, username }: SidebarProps) {
   const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Professional Profile', href: '/dashboard/profile', icon: User },
+    { 
+      name: 'Smart Networking', 
+      href: '/dashboard/contacts', 
+      icon: Contact,
+      badge: followUpDueCount > 0 ? `${followUpDueCount} task${followUpDueCount > 1 ? 's' : ''}` : undefined,
+      badgeColor: hasOverdue ? 'bg-rose-500 text-white animate-pulse' : 'bg-amber-500 text-white'
+    },
     { 
       name: 'Network & Connections', 
       href: '/dashboard/network', 

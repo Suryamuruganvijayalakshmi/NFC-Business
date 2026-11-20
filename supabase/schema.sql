@@ -294,3 +294,94 @@ BEGIN
       FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
   END IF;
 END $$;
+
+-- ------------------------------------------------------------------------------
+-- 9. SMART NETWORKING & PERSONAL CRM TABLES
+-- ------------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.smart_contacts (
+  id text PRIMARY KEY,
+  owner_user_id text NOT NULL,
+  full_name text NOT NULL,
+  headline text,
+  company text,
+  role text,
+  email text,
+  phone text,
+  avatar_url text,
+  location text,
+  website text,
+  linkedin_url text,
+  twitter_url text,
+  github_url text,
+  category text DEFAULT 'Entrepreneurs',
+  tags text[] DEFAULT '{}',
+  is_important boolean DEFAULT false,
+  met_at text,
+  met_date text,
+  discussion_notes text,
+  interests text,
+  opportunities text,
+  collaboration_ideas text,
+  private_notes text,
+  signtap_username text,
+  source text DEFAULT 'manual',
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.smart_contacts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own smart contacts"
+  ON public.smart_contacts
+  FOR ALL
+  USING (auth.uid()::text = owner_user_id)
+  WITH CHECK (auth.uid()::text = owner_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_smart_contacts_owner ON public.smart_contacts(owner_user_id);
+
+CREATE TABLE IF NOT EXISTS public.contact_follow_ups (
+  id text PRIMARY KEY,
+  contact_id text NOT NULL,
+  contact_name text NOT NULL,
+  owner_user_id text NOT NULL,
+  title text NOT NULL,
+  description text,
+  due_date text NOT NULL,
+  priority text DEFAULT 'medium',
+  status text DEFAULT 'pending',
+  completed_at text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.contact_follow_ups ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own follow-ups"
+  ON public.contact_follow_ups
+  FOR ALL
+  USING (auth.uid()::text = owner_user_id)
+  WITH CHECK (auth.uid()::text = owner_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_follow_ups_owner ON public.contact_follow_ups(owner_user_id);
+
+CREATE TABLE IF NOT EXISTS public.contact_interactions (
+  id text PRIMARY KEY,
+  contact_id text NOT NULL,
+  owner_user_id text NOT NULL,
+  type text NOT NULL,
+  title text NOT NULL,
+  details text,
+  location text,
+  occurred_at text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.contact_interactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own contact interactions"
+  ON public.contact_interactions
+  FOR ALL
+  USING (auth.uid()::text = owner_user_id)
+  WITH CHECK (auth.uid()::text = owner_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_contact_interactions_owner ON public.contact_interactions(owner_user_id);

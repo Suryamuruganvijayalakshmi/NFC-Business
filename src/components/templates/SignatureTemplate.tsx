@@ -17,7 +17,8 @@ import {
   sendConnectionRequest, 
   isFollowing, 
   toggleFollow, 
-  getPostsByUserId 
+  getPostsByUserId,
+  savePublicProfileAsContact
 } from '@/lib/store';
 import { 
   MapPin, 
@@ -42,7 +43,8 @@ import {
   Heart,
   MessageSquare,
   Building,
-  Check
+  Check,
+  Contact
 } from 'lucide-react';
 
 interface TemplateProps {
@@ -109,6 +111,21 @@ export default function SignatureTemplate({
     const isNowFollowing = toggleFollow(currentUser.id, profile.user_id);
     setFollowing(isNowFollowing);
     showToast(isNowFollowing ? `Now following ${profile.full_name}` : `Unfollowed ${profile.full_name}`);
+  };
+
+  const [savedToCRM, setSavedToCRM] = useState(false);
+
+  const handleSaveToCRM = () => {
+    if (!currentUser) {
+      window.location.href = `/login?redirect=/u/${profile.username}`;
+      return;
+    }
+    const res = savePublicProfileAsContact(currentUser.id, profile, 'SignTap NFC Profile Tap');
+    setSavedToCRM(true);
+    showToast(res.isNew 
+      ? `Saved ${profile.full_name} to your Smart CRM! Check your dashboard.`
+      : `Updated ${profile.full_name} in your Smart CRM (NFC tap logged)!`
+    );
   };
 
   const publicUrl = typeof window !== 'undefined' 
@@ -311,6 +328,23 @@ export default function SignatureTemplate({
             <span>Share QR</span>
           </button>
         </div>
+
+        {/* 1-Click Save to Smart Networking CRM for Authenticated Visitors / NFC Taps */}
+        {!isOwnProfile && (
+          <div className="pt-1">
+            <button
+              onClick={handleSaveToCRM}
+              className={`w-full py-2.5 px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                savedToCRM 
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' 
+                  : 'bg-indigo-600/20 hover:bg-indigo-600/30 border-indigo-500/40 text-indigo-300'
+              }`}
+            >
+              <Contact className="w-4 h-4 text-indigo-400" />
+              <span>{savedToCRM ? 'Saved to your Smart Networking CRM ✓' : 'Save to Smart Networking CRM (Private Notes & Reminders)'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Tab Navigation: Profile Details vs Professional Activity */}
         <div className="flex items-center gap-2 border-b border-white/10 pb-2 pt-2">

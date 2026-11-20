@@ -9,6 +9,7 @@ import {
 } from '@/lib/types';
 import { downloadVCard } from '@/lib/vcard';
 import QRCodeModal from '@/components/QRCodeModal';
+import { getCurrentUser, savePublicProfileAsContact } from '@/lib/store';
 import { 
   MapPin, 
   Globe, 
@@ -22,7 +23,8 @@ import {
   Sparkles,
   Share2,
   Building2,
-  MessageCircle
+  MessageCircle,
+  Contact
 } from 'lucide-react';
 
 interface TemplateProps {
@@ -43,6 +45,17 @@ export default function MinimalTemplate({
   isPreview = false,
 }: TemplateProps) {
   const [showQR, setShowQR] = useState(false);
+  const [savedToCRM, setSavedToCRM] = useState(false);
+
+  const handleSaveToCRM = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      window.location.href = `/login?redirect=/u/${profile.username}`;
+      return;
+    }
+    savePublicProfileAsContact(user.id, profile, 'SignTap NFC Profile Tap');
+    setSavedToCRM(true);
+  };
   const publicUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/id/${profile.username}` 
     : `https://signbridge.click/id/${profile.username}`;
@@ -135,6 +148,21 @@ export default function MinimalTemplate({
           >
             <QrCode className="w-4 h-4 text-slate-600" />
             QR Code
+          </button>
+        </div>
+
+        {/* 1-Click Save to Smart Networking CRM */}
+        <div className="mt-3">
+          <button
+            onClick={handleSaveToCRM}
+            className={`w-full py-2.5 px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+              savedToCRM 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                : 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700'
+            }`}
+          >
+            <Contact className="w-4 h-4 text-indigo-600" />
+            <span>{savedToCRM ? 'Saved to your Smart Networking CRM ✓' : 'Save to Smart Networking CRM (Private Notes)'}</span>
           </button>
         </div>
 

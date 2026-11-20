@@ -19,9 +19,12 @@ import {
   getConnectionStatus,
   sendConnectionRequest,
   isFollowing,
-  toggleFollow
+  toggleFollow,
+  getContactsByUserId,
+  getFollowUpsByUserId,
+  toggleFollowUpComplete
 } from '@/lib/store';
-import { Profile, AnalyticsSummary, NFCCard, Connection, PostItem } from '@/lib/types';
+import { Profile, AnalyticsSummary, NFCCard, Connection, PostItem, ContactFollowUp } from '@/lib/types';
 import QRCodeModal from '@/components/QRCodeModal';
 import { 
   Eye, 
@@ -50,7 +53,10 @@ import {
   ArrowUpRight,
   Rocket,
   Share2,
-  Tag
+  Tag,
+  Contact,
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function DashboardOverviewPage() {
@@ -64,6 +70,12 @@ export default function DashboardOverviewPage() {
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Smart Networking CRM telemetry state
+  const [crmContactsCount, setCrmContactsCount] = useState(0);
+  const [crmImportantCount, setCrmImportantCount] = useState(0);
+  const [crmFollowUps, setCrmFollowUps] = useState<ContactFollowUp[]>([]);
+  const [crmOverdueCount, setCrmOverdueCount] = useState(0);
 
   // Inline Quick Post states
   const [quickPostContent, setQuickPostContent] = useState('');
@@ -99,7 +111,24 @@ export default function DashboardOverviewPage() {
       // Other professionals on SignTap to connect with & follow
       const others = getAllProfiles().filter(o => o.user_id !== user.id && o.published !== false);
       setRecommendedPeople(others);
+
+      // Smart Networking CRM contacts & follow-ups
+      const crmContacts = getContactsByUserId(user.id);
+      setCrmContactsCount(crmContacts.length);
+      setCrmImportantCount(crmContacts.filter(c => c.is_important).length);
+
+      const fu = getFollowUpsByUserId(user.id);
+      setCrmFollowUps(fu.upcoming.slice(0, 3));
+      setCrmOverdueCount(fu.overdue.length);
     }
+  };
+
+  const handleCompleteFollowUp = (fuId: string) => {
+    const user = getCurrentUser();
+    if (!user) return;
+    toggleFollowUpComplete(fuId, user.id);
+    showToast('Follow-up task completed! ✅');
+    loadData();
   };
 
   useEffect(() => {
@@ -382,6 +411,90 @@ export default function DashboardOverviewPage() {
             Active professionals following your posts
           </p>
         </Link>
+      </div>
+
+      {/* 2.5 SMART NETWORKING CRM SUMMARY & REMINDERS WIDGET */}
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shadow-xs">
+              <Contact className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-[#101828]">Smart Networking & Relationship Hub</h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                  Private CRM
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Track personal meeting notes, contact tags, and follow-up reminders after NFC taps.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard/contacts"
+              className="py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+            >
+              <span>Open Smart CRM</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Telemetry pill badges */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span className="text-slate-400 text-[11px] font-medium block">Total Saved Contacts</span>
+            <span className="text-lg font-bold text-slate-900 mt-0.5 block">{crmContactsCount}</span>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span className="text-slate-400 text-[11px] font-medium block">Priority Starred</span>
+            <span className="text-lg font-bold text-slate-900 mt-0.5 block">{crmImportantCount}</span>
+          </div>
+          <div className={`p-3 rounded-xl border ${crmOverdueCount > 0 ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-50 border-slate-100'}`}>
+            <span className="text-[11px] font-medium flex items-center gap-1">
+              Overdue Tasks {crmOverdueCount > 0 && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />}
+            </span>
+            <span className={`text-lg font-bold mt-0.5 block ${crmOverdueCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              {crmOverdueCount}
+            </span>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span className="text-slate-400 text-[11px] font-medium block">Upcoming Follow-Ups</span>
+            <span className="text-lg font-bold text-slate-900 mt-0.5 block">{crmFollowUps.length}</span>
+          </div>
+        </div>
+
+        {/* Next Pending Tasks */}
+        {crmFollowUps.length > 0 && (
+          <div className="pt-2 space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Next Action Items:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {crmFollowUps.map(fu => (
+                <div key={fu.id} className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between gap-2 text-xs">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="font-bold text-slate-900 truncate">{fu.title}</p>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      With <strong className="text-slate-700">{fu.contact_name}</strong> · Due {fu.due_date}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleCompleteFollowUp(fu.id)}
+                    title="Mark Done"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-400 hover:text-emerald-600 transition-colors flex-shrink-0"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3. POST OPTIONS: Inline Post Composer right on Dashboard */}
