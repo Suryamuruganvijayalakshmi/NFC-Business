@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { setCurrentUser, saveProfile, getProfileByUserId } from '@/lib/store';
+import { setCurrentUser, saveProfile, getProfileByUserId, getOrCreateProfileForUser } from '@/lib/store';
 import { UserSession, Profile } from '@/lib/types';
 import Logo from '@/components/Logo';
 
@@ -39,6 +39,7 @@ function CallbackContent() {
           const processUser = async (user: any) => {
             const fullName = user.user_metadata?.full_name || user.user_metadata?.name || 'SignTap Member';
             const email = user.email || '';
+            const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
             const username = user.user_metadata?.username || email.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user${Date.now().toString().slice(-4)}`;
 
             const sessionUser: UserSession = {
@@ -48,24 +49,25 @@ function CallbackContent() {
                 full_name: fullName,
                 username,
                 profile_type: 'professional',
+                avatar_url: avatarUrl,
               }
             };
 
             setCurrentUser(sessionUser);
 
-            // Fetch profile from Supabase if available
+            // Fetch profile from Supabase if available or create locally
             try {
               if (supabase) {
                 const { data: dbProfile } = await supabase
                   .from('profiles')
                   .select('*')
-                  .or(`user_id.eq.${user.id},email.eq.${email}`)
+                  .eq('user_id', user.id)
                   .maybeSingle();
 
                 if (dbProfile) {
                   saveProfile(dbProfile);
                   if (isMounted) setStatus('Welcome back! Loading your dashboard...');
-                  setTimeout(() => router.replace('/dashboard'), 300);
+                  setTimeout(() => router.replace('/dashboard'), 200);
                   return;
                 }
               }
@@ -73,15 +75,10 @@ function CallbackContent() {
               console.warn('Profile fetch notice:', err);
             }
 
-            // Fallback to local check
-            const existing = getProfileByUserId(user.id);
-            if (!existing) {
-              if (isMounted) setStatus('Welcome to SignTap! Setting up your digital identity...');
-              setTimeout(() => router.replace('/onboarding'), 400);
-            } else {
-              if (isMounted) setStatus('Success! Loading your personalized dashboard...');
-              setTimeout(() => router.replace('/dashboard'), 400);
-            }
+            // Create or fetch profile for this user
+            const userProfile = getOrCreateProfileForUser(sessionUser);
+            if (isMounted) setStatus('Welcome to SignTap! Loading your personalized dashboard...');
+            setTimeout(() => router.replace('/dashboard'), 200);
           };
 
           if (data.session?.user) {

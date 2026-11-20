@@ -303,33 +303,96 @@ export function getOrCreateProfileForUser(user: UserSession): Profile {
   const existing = getProfileByUserId(user.id);
   if (existing) return existing;
 
-  const username = user.user_metadata?.username || user.email?.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user_${Date.now().toString().slice(-4)}`;
+  // Check by email to match if user exists
+  const profiles = getAllProfiles();
+  const byEmail = profiles.find(p => p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase());
+  if (byEmail) {
+    byEmail.user_id = user.id;
+    saveProfile(byEmail);
+    return byEmail;
+  }
+
+  // Generate unique username
+  let baseUsername = user.user_metadata?.username || user.email?.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user_${Date.now().toString().slice(-4)}`;
+  let uniqueUsername = baseUsername;
+  let counter = 1;
+  while (profiles.some(p => p.username.toLowerCase() === uniqueUsername.toLowerCase() && p.user_id !== user.id)) {
+    uniqueUsername = `${baseUsername}_${counter}`;
+    counter++;
+  }
 
   const newProfile: Profile = {
     id: `prof-${Date.now()}`,
     user_id: user.id,
-    username: username,
-    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'SignBridge Member',
+    username: uniqueUsername,
+    full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'SignTap Member',
     profile_type: user.user_metadata?.profile_type || 'professional',
     title: 'Professional & Innovator',
-    bio: 'Welcome to my official digital identity page.',
-    profile_image: (user.user_metadata as any)?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+    headline: `${user.user_metadata?.full_name || 'SignTap Member'} | Professional Digital Identity`,
+    bio: 'Welcome to my official digital identity page. Connect with me or tap my NFC card.',
+    about: '',
+    profile_image: (user.user_metadata as any)?.avatar_url || (user.user_metadata as any)?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
     cover_image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80',
     email: user.email || '',
     phone: '',
     location: '',
     website: '',
+    company: '',
+    experiences: [],
+    education: [],
+    certifications: [],
+    achievements: [],
+    businesses: [],
+    services: [],
+    skills: [],
+    languages: [{ id: `lang-${Date.now()}`, language: 'English', proficiency: 'Professional' }],
+    custom_links: [],
+    professional_interests: [],
+    connections_count: 0,
+    followers_count: 0,
     theme: 'signature',
     accent_color: '#087CF0',
     button_style: 'rounded',
     font_family: 'sans',
     background_style: 'navy_grid',
     published: true,
+    section_visibility: {
+      bio: true,
+      contact: true,
+      socials: true,
+      skills: true,
+      services: true,
+      portfolio: true,
+      experience: true,
+      education: true,
+      certifications: true,
+      achievements: true,
+      businesses: true,
+      languages: true,
+      activity: true
+    },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
   saveProfile(newProfile);
+
+  // Automatically provision a fresh NFC Card for this user with 0 taps
+  const cardUid = `ST-NFC-${Math.floor(1000 + Math.random() * 9000)}`;
+  const newCard: NFCCard = {
+    id: `card-${Date.now()}`,
+    card_uid: cardUid,
+    activation_code: `ACT-${Math.floor(1000 + Math.random() * 9000)}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
+    owner_user_id: user.id,
+    profile_id: newProfile.id,
+    card_name: `${newProfile.full_name}'s Smart Card`,
+    status: 'activated',
+    tap_count: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  saveNFCCard(newCard);
+
   return newProfile;
 }
 
@@ -822,13 +885,15 @@ export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
     };
   }).sort((a, b) => b.clicks - a.clicks);
 
+  const isDemoSurya = profileId === 'prof-surya-01';
+
   return {
-    total_views: Math.max(total_views, 42),
-    total_nfc_taps: Math.max(total_nfc_taps, 28),
-    total_qr_scans: Math.max(total_qr_scans, 14),
-    total_link_clicks: Math.max(total_link_clicks, 39),
-    total_contact_saves: Math.max(total_contact_saves, 18),
-    total_whatsapp_clicks: Math.max(total_whatsapp_clicks, 12),
+    total_views: isDemoSurya ? Math.max(total_views, 42) : total_views,
+    total_nfc_taps: isDemoSurya ? Math.max(total_nfc_taps, 28) : total_nfc_taps,
+    total_qr_scans: isDemoSurya ? Math.max(total_qr_scans, 14) : total_qr_scans,
+    total_link_clicks: isDemoSurya ? Math.max(total_link_clicks, 39) : total_link_clicks,
+    total_contact_saves: isDemoSurya ? Math.max(total_contact_saves, 18) : total_contact_saves,
+    total_whatsapp_clicks: isDemoSurya ? Math.max(total_whatsapp_clicks, 12) : total_whatsapp_clicks,
     views_by_day: days,
     top_links,
   };

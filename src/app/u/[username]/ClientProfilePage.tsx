@@ -8,8 +8,10 @@ import {
   getSectionsByProfileId, 
   getProjectsByProfileId, 
   getLinksByProfileId, 
+  saveProfile,
   logAnalyticsEvent 
 } from '@/lib/store';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Profile, ProfileSection, PortfolioProject, SocialLink } from '@/lib/types';
 import MinimalTemplate from '@/components/templates/MinimalTemplate';
 import SignatureTemplate from '@/components/templates/SignatureTemplate';
@@ -29,17 +31,29 @@ function ProfileContent() {
   useEffect(() => {
     if (!username) return;
     
-    const foundProfile = getProfileByUsername(username);
+    let foundProfile = getProfileByUsername(username);
     if (foundProfile) {
       setProfile(foundProfile);
       setSections(getSectionsByProfileId(foundProfile.id));
       setProjects(getProjectsByProfileId(foundProfile.id));
       setLinks(getLinksByProfileId(foundProfile.id));
-
-      // Log profile view analytics event
       logAnalyticsEvent(foundProfile.id, 'profile_view');
+      setLoading(false);
+    } else if (isSupabaseConfigured && supabase) {
+      supabase.from('profiles').select('*').eq('username', username.toLowerCase()).maybeSingle().then(({ data, error }) => {
+        if (data && !error) {
+          saveProfile(data);
+          setProfile(data);
+          setSections(getSectionsByProfileId(data.id));
+          setProjects(getProjectsByProfileId(data.id));
+          setLinks(getLinksByProfileId(data.id));
+          logAnalyticsEvent(data.id, 'profile_view');
+        }
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, [username]);
 
   const handleLinkClick = (linkId: string) => {

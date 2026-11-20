@@ -414,5 +414,8 @@ export interface UserSession {
     username?: string;
     profile_type?: ProfileType;
     phone?: string;
+    avatar_url?: string;
+    picture?: string;
+    [key: string]: any;
   };
 }

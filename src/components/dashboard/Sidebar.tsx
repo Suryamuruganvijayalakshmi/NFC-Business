@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
-import { logoutUser, getCurrentUser, getPendingRequests } from '@/lib/store';
+import { logoutUser, getCurrentUser, getProfileByUserId, getPendingRequests } from '@/lib/store';
 import { 
   LayoutDashboard, 
   User, 
@@ -28,18 +28,26 @@ interface SidebarProps {
   username?: string;
 }
 
-export default function Sidebar({ onNavigate, username = 'surya' }: SidebarProps) {
+export default function Sidebar({ onNavigate, username }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [pendingCount, setPendingCount] = useState(0);
+  const [activeUsername, setActiveUsername] = useState(username || 'member');
 
   useEffect(() => {
     const user = getCurrentUser();
     if (user) {
+      const p = getProfileByUserId(user.id);
+      if (p) setActiveUsername(p.username);
+      else if (user.user_metadata?.username) setActiveUsername(user.user_metadata.username);
+      else if (username) setActiveUsername(username);
+
       const pending = getPendingRequests(user.id);
       setPendingCount(pending.length);
+    } else if (username) {
+      setActiveUsername(username);
     }
-  }, [pathname]);
+  }, [pathname, username]);
 
   const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -82,13 +90,13 @@ export default function Sidebar({ onNavigate, username = 'surya' }: SidebarProps
         <div className="p-3">
           <div className="flex flex-col gap-1.5">
             <Link
-              href={`/u/${username}`}
+              href={`/u/${activeUsername}`}
               target="_blank"
               className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors group"
             >
               <span className="flex items-center gap-2 truncate">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
-                <span className="truncate">/u/{username}</span>
+                <span className="truncate">/u/{activeUsername}</span>
               </span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 flex-shrink-0" />
             </Link>
