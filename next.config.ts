@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   experimental: {
+    workerThreads: false,
+    cpus: 1,
     staticGenerationRetryCount: 3,
     staticGenerationMaxConcurrency: 1,
     staticGenerationMinPagesPerWorker: 100,

@@ -18,6 +18,7 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'Home', href: '/' },
+    { label: 'Discover', href: '/discover' },
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'Explore Cards', href: '/explore-cards' },
     { label: 'Features', href: '/features' },

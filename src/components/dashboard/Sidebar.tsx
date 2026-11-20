@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
-import { logoutUser } from '@/lib/store';
+import { logoutUser, getCurrentUser, getPendingRequests } from '@/lib/store';
 import { 
   LayoutDashboard, 
   User, 
@@ -17,7 +17,10 @@ import {
   Settings, 
   LogOut, 
   ExternalLink,
-  ChevronRight
+  Users2,
+  Newspaper,
+  Building,
+  Compass
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,17 +31,35 @@ interface SidebarProps {
 export default function Sidebar({ onNavigate, username = 'surya' }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      const pending = getPendingRequests(user.id);
+      setPendingCount(pending.length);
+    }
+  }, [pathname]);
 
   const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Edit Profile', href: '/dashboard/profile', icon: User },
-    { name: 'Appearance', href: '/dashboard/design', icon: Palette },
-    { name: 'Social Links', href: '/dashboard/links', icon: Link2 },
+    { name: 'Professional Profile', href: '/dashboard/profile', icon: User },
+    { 
+      name: 'Network & Connections', 
+      href: '/dashboard/network', 
+      icon: Users2, 
+      badge: pendingCount > 0 ? `${pendingCount} new` : undefined,
+      badgeColor: 'bg-emerald-500 text-white'
+    },
+    { name: 'Activity & Posts', href: '/dashboard/activity', icon: Newspaper },
+    { name: 'Business Identity', href: '/dashboard/business', icon: Building },
     { name: 'Portfolio Works', href: '/dashboard/portfolio', icon: Briefcase },
+    { name: 'Social & Custom Links', href: '/dashboard/links', icon: Link2 },
+    { name: 'Appearance & Theme', href: '/dashboard/design', icon: Palette },
     { name: 'NFC Management', href: '/dashboard/nfc', icon: Wifi, badge: 'NFC' },
     { name: 'My Orders', href: '/dashboard/orders', icon: Package },
     { name: 'Live Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-    { name: 'Account Settings', href: '/dashboard/settings', icon: Settings },
+    { name: 'Settings & Privacy', href: '/dashboard/settings', icon: Settings },
   ];
 
   const handleLogout = () => {
@@ -51,29 +72,42 @@ export default function Sidebar({ onNavigate, username = 'surya' }: SidebarProps
       
       {/* Top Header */}
       <div>
-        <div className="h-18 flex items-center px-6 border-b border-slate-100">
+        <div className="h-16 flex items-center px-6 border-b border-slate-100">
           <Link href="/" className="flex items-center gap-2">
             <Logo theme="light" size="sm" />
           </Link>
         </div>
 
         {/* View Public Profile Quick Link */}
-        <div className="p-4">
-          <Link
-            href={`/u/${username}`}
-            target="_blank"
-            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors group"
-          >
-            <span className="flex items-center gap-2 truncate">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
-              <span className="truncate">/u/{username}</span>
-            </span>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 flex-shrink-0" />
-          </Link>
+        <div className="p-3">
+          <div className="flex flex-col gap-1.5">
+            <Link
+              href={`/u/${username}`}
+              target="_blank"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors group"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
+                <span className="truncate">/u/{username}</span>
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 flex-shrink-0" />
+            </Link>
+
+            <Link
+              href="/discover"
+              className="flex items-center justify-between p-2 rounded-xl bg-blue-50/60 border border-blue-100 text-[11px] font-semibold text-[#087CF0] hover:bg-blue-100/60 transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5" />
+                <span>Discover Professionals</span>
+              </span>
+              <span className="text-[10px] bg-blue-200/80 px-1.5 py-0.2 rounded font-bold">New</span>
+            </Link>
+          </div>
         </div>
 
         {/* Navigation Items */}
-        <nav className="px-3 space-y-1">
+        <nav className="px-3 space-y-0.5">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -82,20 +116,24 @@ export default function Sidebar({ onNavigate, username = 'surya' }: SidebarProps
                 key={item.name}
                 href={item.href}
                 onClick={onNavigate}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                   isActive
                     ? 'bg-[#101828] text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <Icon className={`w-4 h-4 ${isActive ? 'text-[#087CF0]' : 'text-slate-400'}`} />
                   <span>{item.name}</span>
                 </div>
 
                 {item.badge && (
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase ${
-                    isActive ? 'bg-[#FF7900] text-white' : 'bg-orange-100 text-[#FF7900]'
+                    item.badgeColor 
+                      ? item.badgeColor 
+                      : isActive 
+                        ? 'bg-[#FF7900] text-white' 
+                        : 'bg-orange-100 text-[#FF7900]'
                   }`}>
                     {item.badge}
                   </span>
@@ -117,7 +155,7 @@ export default function Sidebar({ onNavigate, username = 'surya' }: SidebarProps
         </button>
 
         <p className="text-[10px] text-center text-slate-400 font-mono">
-          SignTap NFC v2.0
+          SignTap Identity Platform v2.0
         </p>
       </div>
     </aside>

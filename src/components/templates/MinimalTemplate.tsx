@@ -167,6 +167,49 @@ export default function MinimalTemplate({
           </div>
         )}
 
+        {/* Work Experience */}
+        {profile.experiences && profile.experiences.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-slate-700" />
+              Work Experience
+            </h3>
+            <div className="space-y-3">
+              {profile.experiences.map((exp) => (
+                <div key={exp.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="flex justify-between items-start text-sm">
+                    <h4 className="font-semibold text-slate-900">{exp.title}</h4>
+                    <span className="text-xs text-slate-500 font-mono">
+                      {exp.start_date} — {exp.is_current ? 'Present' : exp.end_date}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">{exp.company} · {exp.employment_type || 'Full-time'}</p>
+                  {exp.description && <p className="text-xs text-slate-500 mt-2 leading-relaxed">{exp.description}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Education */}
+        {profile.education && profile.education.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-slate-700" />
+              Education
+            </h3>
+            <div className="space-y-3">
+              {profile.education.map((edu) => (
+                <div key={edu.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <h4 className="font-semibold text-slate-900 text-sm">{edu.school}</h4>
+                  <p className="text-xs text-slate-600">{edu.degree} · {edu.field_of_study}</p>
+                  <p className="text-[11px] text-slate-400 font-mono">{edu.start_year} — {edu.end_year}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Custom Profile Sections */}
         {visibleSections.map((sec) => (
           <div key={sec.id} className="mt-8 pt-6 border-t border-slate-100">

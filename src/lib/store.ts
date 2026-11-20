@@ -15,7 +15,19 @@ import {
   Order,
   OrderStatus,
   PaymentStatus,
-  AdminActivity
+  AdminActivity,
+  Connection,
+  ConnectionStatus,
+  Follow,
+  PostItem,
+  PostComment,
+  WorkExperience,
+  EducationItem,
+  CertificationItem,
+  AchievementItem,
+  BusinessEntity,
+  LanguageItem,
+  CustomLinkItem
 } from './types';
 import { 
   INITIAL_PROFILES, 
@@ -26,7 +38,10 @@ import {
   INITIAL_ANALYTICS,
   INITIAL_PRODUCTS,
   INITIAL_ORDERS,
-  INITIAL_ADMIN_ACTIVITIES
+  INITIAL_ADMIN_ACTIVITIES,
+  INITIAL_CONNECTIONS,
+  INITIAL_POSTS,
+  INITIAL_POST_COMMENTS
 } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
@@ -41,6 +56,10 @@ const STORAGE_KEYS = {
   ORDERS: 'sb_orders',
   ANALYTICS: 'sb_analytics',
   ADMIN_ACTIVITY: 'sb_admin_activity',
+  CONNECTIONS: 'sb_connections',
+  FOLLOWS: 'sb_follows',
+  POSTS: 'sb_posts',
+  POST_COMMENTS: 'sb_post_comments',
 };
 
 // Helper to access localStorage safely
@@ -833,4 +852,426 @@ export function logAdminActivity(action: string, details: string, adminEmail: st
   };
   activities.unshift(newActivity);
   setLocalItem(STORAGE_KEYS.ADMIN_ACTIVITY, activities.slice(0, 50));
+}
+
+// -----------------------------------------------------------------------------
+// Professional Networking: Connections
+// -----------------------------------------------------------------------------
+export function getAllConnections(): Connection[] {
+  return getLocalItem<Connection[]>(STORAGE_KEYS.CONNECTIONS, INITIAL_CONNECTIONS);
+}
+
+export function getConnectionsForUser(userId: string): Connection[] {
+  const conns = getAllConnections();
+  return conns.filter(c => 
+    (c.requester_id === userId || c.recipient_id === userId) && c.status === 'connected'
+  );
+}
+
+export function getPendingRequests(userId: string): Connection[] {
+  const conns = getAllConnections();
+  return conns.filter(c => c.recipient_id === userId && c.status === 'pending');
+}
+
+export function getSentRequests(userId: string): Connection[] {
+  const conns = getAllConnections();
+  return conns.filter(c => c.requester_id === userId && c.status === 'pending');
+}
+
+export function getConnectionStatus(userId1: string, userId2: string): { status: ConnectionStatus | 'none'; isRequester: boolean; connection?: Connection } {
+  if (!userId1 || !userId2 || userId1 === userId2) return { status: 'none', isRequester: false };
+  const conns = getAllConnections();
+  const found = conns.find(c => 
+    (c.requester_id === userId1 && c.recipient_id === userId2) ||
+    (c.requester_id === userId2 && c.recipient_id === userId1)
+  );
+  if (!found) return { status: 'none', isRequester: false };
+  return {
+    status: found.status,
+    isRequester: found.requester_id === userId1,
+    connection: found
+  };
+}
+
+export function sendConnectionRequest(requester: Profile, recipient: Profile): Connection {
+  const conns = getAllConnections();
+  const existing = conns.findIndex(c => 
+    (c.requester_id === requester.user_id && c.recipient_id === recipient.user_id) ||
+    (c.requester_id === recipient.user_id && c.recipient_id === requester.user_id)
+  );
+
+  const newConn: Connection = {
+    id: `conn-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    requester_id: requester.user_id,
+    requester_name: requester.full_name,
+    requester_username: requester.username,
+    requester_image: requester.profile_image,
+    requester_headline: requester.headline || requester.title,
+    recipient_id: recipient.user_id,
+    recipient_name: recipient.full_name,
+    recipient_username: recipient.username,
+    recipient_image: recipient.profile_image,
+    recipient_headline: recipient.headline || recipient.title,
+    status: 'pending',
+    created_at: new Date().toISOString(),
+  };
+
+  if (existing >= 0) {
+    conns[existing] = newConn;
+  } else {
+    conns.unshift(newConn);
+  }
+
+  setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
+  return newConn;
+}
+
+export function acceptConnectionRequest(connectionId: string): void {
+  const conns = getAllConnections();
+  const index = conns.findIndex(c => c.id === connectionId);
+  if (index >= 0) {
+    conns[index].status = 'connected';
+    conns[index].updated_at = new Date().toISOString();
+    setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
+
+    // Update connection count in local profiles
+    const profiles = getAllProfiles();
+    const reqProfile = profiles.find(p => p.user_id === conns[index].requester_id);
+    const recProfile = profiles.find(p => p.user_id === conns[index].recipient_id);
+    if (reqProfile) {
+      reqProfile.connections_count = (reqProfile.connections_count || 0) + 1;
+      saveProfile(reqProfile);
+    }
+    if (recProfile) {
+      recProfile.connections_count = (recProfile.connections_count || 0) + 1;
+      saveProfile(recProfile);
+    }
+  }
+}
+
+export function declineConnectionRequest(connectionId: string): void {
+  const conns = getAllConnections();
+  const index = conns.findIndex(c => c.id === connectionId);
+  if (index >= 0) {
+    conns[index].status = 'declined';
+    conns[index].updated_at = new Date().toISOString();
+    setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
+  }
+}
+
+export function removeConnection(connectionId: string): void {
+  const conns = getAllConnections();
+  const filtered = conns.filter(c => c.id !== connectionId);
+  setLocalItem(STORAGE_KEYS.CONNECTIONS, filtered);
+}
+
+// -----------------------------------------------------------------------------
+// Following Management
+// -----------------------------------------------------------------------------
+export function getAllFollows(): Follow[] {
+  return getLocalItem<Follow[]>(STORAGE_KEYS.FOLLOWS, [
+    { id: 'f-1', follower_id: 'user-surya-01', following_id: 'user-elena-02', created_at: '2026-10-01T00:00:00Z' },
+    { id: 'f-2', follower_id: 'user-elena-02', following_id: 'user-surya-01', created_at: '2026-10-02T00:00:00Z' }
+  ]);
+}
+
+export function isFollowing(followerId: string, followingId: string): boolean {
+  if (!followerId || !followingId) return false;
+  const follows = getAllFollows();
+  return follows.some(f => f.follower_id === followerId && f.following_id === followingId);
+}
+
+export function toggleFollow(followerId: string, followingId: string): boolean {
+  const follows = getAllFollows();
+  const index = follows.findIndex(f => f.follower_id === followerId && f.following_id === followingId);
+  const profiles = getAllProfiles();
+  const target = profiles.find(p => p.user_id === followingId);
+
+  if (index >= 0) {
+    follows.splice(index, 1);
+    setLocalItem(STORAGE_KEYS.FOLLOWS, follows);
+    if (target && (target.followers_count || 0) > 0) {
+      target.followers_count = (target.followers_count || 1) - 1;
+      saveProfile(target);
+    }
+    return false;
+  } else {
+    follows.push({
+      id: `f-${Date.now()}`,
+      follower_id: followerId,
+      following_id: followingId,
+      created_at: new Date().toISOString()
+    });
+    setLocalItem(STORAGE_KEYS.FOLLOWS, follows);
+    if (target) {
+      target.followers_count = (target.followers_count || 0) + 1;
+      saveProfile(target);
+    }
+    return true;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Professional Activity Feed: Posts & Updates
+// -----------------------------------------------------------------------------
+export function getAllPosts(): PostItem[] {
+  return getLocalItem<PostItem[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
+}
+
+export function getPostsByUserId(userId: string): PostItem[] {
+  const posts = getAllPosts();
+  return posts.filter(p => p.author_id === userId);
+}
+
+export function createPost(postData: {
+  author_id: string;
+  author_name: string;
+  author_username: string;
+  author_image: string;
+  author_headline: string;
+  content: string;
+  media_url?: string;
+  media_type?: 'image' | 'link' | 'project' | 'milestone';
+  project_link?: string;
+  tags?: string[];
+}): PostItem {
+  const posts = getAllPosts();
+  const newPost: PostItem = {
+    ...postData,
+    id: `post-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    likes_count: 0,
+    comments_count: 0,
+    shares_count: 0,
+    liked_by: [],
+    bookmarked_by: [],
+    tags: postData.tags || [],
+    created_at: new Date().toISOString(),
+  };
+
+  posts.unshift(newPost);
+  setLocalItem(STORAGE_KEYS.POSTS, posts);
+  return newPost;
+}
+
+export function toggleLikePost(postId: string, userId: string): { liked: boolean; count: number } {
+  const posts = getAllPosts();
+  const post = posts.find(p => p.id === postId);
+  if (!post) return { liked: false, count: 0 };
+
+  const likedBy = post.liked_by || [];
+  const hasLiked = likedBy.includes(userId);
+
+  if (hasLiked) {
+    post.liked_by = likedBy.filter(id => id !== userId);
+    post.likes_count = Math.max(0, post.likes_count - 1);
+  } else {
+    post.liked_by = [...likedBy, userId];
+    post.likes_count = post.likes_count + 1;
+  }
+
+  setLocalItem(STORAGE_KEYS.POSTS, posts);
+  return { liked: !hasLiked, count: post.likes_count };
+}
+
+export function toggleBookmarkPost(postId: string, userId: string): boolean {
+  const posts = getAllPosts();
+  const post = posts.find(p => p.id === postId);
+  if (!post) return false;
+
+  const bookmarked = post.bookmarked_by || [];
+  const hasBookmarked = bookmarked.includes(userId);
+
+  if (hasBookmarked) {
+    post.bookmarked_by = bookmarked.filter(id => id !== userId);
+  } else {
+    post.bookmarked_by = [...bookmarked, userId];
+  }
+
+  setLocalItem(STORAGE_KEYS.POSTS, posts);
+  return !hasBookmarked;
+}
+
+export function getCommentsByPostId(postId: string): PostComment[] {
+  const comments = getLocalItem<PostComment[]>(STORAGE_KEYS.POST_COMMENTS, INITIAL_POST_COMMENTS);
+  return comments.filter(c => c.post_id === postId);
+}
+
+export function addCommentToPost(postId: string, author: Profile, content: string): PostComment {
+  const comments = getLocalItem<PostComment[]>(STORAGE_KEYS.POST_COMMENTS, INITIAL_POST_COMMENTS);
+  const newComment: PostComment = {
+    id: `comm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    post_id: postId,
+    author_id: author.user_id,
+    author_name: author.full_name,
+    author_username: author.username,
+    author_image: author.profile_image,
+    content: content.trim(),
+    created_at: new Date().toISOString(),
+  };
+
+  comments.push(newComment);
+  setLocalItem(STORAGE_KEYS.POST_COMMENTS, comments);
+
+  // Update post comment count
+  const posts = getAllPosts();
+  const post = posts.find(p => p.id === postId);
+  if (post) {
+    post.comments_count = (post.comments_count || 0) + 1;
+    setLocalItem(STORAGE_KEYS.POSTS, posts);
+  }
+
+  return newComment;
+}
+
+// -----------------------------------------------------------------------------
+// Professional Search & Discovery
+// -----------------------------------------------------------------------------
+export function searchProfessionals(query?: string, filters?: { skill?: string; role?: string; industry?: string }): Profile[] {
+  const profiles = getAllProfiles().filter(p => p.published !== false);
+  if (!query && !filters?.skill && !filters?.role && !filters?.industry) {
+    return profiles;
+  }
+
+  const q = (query || '').toLowerCase().trim();
+
+  return profiles.filter(p => {
+    // Match query in name, headline, title, company, skills, or bio
+    const matchesQ = !q || (
+      p.full_name?.toLowerCase().includes(q) ||
+      p.username?.toLowerCase().includes(q) ||
+      p.title?.toLowerCase().includes(q) ||
+      p.headline?.toLowerCase().includes(q) ||
+      p.company?.toLowerCase().includes(q) ||
+      p.location?.toLowerCase().includes(q) ||
+      (p.skills && p.skills.some(s => s.toLowerCase().includes(q))) ||
+      (p.businesses && p.businesses.some(b => b.name.toLowerCase().includes(q) || b.industry?.toLowerCase().includes(q)))
+    );
+
+    // Filter by skill
+    const matchesSkill = !filters?.skill || (
+      p.skills && p.skills.some(s => s.toLowerCase().includes(filters.skill!.toLowerCase()))
+    );
+
+    // Filter by role / profile type
+    const matchesRole = !filters?.role || (
+      p.profile_type === filters.role ||
+      p.title?.toLowerCase().includes(filters.role.toLowerCase())
+    );
+
+    // Filter by industry
+    const matchesIndustry = !filters?.industry || (
+      (p.businesses && p.businesses.some(b => b.industry?.toLowerCase().includes(filters.industry!.toLowerCase()))) ||
+      p.company?.toLowerCase().includes(filters.industry.toLowerCase())
+    );
+
+    return matchesQ && matchesSkill && matchesRole && matchesIndustry;
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Profile Sub-entity CRUD Helpers
+// -----------------------------------------------------------------------------
+export function saveExperienceToProfile(userId: string, exp: WorkExperience): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  const experiences = profile.experiences || [];
+  const idx = experiences.findIndex(e => e.id === exp.id);
+  if (idx >= 0) {
+    experiences[idx] = exp;
+  } else {
+    experiences.unshift(exp);
+  }
+  profile.experiences = experiences;
+  saveProfile(profile);
+}
+
+export function deleteExperienceFromProfile(userId: string, expId: string): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  profile.experiences = (profile.experiences || []).filter(e => e.id !== expId);
+  saveProfile(profile);
+}
+
+export function saveEducationToProfile(userId: string, edu: EducationItem): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  const education = profile.education || [];
+  const idx = education.findIndex(e => e.id === edu.id);
+  if (idx >= 0) {
+    education[idx] = edu;
+  } else {
+    education.unshift(edu);
+  }
+  profile.education = education;
+  saveProfile(profile);
+}
+
+export function deleteEducationFromProfile(userId: string, eduId: string): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  profile.education = (profile.education || []).filter(e => e.id !== eduId);
+  saveProfile(profile);
+}
+
+export function saveCertificationToProfile(userId: string, cert: CertificationItem): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  const certs = profile.certifications || [];
+  const idx = certs.findIndex(c => c.id === cert.id);
+  if (idx >= 0) {
+    certs[idx] = cert;
+  } else {
+    certs.unshift(cert);
+  }
+  profile.certifications = certs;
+  saveProfile(profile);
+}
+
+export function deleteCertificationFromProfile(userId: string, certId: string): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  profile.certifications = (profile.certifications || []).filter(c => c.id !== certId);
+  saveProfile(profile);
+}
+
+export function saveBusinessToProfile(userId: string, biz: BusinessEntity): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  const businesses = profile.businesses || [];
+  const idx = businesses.findIndex(b => b.id === biz.id);
+  if (idx >= 0) {
+    businesses[idx] = biz;
+  } else {
+    businesses.unshift(biz);
+  }
+  profile.businesses = businesses;
+  saveProfile(profile);
+}
+
+export function deleteBusinessFromProfile(userId: string, bizId: string): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  profile.businesses = (profile.businesses || []).filter(b => b.id !== bizId);
+  saveProfile(profile);
+}
+
+export function saveLanguageToProfile(userId: string, lang: LanguageItem): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  const languages = profile.languages || [];
+  const idx = languages.findIndex(l => l.id === lang.id);
+  if (idx >= 0) {
+    languages[idx] = lang;
+  } else {
+    languages.push(lang);
+  }
+  profile.languages = languages;
+  saveProfile(profile);
+}
+
+export function deleteLanguageFromProfile(userId: string, langId: string): void {
+  const profile = getProfileByUserId(userId);
+  if (!profile) return;
+  profile.languages = (profile.languages || []).filter(l => l.id !== langId);
+  saveProfile(profile);
 }

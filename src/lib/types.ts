@@ -19,6 +19,78 @@ export interface ServiceItem {
   price?: string;
 }
 
+export interface WorkExperience {
+  id: string;
+  title: string;
+  company: string;
+  company_logo?: string;
+  location?: string;
+  employment_type?: 'Full-time' | 'Part-time' | 'Contract' | 'Freelance' | 'Internship' | 'Co-Founder';
+  start_date: string;
+  end_date?: string;
+  is_current: boolean;
+  description?: string;
+  skills_used?: string[];
+}
+
+export interface EducationItem {
+  id: string;
+  school: string;
+  degree: string;
+  field_of_study: string;
+  start_year: string;
+  end_year?: string;
+  grade?: string;
+  activities?: string;
+  description?: string;
+}
+
+export interface CertificationItem {
+  id: string;
+  name: string;
+  issuing_org: string;
+  issue_date: string;
+  expiration_date?: string;
+  credential_id?: string;
+  credential_url?: string;
+}
+
+export interface AchievementItem {
+  id: string;
+  title: string;
+  issuer?: string;
+  date?: string;
+  description?: string;
+}
+
+export interface BusinessEntity {
+  id: string;
+  name: string;
+  tagline?: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  industry?: string;
+  services?: string[];
+  contact_email?: string;
+  whatsapp?: string;
+  is_primary?: boolean;
+}
+
+export interface LanguageItem {
+  id: string;
+  language: string;
+  proficiency: 'Native' | 'Fluent' | 'Professional' | 'Conversational' | 'Basic';
+}
+
+export interface CustomLinkItem {
+  id: string;
+  title: string;
+  url: string;
+  icon?: string;
+  highlight?: boolean;
+}
+
 export interface Profile {
   id: string;
   user_id: string;
@@ -26,7 +98,9 @@ export interface Profile {
   full_name: string;
   profile_type: ProfileType;
   title: string;
+  headline?: string;
   bio: string;
+  about?: string;
   profile_image: string;
   cover_image?: string;
   location?: string;
@@ -41,6 +115,16 @@ export interface Profile {
   resume_url?: string;
   skills?: string[];
   services?: ServiceItem[];
+  experiences?: WorkExperience[];
+  education?: EducationItem[];
+  certifications?: CertificationItem[];
+  achievements?: AchievementItem[];
+  businesses?: BusinessEntity[];
+  languages?: LanguageItem[];
+  custom_links?: CustomLinkItem[];
+  professional_interests?: string[];
+  connections_count?: number;
+  followers_count?: number;
   theme: TemplateTheme;
   accent_color: string;
   button_style: ButtonStyle;
@@ -55,9 +139,78 @@ export interface Profile {
     services?: boolean;
     portfolio?: boolean;
     experience?: boolean;
+    education?: boolean;
+    certifications?: boolean;
+    achievements?: boolean;
+    businesses?: boolean;
+    languages?: boolean;
+    activity?: boolean;
   };
   created_at: string;
   updated_at: string;
+}
+
+// -----------------------------------------------------------------------------
+// Professional Networking & Connections
+// -----------------------------------------------------------------------------
+export type ConnectionStatus = 'pending' | 'connected' | 'declined';
+
+export interface Connection {
+  id: string;
+  requester_id: string;
+  requester_name: string;
+  requester_username: string;
+  requester_image: string;
+  requester_headline: string;
+  recipient_id: string;
+  recipient_name: string;
+  recipient_username: string;
+  recipient_image: string;
+  recipient_headline: string;
+  status: ConnectionStatus;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Follow {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+}
+
+// -----------------------------------------------------------------------------
+// Professional Activity Feed (Posts, Updates, Project Drops)
+// -----------------------------------------------------------------------------
+export interface PostItem {
+  id: string;
+  author_id: string;
+  author_name: string;
+  author_username: string;
+  author_image: string;
+  author_headline: string;
+  content: string;
+  media_url?: string;
+  media_type?: 'image' | 'link' | 'project' | 'milestone';
+  project_link?: string;
+  likes_count: number;
+  comments_count: number;
+  shares_count: number;
+  liked_by?: string[];
+  bookmarked_by?: string[];
+  tags?: string[];
+  created_at: string;
+}
+
+export interface PostComment {
+  id: string;
+  post_id: string;
+  author_id: string;
+  author_name: string;
+  author_username: string;
+  author_image: string;
+  content: string;
+  created_at: string;
 }
 
 export type SectionType = 
