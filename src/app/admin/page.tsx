@@ -25,7 +25,8 @@ import {
   getAllPosts,
   deletePost,
   deleteProfile,
-  toggleProfilePremium
+  toggleProfilePremium,
+  isSuperAdminUser
 } from '@/lib/store';
 import { Profile, NFCCard, Order, Product, AdminActivity, OrderStatus, PostItem } from '@/lib/types';
 import { 
@@ -100,19 +101,9 @@ export default function AdminConsolePage() {
 
   useEffect(() => {
     const user = getCurrentUser();
-    // Role check: Admin or authorized master owner
-    const isMasterAdmin = user && (
-      user.role === 'admin' ||
-      user.email?.toLowerCase().includes('admin') ||
-      user.email?.toLowerCase() === 'vmsurya2007@gmail.com' ||
-      user.email?.toLowerCase() === 'signbridge.aiauto@gmail.com' ||
-      user.user_metadata?.username === 'surya' ||
-      user.user_metadata?.username === 'vmsurya2007' ||
-      user.id === 'user-surya-01'
-    );
-
-    if (!isMasterAdmin) {
-      router.push('/admin/login');
+    // Strictly restricted to vmsurya2007@gmail.com and signbridge.aiauto@gmail.com
+    if (!isSuperAdminUser(user)) {
+      router.push('/dashboard');
       return;
     }
     setCurrentUser(user);

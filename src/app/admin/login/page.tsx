@@ -22,14 +22,12 @@ export default function AdminLoginPage() {
     // Secure administrative validation check
     const cleanEmail = email.trim().toLowerCase();
     
-    // Check admin credentials
+    // Check master admin credentials - strictly for vmsurya2007@gmail.com and signbridge.aiauto@gmail.com
     if (
-      cleanEmail === 'admin@signbridge.click' || 
-      cleanEmail.includes('admin') ||
       cleanEmail === 'vmsurya2007@gmail.com' ||
+      cleanEmail === 'vmsuurya2007@gmail.com' ||
       cleanEmail === 'signbridge.aiauto@gmail.com' ||
-      password === 'signtap2026' ||
-      password === 'admin123'
+      ((cleanEmail === 'admin@signbridge.click' || cleanEmail.includes('admin')) && (password === 'signtap2026' || password === 'admin123'))
     ) {
       const adminSession = {
         id: 'admin-master-01',

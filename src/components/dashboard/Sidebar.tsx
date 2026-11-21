@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
-import { logoutUser, getCurrentUser, getProfileByUserId, getPendingRequests, getFollowUpsByUserId } from '@/lib/store';
+import { logoutUser, getCurrentUser, getProfileByUserId, getPendingRequests, getFollowUpsByUserId, isSuperAdminUser } from '@/lib/store';
 import { 
   LayoutDashboard, 
   User, 
@@ -58,15 +58,8 @@ export default function Sidebar({ onNavigate, username }: SidebarProps) {
   }, [pathname, username]);
 
   const currentUser = getCurrentUser();
-  const isAdmin = currentUser && (
-    currentUser.role === 'admin' ||
-    currentUser.email?.toLowerCase().includes('admin') ||
-    currentUser.email?.toLowerCase() === 'vmsurya2007@gmail.com' ||
-    currentUser.email?.toLowerCase() === 'signbridge.aiauto@gmail.com' ||
-    currentUser.user_metadata?.username === 'surya' ||
-    currentUser.user_metadata?.username === 'vmsurya2007' ||
-    currentUser.id === 'user-surya-01'
-  );
+  // Strictly restricted to vmsurya2007@gmail.com and signbridge.aiauto@gmail.com
+  const isAdmin = isSuperAdminUser(currentUser);
 
   const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },

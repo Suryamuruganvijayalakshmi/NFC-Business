@@ -216,6 +216,31 @@ export interface PostComment {
   created_at: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_username: string;
+  sender_avatar?: string;
+  receiver_id: string;
+  receiver_name: string;
+  receiver_username: string;
+  content: string;
+  created_at: string;
+  read: boolean;
+}
+
+export interface ChatConversation {
+  participant_id: string;
+  participant_name: string;
+  participant_username: string;
+  participant_avatar?: string;
+  participant_headline?: string;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count: number;
+}
+
 export type SectionType = 
   | 'about' 
   | 'experience' 

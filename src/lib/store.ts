@@ -33,7 +33,9 @@ import {
   ContactInteraction,
   FollowUpPriority,
   FollowUpStatus,
-  InteractionType
+  InteractionType,
+  ChatMessage,
+  ChatConversation
 } from './types';
 import { 
   INITIAL_PROFILES, 
@@ -75,6 +77,7 @@ const STORAGE_KEYS = {
   CRM_FOLLOWUPS: 'sb_crm_followups',
   CRM_INTERACTIONS: 'sb_crm_interactions',
   CRM_CATEGORIES: 'sb_crm_categories',
+  MESSAGES: 'sb_chat_messages',
 };
 
 // Helper to access localStorage safely
@@ -118,6 +121,22 @@ export function getCurrentUser(): UserSession | null {
 
 export function setCurrentUser(user: UserSession | null): void {
   setLocalItem(STORAGE_KEYS.USER, user);
+}
+
+/**
+ * Master Super Admin Accounts
+ * Strictly restricted to vmsurya2007@gmail.com and signbridge.aiauto@gmail.com
+ */
+export const AUTHORIZED_SUPER_ADMIN_EMAILS = [
+  'vmsurya2007@gmail.com',
+  'vmsuurya2007@gmail.com', // handle user typo
+  'signbridge.aiauto@gmail.com',
+];
+
+export function isSuperAdminUser(user: UserSession | null | undefined): boolean {
+  if (!user || !user.email) return false;
+  const email = user.email.toLowerCase().trim();
+  return AUTHORIZED_SUPER_ADMIN_EMAILS.includes(email);
 }
 
 export async function loginUser(email: string, password?: string): Promise<{ user: UserSession | null; error?: string }> {
@@ -1987,5 +2006,131 @@ export function savePublicProfileAsContact(
   });
 
   return { contact: newContact, isNew: true };
+}
+
+// -----------------------------------------------------------------------------
+// Direct Messaging & In-App Chat
+// -----------------------------------------------------------------------------
+export function getAllMessages(): ChatMessage[] {
+  return getLocalItem<ChatMessage[]>(STORAGE_KEYS.MESSAGES, [
+    {
+      id: 'msg-demo-1',
+      sender_id: 'user-surya-01',
+      sender_name: 'Surya Narayanan',
+      sender_username: 'surya',
+      receiver_id: 'user-elena-02',
+      receiver_name: 'Elena Rostova',
+      receiver_username: 'elena',
+      content: 'Hi Elena! Great meeting you at the tech summit. Did you get a chance to test the SignTap NFC smart card?',
+      created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+      read: true,
+    },
+    {
+      id: 'msg-demo-2',
+      sender_id: 'user-elena-02',
+      sender_name: 'Elena Rostova',
+      sender_username: 'elena',
+      receiver_id: 'user-surya-01',
+      receiver_name: 'Surya Narayanan',
+      receiver_username: 'surya',
+      content: 'Yes Surya! The contactless tap worked instantly on my iPhone. Loved the sleek layout and vCard save.',
+      created_at: new Date(Date.now() - 3600000).toISOString(),
+      read: true,
+    }
+  ]);
+}
+
+export function getMessagesBetween(userId1: string, userId2: string): ChatMessage[] {
+  const all = getAllMessages();
+  return all.filter(m => 
+    (m.sender_id === userId1 && m.receiver_id === userId2) ||
+    (m.sender_id === userId2 && m.receiver_id === userId1)
+  ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+}
+
+export function sendMessage(
+  sender: UserSession | Profile,
+  receiver: Profile,
+  content: string
+): ChatMessage {
+  const messages = getAllMessages();
+  const senderId = 'user_id' in sender ? sender.user_id : sender.id;
+  const senderName = 'full_name' in sender ? sender.full_name : (sender.user_metadata?.full_name || 'SignTap Member');
+  const senderUsername = 'username' in sender ? sender.username : (sender.user_metadata?.username || 'member');
+  const senderAvatar = 'profile_image' in sender ? sender.profile_image : (sender.user_metadata?.avatar_url || '');
+
+  const newMsg: ChatMessage = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    sender_id: senderId,
+    sender_name: senderName,
+    sender_username: senderUsername,
+    sender_avatar: senderAvatar,
+    receiver_id: receiver.user_id || receiver.id,
+    receiver_name: receiver.full_name,
+    receiver_username: receiver.username,
+    content: content.trim(),
+    created_at: new Date().toISOString(),
+    read: false,
+  };
+
+  messages.push(newMsg);
+  setLocalItem(STORAGE_KEYS.MESSAGES, messages);
+  return newMsg;
+}
+
+export function getConversationsForUser(userId: string): ChatConversation[] {
+  const messages = getAllMessages();
+  const profiles = getAllProfiles();
+  const conversationsMap = new Map<string, ChatConversation>();
+
+  for (const m of messages) {
+    const isSender = m.sender_id === userId;
+    const isReceiver = m.receiver_id === userId;
+    if (!isSender && !isReceiver) continue;
+
+    const otherId = isSender ? m.receiver_id : m.sender_id;
+    const otherProfile = profiles.find(p => p.user_id === otherId || p.id === otherId);
+
+    const existing = conversationsMap.get(otherId);
+    const unread = (!m.read && m.receiver_id === userId) ? 1 : 0;
+
+    if (!existing || new Date(m.created_at) > new Date(existing.last_message_time || '')) {
+      conversationsMap.set(otherId, {
+        participant_id: otherId,
+        participant_name: otherProfile ? otherProfile.full_name : (isSender ? m.receiver_name : m.sender_name),
+        participant_username: otherProfile ? otherProfile.username : (isSender ? m.receiver_username : m.sender_username),
+        participant_avatar: otherProfile ? otherProfile.profile_image : (isSender ? undefined : m.sender_avatar),
+        participant_headline: otherProfile?.headline || otherProfile?.title || 'SignTap Member',
+        last_message: m.content,
+        last_message_time: m.created_at,
+        unread_count: (existing?.unread_count || 0) + unread,
+      });
+    } else if (unread > 0) {
+      existing.unread_count += unread;
+    }
+  }
+
+  return Array.from(conversationsMap.values()).sort(
+    (a, b) => new Date(b.last_message_time || 0).getTime() - new Date(a.last_message_time || 0).getTime()
+  );
+}
+
+export function markMessagesAsRead(userId: string, senderId: string): void {
+  const messages = getAllMessages();
+  let changed = false;
+  for (const m of messages) {
+    if (m.receiver_id === userId && m.sender_id === senderId && !m.read) {
+      m.read = true;
+      changed = true;
+    }
+  }
+  if (changed) {
+    setLocalItem(STORAGE_KEYS.MESSAGES, messages);
+  }
+}
+
+export function getUnreadMessageCount(userId: string): number {
+  const messages = getAllMessages();
+  return messages.filter(m => m.receiver_id === userId && !m.read).length;
 }
 
