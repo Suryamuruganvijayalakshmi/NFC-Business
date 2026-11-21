@@ -21,7 +21,8 @@ import {
   Newspaper,
   Building,
   Compass,
-  Contact
+  Contact,
+  ShieldCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -56,9 +57,21 @@ export default function Sidebar({ onNavigate, username }: SidebarProps) {
     }
   }, [pathname, username]);
 
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser && (
+    currentUser.role === 'admin' ||
+    currentUser.email?.toLowerCase().includes('admin') ||
+    currentUser.email?.toLowerCase() === 'vmsurya2007@gmail.com' ||
+    currentUser.email?.toLowerCase() === 'signbridge.aiauto@gmail.com' ||
+    currentUser.user_metadata?.username === 'surya' ||
+    currentUser.user_metadata?.username === 'vmsurya2007' ||
+    currentUser.id === 'user-surya-01'
+  );
+
   const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Professional Profile', href: '/dashboard/profile', icon: User },
+    ...(isAdmin ? [{ name: 'Super Admin Console', href: '/admin', icon: ShieldCheck, badge: 'MASTER', badgeColor: 'bg-indigo-600 text-white' }] : []),
     { 
       name: 'Smart Networking', 
       href: '/dashboard/contacts', 

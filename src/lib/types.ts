@@ -125,6 +125,9 @@ export interface Profile {
   professional_interests?: string[];
   connections_count?: number;
   followers_count?: number;
+  is_premium?: boolean;
+  premium_plan?: 'yearly' | 'lifetime' | 'none';
+  premium_expires_at?: string;
   theme: TemplateTheme;
   accent_color: string;
   button_style: ButtonStyle;

@@ -136,6 +136,9 @@ function ProfileContent() {
               theme: data.theme || localProfile?.theme || 'signature',
               accent_color: data.accent_color || localProfile?.accent_color || '#087CF0',
               published: data.published !== false,
+              is_premium: Boolean(data.is_premium || ext.is_premium || localProfile?.is_premium),
+              premium_plan: data.premium_plan || ext.premium_plan || localProfile?.premium_plan || 'none',
+              premium_expires_at: data.premium_expires_at || ext.premium_expires_at || localProfile?.premium_expires_at,
             };
 
             // Privacy check

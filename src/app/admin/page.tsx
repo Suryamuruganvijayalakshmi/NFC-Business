@@ -21,9 +21,13 @@ import {
   issueNewNFCCard,
   createOrder,
   logAdminActivity,
-  logoutUser
+  logoutUser,
+  getAllPosts,
+  deletePost,
+  deleteProfile,
+  toggleProfilePremium
 } from '@/lib/store';
-import { Profile, NFCCard, Order, Product, AdminActivity, OrderStatus } from '@/lib/types';
+import { Profile, NFCCard, Order, Product, AdminActivity, OrderStatus, PostItem } from '@/lib/types';
 import { 
   ShieldCheck, 
   Users, 
@@ -51,7 +55,12 @@ import {
   Clock,
   Radio,
   ShieldAlert,
-  Edit2
+  Edit2,
+  Trash2,
+  Crown,
+  Newspaper,
+  Heart,
+  MessageSquare
 } from 'lucide-react';
 
 export default function AdminConsolePage() {
@@ -59,7 +68,7 @@ export default function AdminConsolePage() {
 
   // Authentication check
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'orders' | 'cards' | 'profiles' | 'products' | 'activity'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'orders' | 'cards' | 'profiles' | 'posts' | 'products' | 'activity'>('overview');
 
   // Core Data
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -67,10 +76,13 @@ export default function AdminConsolePage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [activities, setActivities] = useState<AdminActivity[]>([]);
+  const [allPosts, setAllPosts] = useState<PostItem[]>([]);
 
   // Search & Filtering
   const [searchQuery, setSearchQuery] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
+  const [profileSearch, setProfileSearch] = useState('');
+  const [postSearch, setPostSearch] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modals & Sub-forms
@@ -88,8 +100,18 @@ export default function AdminConsolePage() {
 
   useEffect(() => {
     const user = getCurrentUser();
-    // Role check: If not admin or email doesn't include admin, redirect to admin login
-    if (!user || (user.role !== 'admin' && !user.email.toLowerCase().includes('admin'))) {
+    // Role check: Admin or authorized master owner
+    const isMasterAdmin = user && (
+      user.role === 'admin' ||
+      user.email?.toLowerCase().includes('admin') ||
+      user.email?.toLowerCase() === 'vmsurya2007@gmail.com' ||
+      user.email?.toLowerCase() === 'signbridge.aiauto@gmail.com' ||
+      user.user_metadata?.username === 'surya' ||
+      user.user_metadata?.username === 'vmsurya2007' ||
+      user.id === 'user-surya-01'
+    );
+
+    if (!isMasterAdmin) {
       router.push('/admin/login');
       return;
     }
@@ -104,11 +126,34 @@ export default function AdminConsolePage() {
     setOrders(getAllOrders());
     setProducts(getAllProducts());
     setActivities(getAdminActivities());
+    setAllPosts(getAllPosts());
   };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleDeletePost = (postId: string) => {
+    if (confirm('Are you sure you want to permanently delete this post?')) {
+      deletePost(postId);
+      refreshData();
+      showToast('Post removed successfully.');
+    }
+  };
+
+  const handleDeleteProfile = (profileId: string, name: string) => {
+    if (confirm(`Are you sure you want to delete profile for "${name}"? This action cannot be undone.`)) {
+      deleteProfile(profileId);
+      refreshData();
+      showToast(`Profile for ${name} deleted.`);
+    }
+  };
+
+  const handleTogglePremium = (profileId: string) => {
+    toggleProfilePremium(profileId);
+    refreshData();
+    showToast('Updated SignTap Premium status (₹1,000/yr).');
   };
 
   // 1. Metric Calculations
@@ -230,10 +275,11 @@ export default function AdminConsolePage() {
         <nav className="hidden md:flex items-center gap-1">
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
-            { id: 'customers', label: 'Customers', icon: Users },
+            { id: 'profiles', label: 'Profiles & Users', icon: Eye },
+            { id: 'posts', label: 'Feed & Posts', icon: Newspaper, badge: allPosts.length > 0 ? allPosts.length : null },
             { id: 'orders', label: 'Orders', icon: Package, badge: pendingOrdersCount > 0 ? pendingOrdersCount : null },
             { id: 'cards', label: 'NFC Cards', icon: Wifi },
-            { id: 'profiles', label: 'Profiles', icon: Eye },
+            { id: 'customers', label: 'Customers', icon: Users },
             { id: 'products', label: 'Products & Pricing', icon: Tag },
             { id: 'activity', label: 'Audit Log', icon: Clock },
           ].map(tab => {
@@ -831,63 +877,224 @@ export default function AdminConsolePage() {
         =================================================================== */}
         {activeTab === 'profiles' && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Digital Profiles Management</h2>
-              <p className="text-xs text-slate-400">Moderate public visibility, inspect engagement, and audit customer content.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Digital Profiles &amp; Users Management</h2>
+                <p className="text-xs text-slate-400">Moderate public visibility, grant/revoke Premium (₹1,000/yr), and audit user accounts.</p>
+              </div>
+
+              <div className="flex items-center bg-[#131B2E] border border-white/10 rounded-xl px-3 py-2 w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search by name or username..."
+                  value={profileSearch}
+                  onChange={(e) => setProfileSearch(e.target.value)}
+                  className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {profiles.map(prof => (
-                <div key={prof.id} className="p-6 rounded-3xl bg-[#131B2E] border border-white/10 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-[#087CF0] uppercase font-bold">
-                      /u/{prof.username}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      prof.published ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'
-                    }`}>
-                      {prof.published ? 'Published' : 'Private'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={prof.profile_image}
-                      alt={prof.full_name}
-                      className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/10"
-                    />
-                    <div>
-                      <h4 className="font-bold text-white text-base">{prof.full_name}</h4>
-                      <p className="text-xs text-slate-400">{prof.title}</p>
-                      <p className="text-[11px] text-[#FF7900]">{prof.company || 'SignBridge Member'}</p>
+              {profiles
+                .filter(p => !profileSearch || p.full_name?.toLowerCase().includes(profileSearch.toLowerCase()) || p.username?.toLowerCase().includes(profileSearch.toLowerCase()) || p.email?.toLowerCase().includes(profileSearch.toLowerCase()))
+                .map(prof => (
+                <div key={prof.id} className="p-6 rounded-3xl bg-[#131B2E] border border-white/10 space-y-4 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-[#087CF0] uppercase font-bold">
+                        /u/{prof.username}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {prof.is_premium && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                            <Crown className="w-3 h-3 fill-amber-400" />
+                            <span>PREMIUM</span>
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          prof.published ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'
+                        }`}>
+                          {prof.published ? 'Published' : 'Private'}
+                        </span>
+                      </div>
                     </div>
+
+                    <div className="flex items-center gap-3">
+                      {prof.profile_image ? (
+                        <img
+                          src={prof.profile_image}
+                          alt={prof.full_name}
+                          className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/10"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#087CF0] to-[#FF7900] flex items-center justify-center text-white font-bold text-sm">
+                          {prof.full_name?.charAt(0) || 'U'}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-white text-base truncate flex items-center gap-1.5">
+                          <span>{prof.full_name}</span>
+                          {prof.is_premium && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />}
+                        </h4>
+                        <p className="text-xs text-slate-400 truncate">{prof.headline || prof.title}</p>
+                        <p className="text-[11px] text-[#FF7900] truncate">{prof.company || prof.email}</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                      {prof.about || prof.bio || 'No biography provided.'}
+                    </p>
                   </div>
 
-                  <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
-                    {prof.bio}
-                  </p>
+                  <div className="pt-3 border-t border-white/10 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <a
+                        href={`/u/${prof.username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#087CF0] hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        <span>Preview Profile</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
 
-                  <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                    <a
-                      href={`/u/${prof.username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#087CF0] hover:underline flex items-center gap-1 font-semibold"
-                    >
-                      <span>Preview Profile</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                      <button
+                        onClick={() => handleToggleProfilePublish(prof.id, prof.published)}
+                        className="py-1 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium text-[11px]"
+                      >
+                        {prof.published ? 'Set Private' : 'Set Public'}
+                      </button>
+                    </div>
 
-                    <button
-                      onClick={() => handleToggleProfilePublish(prof.id, prof.published)}
-                      className="py-1 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium"
-                    >
-                      {prof.published ? 'Unpublish' : 'Publish'}
-                    </button>
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">
+                      <button
+                        onClick={() => handleTogglePremium(prof.id)}
+                        className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors ${
+                          prof.is_premium
+                            ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                            : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        <Crown className="w-3 h-3" />
+                        <span>{prof.is_premium ? 'Revoke Premium' : 'Grant Premium'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteProfile(prof.id, prof.full_name)}
+                        className="p-1 px-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 text-[11px] font-bold flex items-center gap-1"
+                        title="Delete Profile"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ===================================================================
+            TAB 6: POSTS & FEED MODERATION
+        =================================================================== */}
+        {activeTab === 'posts' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Posts &amp; Community Moderation</h2>
+                <p className="text-xs text-slate-400">
+                  Inspect and purge community posts, milestones, or announcements across all accounts.
+                </p>
+              </div>
+
+              <div className="flex items-center bg-[#131B2E] border border-white/10 rounded-xl px-3 py-2 w-full sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Filter posts or authors..."
+                  value={postSearch}
+                  onChange={(e) => setPostSearch(e.target.value)}
+                  className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full"
+                />
+              </div>
+            </div>
+
+            {allPosts.length === 0 ? (
+              <div className="p-12 text-center rounded-3xl bg-[#131B2E] border border-white/10 space-y-2">
+                <Newspaper className="w-10 h-10 text-slate-600 mx-auto" />
+                <h3 className="text-base font-bold text-white">No Posts Found</h3>
+                <p className="text-xs text-slate-400">No active posts are published across the platform.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {allPosts
+                  .filter(p => !postSearch || p.content.toLowerCase().includes(postSearch.toLowerCase()) || p.author_name.toLowerCase().includes(postSearch.toLowerCase()))
+                  .map(post => (
+                    <div key={post.id} className="p-6 rounded-3xl bg-[#131B2E] border border-white/10 space-y-4 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-[#087CF0]/20 text-[#087CF0] flex items-center justify-center font-bold text-xs">
+                              {post.author_name?.charAt(0) || 'U'}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-white">{post.author_name}</p>
+                              <p className="text-[10px] text-slate-400">@{post.author_username}</p>
+                            </div>
+                          </div>
+
+                          <span className="text-[10px] font-mono text-slate-500">
+                            {new Date(post.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-200 leading-relaxed line-clamp-3">
+                          {post.content}
+                        </p>
+
+                        {post.media_url && (
+                          <div className="h-28 rounded-xl overflow-hidden border border-white/10">
+                            <img src={post.media_url} alt="Post attachment" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-4 text-[11px] text-slate-400 font-medium">
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3.5 h-3.5 text-rose-400" />
+                            <span>{post.likes_count || 0}</span>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                            <span>{post.comments_count || 0}</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                        <a
+                          href={`/u/${post.author_username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-[#087CF0] hover:underline flex items-center gap-1 font-semibold"
+                        >
+                          <span>Author Profile</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          className="py-1 px-2.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-1 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete Post</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         )}
 

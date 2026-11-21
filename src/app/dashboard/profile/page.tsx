@@ -40,7 +40,10 @@ import {
   ExternalLink,
   MessageCircle,
   FileText,
-  Sliders
+  Sliders,
+  Upload,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export default function ProfileEditorPage() {
@@ -180,6 +183,40 @@ export default function ProfileEditorPage() {
       setPublished(p.published !== false);
     }
   }, []);
+
+  const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image is too large. Please select an image under 5MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          setProfileImage(ev.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        alert('Cover image is too large. Please select an image under 8MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          setCoverImage(ev.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAddExperience = (e: React.FormEvent) => {
     e.preventDefault();
@@ -498,29 +535,92 @@ export default function ProfileEditorPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Direct Image File Uploaders */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            {/* Profile Avatar Direct Uploader */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">
-                Profile Image URL
+              <label className="text-xs font-bold text-slate-800 block mb-2">
+                Profile Photo (Select Image File)
               </label>
-              <input
-                type="url"
-                value={profileImage}
-                onChange={(e) => setProfileImage(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#087CF0]/20"
-              />
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-16 rounded-2xl border-2 border-slate-200 bg-white overflow-hidden flex-shrink-0 flex items-center justify-center shadow-inner">
+                  {profileImage ? (
+                    <img src={profileImage} alt="Avatar Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-8 h-8 text-slate-300" />
+                  )}
+                </div>
+                <div className="space-y-1.5 flex-1">
+                  <input
+                    type="file"
+                    id="profile-img-file"
+                    accept="image/*"
+                    onChange={handleProfileImageUpload}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="profile-img-file"
+                    className="inline-flex items-center gap-1.5 py-2 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#087CF0]" />
+                    <span>{profileImage ? 'Change Photo' : 'Upload Photo'}</span>
+                  </label>
+                  {profileImage && (
+                    <button
+                      type="button"
+                      onClick={() => setProfileImage('')}
+                      className="ml-2 text-[11px] text-rose-600 hover:underline font-semibold"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <p className="text-[10px] text-slate-400">JPG, PNG, WebP up to 5MB</p>
+                </div>
+              </div>
             </div>
 
+            {/* Cover Banner Direct Uploader */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">
-                Cover Image URL
+              <label className="text-xs font-bold text-slate-800 block mb-2">
+                Cover Banner (Select Image File)
               </label>
-              <input
-                type="url"
-                value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#087CF0]/20"
-              />
+              <div className="space-y-2">
+                <div className="h-16 w-full rounded-2xl border-2 border-slate-200 bg-white overflow-hidden flex items-center justify-center shadow-inner">
+                  {coverImage ? (
+                    <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex items-center gap-2 text-slate-300 text-xs font-semibold">
+                      <ImageIcon className="w-5 h-5 text-slate-300" />
+                      <span>No cover banner selected</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    id="cover-img-file"
+                    accept="image/*"
+                    onChange={handleCoverImageUpload}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="cover-img-file"
+                    className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#FF7900]" />
+                    <span>{coverImage ? 'Change Banner' : 'Upload Banner'}</span>
+                  </label>
+                  {coverImage && (
+                    <button
+                      type="button"
+                      onClick={() => setCoverImage('')}
+                      className="text-[11px] text-rose-600 hover:underline font-semibold"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

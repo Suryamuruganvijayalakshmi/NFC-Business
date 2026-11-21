@@ -472,6 +472,9 @@ export function saveProfile(profile: Profile): void {
         services: updatedProfile.services,
         languages: updatedProfile.languages,
         custom_links: updatedProfile.custom_links,
+        is_premium: updatedProfile.is_premium,
+        premium_plan: updatedProfile.premium_plan,
+        premium_expires_at: updatedProfile.premium_expires_at,
       }
     };
 
@@ -1211,6 +1214,48 @@ export function toggleLikePost(postId: string, userId: string): { liked: boolean
 
   setLocalItem(STORAGE_KEYS.POSTS, posts);
   return { liked: !hasLiked, count: post.likes_count };
+}
+
+export function deletePost(postId: string): void {
+  const posts = getAllPosts();
+  const filtered = posts.filter(p => p.id !== postId);
+  setLocalItem(STORAGE_KEYS.POSTS, filtered);
+}
+
+export function deleteProfile(profileId: string): void {
+  const profiles = getAllProfiles();
+  const filtered = profiles.filter(p => p.id !== profileId);
+  setLocalItem(STORAGE_KEYS.PROFILES, filtered);
+  if (isSupabaseConfigured && supabase) {
+    supabase.from('profiles').delete().eq('id', profileId).then();
+  }
+}
+
+export function upgradeProfileToPremium(profileId: string, plan: 'yearly' | 'lifetime' = 'yearly'): Profile | null {
+  const profiles = getAllProfiles();
+  const profile = profiles.find(p => p.id === profileId);
+  if (!profile) return null;
+  profile.is_premium = true;
+  profile.premium_plan = plan;
+  profile.premium_expires_at = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  saveProfile(profile);
+  return profile;
+}
+
+export function toggleProfilePremium(profileId: string): Profile | null {
+  const profiles = getAllProfiles();
+  const profile = profiles.find(p => p.id === profileId);
+  if (!profile) return null;
+  profile.is_premium = !profile.is_premium;
+  if (profile.is_premium) {
+    profile.premium_plan = 'yearly';
+    profile.premium_expires_at = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  } else {
+    profile.premium_plan = 'none';
+    profile.premium_expires_at = undefined;
+  }
+  saveProfile(profile);
+  return profile;
 }
 
 export function toggleBookmarkPost(postId: string, userId: string): boolean {
