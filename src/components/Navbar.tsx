@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from '@/components/Logo';
-import { getCurrentUser } from '@/lib/store';
-import { ArrowRight, Menu, X, LayoutDashboard, CreditCard, Sparkles, Wifi } from 'lucide-react';
+import { getCurrentUser, logoutUser } from '@/lib/store';
+import { ArrowRight, Menu, X, LayoutDashboard, CreditCard, Sparkles, Wifi, LogIn, LogOut, UserPlus } from 'lucide-react';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -136,39 +136,72 @@ export default function Navbar() {
           <div className="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
             {user ? (
               <>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-full bg-[#923cf6] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{user.user_metadata?.full_name || 'SignTap Member'}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-slate-900 text-white text-xs font-semibold"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-xs hover:bg-black transition-colors"
                 >
                   <LayoutDashboard className="w-4 h-4 text-[#923cf6]" />
                   <span>Go to Dashboard</span>
                 </Link>
+
                 <Link
                   href="/order"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-[#923cf6] text-white text-xs font-semibold"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-[#923cf6] text-white text-xs font-bold shadow-md hover:bg-[#8129e0] transition-colors"
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>Get SignTap Card</span>
                 </Link>
+
+                <button
+                  onClick={() => {
+                    logoutUser();
+                    setUser(null);
+                    setMobileMenuOpen(false);
+                    window.location.href = '/';
+                  }}
+                  className="w-full py-2 rounded-full text-center text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
               </>
             ) : (
               <>
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-2.5 rounded-full text-center text-xs font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50"
+                  className="w-full py-2.5 rounded-full text-center text-xs font-bold text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 border border-slate-200"
                 >
-                  Log In
+                  <LogIn className="w-4 h-4 text-[#923cf6]" />
+                  <span>Log In to SignTap</span>
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-2 rounded-full text-center text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Create Free Account</span>
                 </Link>
                 <Link
                   href="/order"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-2.5 rounded-full text-center text-xs font-semibold text-white bg-[#923cf6] hover:bg-[#8129e0] flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-full text-center text-xs font-semibold text-white bg-[#923cf6] hover:bg-[#8129e0] flex items-center justify-center gap-2 shadow-md transition-all"
                 >
-                  <span>Get SignTap Card</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <CreditCard className="w-4 h-4" />
+                  <span>Get SignTap NFC Card</span>
                 </Link>
               </>
             )}

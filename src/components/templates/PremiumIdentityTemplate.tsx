@@ -32,7 +32,8 @@ import {
   getAllProfiles,
   getAnalyticsSummary,
   getUnreadMessageCount,
-  getNewMemberStatus
+  getNewMemberStatus,
+  logoutUser
 } from '@/lib/store';
 import { sanitizeUrl } from '@/lib/security';
 import { 
@@ -85,6 +86,9 @@ import {
   BarChart2,
   TrendingUp,
   X,
+  Menu,
+  LogIn,
+  LogOut,
   CreditCard,
   Sliders,
   ChevronDown
@@ -129,6 +133,7 @@ export default function PremiumIdentityTemplate({
   // Global LinkedIn search state
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -458,8 +463,114 @@ export default function PremiumIdentityTemplate({
               <CreditCard className="w-3.5 h-3.5 text-[#087CF0]" />
               <span>NFC Smart Card</span>
             </Link>
+
+            {/* Mobile Navigation Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="sm:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </nav>
         </div>
+
+        {/* Mobile Navigation Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden bg-white border-b border-slate-200 px-4 py-3 shadow-lg space-y-2 animate-in fade-in">
+            {currentUser ? (
+              <>
+                <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-full bg-[#087CF0] text-white flex items-center justify-center font-bold text-xs">
+                    {currentUser.user_metadata?.full_name?.charAt(0) || 'U'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{currentUser.user_metadata?.full_name || 'SignTap Member'}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{currentUser.email}</p>
+                  </div>
+                </div>
+
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xs hover:bg-black transition-colors"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-[#087CF0]" />
+                  <span>Go to My Dashboard</span>
+                </Link>
+
+                <Link
+                  href="/dashboard/network"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold"
+                >
+                  <Users2 className="w-3.5 h-3.5 text-slate-500" />
+                  <span>My Connections & Network</span>
+                </Link>
+
+                <Link
+                  href="/dashboard/activity"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold"
+                >
+                  <Newspaper className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Community Posts</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    logoutUser();
+                    setCurrentUser(null);
+                    setMobileMenuOpen(false);
+                    window.location.reload();
+                  }}
+                  className="w-full py-2 px-3 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={`/login?redirect=/u/${profile.username}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#087CF0] text-white text-xs font-bold shadow-xs hover:bg-[#0668cc] transition-colors"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Log In to SignTap</span>
+                </Link>
+
+                <Link
+                  href={`/signup?redirect=/u/${profile.username}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
+                >
+                  <UserPlus className="w-3.5 h-3.5 text-[#087CF0]" />
+                  <span>Create Free Account</span>
+                </Link>
+
+                <Link
+                  href="/discover"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold"
+                >
+                  <Compass className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Discover SignTap Professionals</span>
+                </Link>
+
+                <Link
+                  href="/explore-cards"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold"
+                >
+                  <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Get Your Physical NFC Smart Card</span>
+                </Link>
+              </>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Floating Toast Notification */}

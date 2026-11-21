@@ -105,18 +105,7 @@ function setLocalItem<T>(key: string, value: T): void {
 // Authentication
 // -----------------------------------------------------------------------------
 export function getCurrentUser(): UserSession | null {
-  const defaultUser: UserSession = {
-    id: 'user-surya-01',
-    email: 'signbridge.aiauto@gmail.com',
-    role: 'user',
-    user_metadata: {
-      full_name: 'Surya Narayanan',
-      username: 'surya',
-      profile_type: 'professional',
-      phone: '9842253267',
-    }
-  };
-  return getLocalItem<UserSession | null>(STORAGE_KEYS.USER, defaultUser);
+  return getLocalItem<UserSession | null>(STORAGE_KEYS.USER, null);
 }
 
 export function setCurrentUser(user: UserSession | null): void {
