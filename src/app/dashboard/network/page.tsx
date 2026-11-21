@@ -35,7 +35,8 @@ import {
   Sparkles,
   Wifi,
   Trash2,
-  Share2
+  Share2,
+  Crown
 } from 'lucide-react';
 
 export default function NetworkPage() {
@@ -458,7 +459,13 @@ export default function NetworkPage() {
                         className="text-base font-bold text-[#101828] hover:text-[#087CF0] transition-colors flex items-center gap-1.5"
                       >
                         <span>{prof.full_name}</span>
-                        <ShieldCheck className="w-4 h-4 text-[#087CF0]" />
+                        {prof.is_premium ? (
+                          <span className="p-0.5 rounded-full bg-amber-500 text-white" title="Verified SignTap Premium">
+                            <Crown className="w-3.5 h-3.5 fill-white text-white" />
+                          </span>
+                        ) : (
+                          <ShieldCheck className="w-4 h-4 text-[#087CF0]" />
+                        )}
                         {profNewStatus.isNew && (
                           <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
                             NEW

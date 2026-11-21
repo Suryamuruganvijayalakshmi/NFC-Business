@@ -33,6 +33,8 @@ import {
   getAnalyticsSummary,
   getUnreadMessageCount,
   getNewMemberStatus,
+  getLiveConnectionCount,
+  getLiveFollowersCount,
   logoutUser
 } from '@/lib/store';
 import { sanitizeUrl } from '@/lib/security';
@@ -676,10 +678,18 @@ export default function PremiumIdentityTemplate({
 
                     {/* Verified Shield Badge Overlay */}
                     <div 
-                      className="absolute bottom-1 right-1 p-1.5 rounded-full bg-white shadow-md border border-slate-100 text-[#087CF0]" 
-                      title="Verified SignTap Identity"
+                      className={`absolute bottom-1 right-1 p-1.5 rounded-full shadow-md border ${
+                        isPremium
+                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-300 shadow-amber-500/20'
+                          : 'bg-white border-slate-100 text-[#087CF0]'
+                      }`}
+                      title={isPremium ? 'SignTap Verified Premium Identity' : 'Verified SignTap Identity'}
                     >
-                      <ShieldCheck className="w-5 h-5 text-[#087CF0] fill-[#087CF0]/10" />
+                      {isPremium ? (
+                        <Crown className="w-5 h-5 text-white fill-white" />
+                      ) : (
+                        <ShieldCheck className="w-5 h-5 text-[#087CF0] fill-[#087CF0]/10" />
+                      )}
                     </div>
 
                     {isOwnProfile && (
@@ -734,20 +744,21 @@ export default function PremiumIdentityTemplate({
                         <ShieldCheck className="w-6 h-6 text-[#087CF0] flex-shrink-0" />
                       </h1>
 
-                      {/* Golden Premium Badge */}
+                      {/* Golden Premium Verified Badge */}
                       {isPremium ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[11px] font-black tracking-wide shadow-xs uppercase">
-                          <Crown className="w-3 h-3 fill-white" />
-                          <span>PREMIUM</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 text-white text-[11px] font-black tracking-wide shadow-xs uppercase border border-amber-300">
+                          <Crown className="w-3.5 h-3.5 fill-white text-white" />
+                          <span>SIGNTAP VERIFIED PRO</span>
+                          <CheckCircle className="w-3.5 h-3.5 text-white" />
                         </span>
                       ) : (
                         <button
                           onClick={() => setShowPremiumModal(true)}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-bold transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
                           title="Click to upgrade to Premium"
                         >
                           <Crown className="w-3 h-3 text-amber-600" />
-                          <span>Get Premium ₹1,000/yr</span>
+                          <span>Get Verified Premium ₹1,000/yr</span>
                         </button>
                       )}
 
@@ -787,14 +798,14 @@ export default function PremiumIdentityTemplate({
                       </button>
                     </div>
 
-                    {/* Connections and Followers */}
+                    {/* Live Connections and Followers */}
                     <div className="pt-1.5 flex items-center gap-3 text-xs font-semibold">
                       <span className="text-[#087CF0] hover:underline cursor-pointer">
-                        {profile.connections_count ?? 0} connections
+                        {getLiveConnectionCount(profile.user_id) || profile.connections_count || 0} connections
                       </span>
                       <span className="text-slate-300">·</span>
                       <span className="text-slate-600">
-                        {profile.followers_count ?? 0} followers
+                        {getLiveFollowersCount(profile.user_id) || profile.followers_count || 0} followers
                       </span>
                     </div>
 

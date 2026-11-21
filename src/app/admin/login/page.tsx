@@ -52,30 +52,30 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-[#0C121E] text-white">
+    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-[#F8FAFD] text-slate-900">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
         <div className="flex justify-center">
-          <Logo theme="dark" size="lg" />
+          <Logo theme="light" size="lg" />
         </div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono font-bold uppercase tracking-wider">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-mono font-bold uppercase tracking-wider">
           <Lock className="w-3.5 h-3.5" />
           <span>Restricted Admin Portal</span>
         </div>
 
-        <h2 className="text-2xl font-extrabold tracking-tight text-white">
+        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
           SignTap Management Console
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           Enter administrative credentials to oversee platform telemetries, orders, and hardware issuance.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-[#131B2E] py-8 px-6 sm:px-10 rounded-3xl border border-white/10 shadow-2xl space-y-6">
+        <div className="bg-white py-8 px-6 sm:px-10 rounded-3xl border border-slate-200/90 shadow-xl space-y-6">
           
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-2.5">
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -83,7 +83,7 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-mono font-bold uppercase text-slate-300 mb-1.5">
+              <label className="block text-xs font-mono font-bold uppercase text-slate-700 mb-1.5">
                 Admin Email
               </label>
               <input
@@ -92,12 +92,12 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@signbridge.click"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-mono font-bold uppercase text-slate-300 mb-1.5">
+              <label className="block text-xs font-mono font-bold uppercase text-slate-700 mb-1.5">
                 Master Security Key / Password
               </label>
               <input
@@ -106,14 +106,14 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-[#087CF0] hover:bg-[#0668cc] text-white text-sm font-semibold transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl bg-[#087CF0] hover:bg-[#0668cc] text-white text-sm font-semibold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             >
               <Key className="w-4 h-4" />
               <span>{loading ? 'Authenticating...' : 'Sign In as Administrator'}</span>
@@ -122,14 +122,14 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Quick Demo Fill Pill */}
-          <div className="pt-2 border-t border-white/10 text-center">
+          <div className="pt-2 border-t border-slate-100 text-center">
             <button
               type="button"
               onClick={() => {
                 setEmail('admin@signbridge.click');
                 setPassword('admin123');
               }}
-              className="text-[11px] text-[#FF7900] hover:underline font-mono"
+              className="text-[11px] text-[#087CF0] hover:underline font-mono"
             >
               Demo: Autofill Admin Credentials
             </button>
@@ -138,7 +138,7 @@ export default function AdminLoginPage() {
           <div className="text-center pt-2">
             <Link
               href="/"
-              className="text-xs text-slate-400 hover:text-white transition-colors"
+              className="text-xs text-slate-500 hover:text-slate-900 transition-colors"
             >
               &larr; Return to Public Website
             </Link>

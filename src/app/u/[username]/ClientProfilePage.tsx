@@ -165,10 +165,21 @@ function ProfileContent() {
               setLinks(getLinksByProfileId(unpackedProfile.id));
             }
 
-            cacheProfileLocally(unpackedProfile);
-            setProfile(unpackedProfile);
-            setSections(getSectionsByProfileId(unpackedProfile.id));
-            setProjects(getProjectsByProfileId(unpackedProfile.id));
+            // Check timestamp freshness: never overwrite fresh local changes with stale remote record
+            const localTime = new Date(localProfile?.updated_at || 0).getTime();
+            const remoteTime = new Date(unpackedProfile.updated_at || 0).getTime();
+
+            if (localProfile && localTime > remoteTime && (localProfile.profile_image || localProfile.full_name)) {
+              setProfile(localProfile);
+              setSections(getSectionsByProfileId(localProfile.id));
+              setProjects(getProjectsByProfileId(localProfile.id));
+            } else {
+              cacheProfileLocally(unpackedProfile);
+              setProfile(unpackedProfile);
+              setSections(getSectionsByProfileId(unpackedProfile.id));
+              setProjects(getProjectsByProfileId(unpackedProfile.id));
+            }
+
             logAnalyticsEvent(unpackedProfile.id, 'profile_view');
           } else if (!localProfile) {
             setProfile(null);

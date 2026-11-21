@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Logo from '@/components/Logo';
 import QRCodeModal from '@/components/QRCodeModal';
+import NotificationDropdown from '@/components/NotificationDropdown';
 import { getCurrentUser, getProfileByUserId, saveProfile, getOrCreateProfileForUser } from '@/lib/store';
 import { Profile, UserSession } from '@/lib/types';
 import { 
@@ -112,6 +113,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Quick Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             
+            {/* Real-time Notification Dropdown */}
+            <NotificationDropdown />
+
             {/* Published / Draft Pill Switch */}
             <button
               onClick={togglePublished}
@@ -136,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* View Public Profile Button */}
             <a
-              href={`/id/${username}`}
+              href={`/u/${username}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#087CF0] text-white text-xs font-semibold hover:bg-[#0668cc] transition-colors shadow-sm"

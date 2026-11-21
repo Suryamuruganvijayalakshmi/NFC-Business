@@ -526,3 +526,32 @@ export interface SmartContact {
   updated_at: string;
 }
 
+// -----------------------------------------------------------------------------
+// Notifications System
+// -----------------------------------------------------------------------------
+export type NotificationType = 
+  | 'connection_request' 
+  | 'connection_accepted' 
+  | 'new_follower' 
+  | 'post_like' 
+  | 'post_comment'
+  | 'system';
+
+export interface AppNotification {
+  id: string;
+  user_id: string; // The recipient of the notification
+  sender_id?: string;
+  sender_name?: string;
+  sender_username?: string;
+  sender_image?: string;
+  sender_headline?: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link?: string;
+  read: boolean;
+  connection_id?: string;
+  created_at: string;
+}
+
+

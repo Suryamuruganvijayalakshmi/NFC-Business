@@ -14,7 +14,8 @@ import {
   Follow,
   SmartContact,
   ContactFollowUp,
-  ContactInteraction
+  ContactInteraction,
+  AppNotification
 } from './types';
 
 export const INITIAL_PRODUCTS: Product[] = [
@@ -1192,4 +1193,49 @@ export const INITIAL_FOLLOW_UPS: ContactFollowUp[] = [
     created_at: '2026-10-25T11:00:00Z',
   }
 ];
+
+export const INITIAL_NOTIFICATIONS: AppNotification[] = [
+  {
+    id: 'notif-1',
+    user_id: 'user-surya-01',
+    sender_id: 'user-elena-02',
+    sender_name: 'Elena Rostova',
+    sender_username: 'elena',
+    sender_image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
+    sender_headline: 'Visual Storyteller & Motion Designer',
+    type: 'connection_request',
+    title: 'New Connection Request',
+    message: 'Elena Rostova wants to connect with your SignTap network.',
+    link: '/dashboard/network',
+    read: false,
+    connection_id: 'conn-init-2',
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'notif-2',
+    user_id: 'user-surya-01',
+    sender_id: 'user-alex-03',
+    sender_name: 'Alex Chen',
+    sender_username: 'alex',
+    sender_image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    sender_headline: 'Lead AI & Full-Stack Architect',
+    type: 'new_follower',
+    title: 'New Follower',
+    message: 'Alex Chen started following your professional updates.',
+    link: '/u/alex',
+    read: false,
+    created_at: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'notif-3',
+    user_id: 'user-surya-01',
+    type: 'system',
+    title: 'Welcome to SignTap Smart Networking',
+    message: 'Your contactless NFC digital identity is active and synchronized.',
+    link: '/dashboard/profile',
+    read: true,
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+  }
+];
+
 

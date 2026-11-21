@@ -35,8 +35,11 @@ import {
   FollowUpStatus,
   InteractionType,
   ChatMessage,
-  ChatConversation
+  ChatConversation,
+  AppNotification,
+  NotificationType
 } from './types';
+export type { AppNotification, NotificationType };
 import { 
   INITIAL_PROFILES, 
   INITIAL_SECTIONS, 
@@ -53,7 +56,8 @@ import {
   DEFAULT_CONTACT_CATEGORIES,
   INITIAL_SMART_CONTACTS,
   INITIAL_CONTACT_INTERACTIONS,
-  INITIAL_FOLLOW_UPS
+  INITIAL_FOLLOW_UPS,
+  INITIAL_NOTIFICATIONS
 } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { sanitizeUrl, sanitizeCsvCell, isAnalyticsRateLimited } from './security';
@@ -78,6 +82,7 @@ const STORAGE_KEYS = {
   CRM_INTERACTIONS: 'sb_crm_interactions',
   CRM_CATEGORIES: 'sb_crm_categories',
   MESSAGES: 'sb_chat_messages',
+  NOTIFICATIONS: 'sb_notifications',
 };
 
 // Helper to access localStorage safely
@@ -251,8 +256,8 @@ export async function signUpUser(
     profile_type: profileType,
     title: 'Digital Identity Pioneer',
     bio: 'Welcome to my SignBridge profile. Tap my NFC Smart Card or connect below.',
-    profile_image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    cover_image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80',
+    profile_image: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName || username)}&backgroundColor=087cf0,923cf6,0d9488,f59e0b&textColor=ffffff`,
+    cover_image: '',
     email,
     theme: 'signature',
     accent_color: '#087CF0',
@@ -354,8 +359,8 @@ export function getOrCreateProfileForUser(user: UserSession): Profile {
     headline: `${user.user_metadata?.full_name || 'SignTap Member'} | Professional Digital Identity`,
     bio: 'Welcome to my official digital identity page. Connect with me or tap my NFC card.',
     about: '',
-    profile_image: (user.user_metadata as any)?.avatar_url || (user.user_metadata as any)?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    cover_image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80',
+    profile_image: (user.user_metadata as any)?.avatar_url || (user.user_metadata as any)?.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.user_metadata?.full_name || uniqueUsername)}&backgroundColor=087cf0,923cf6,0d9488,f59e0b&textColor=ffffff`,
+    cover_image: '',
     email: user.email || '',
     phone: '',
     location: '',
@@ -422,11 +427,20 @@ export function getOrCreateProfileForUser(user: UserSession): Profile {
 /**
  * Read-only local cache updater for public profile visitors.
  * Does NOT upsert to Supabase or mutate owner data.
+ * Checks timestamp freshness to prevent stale remote data from overwriting local changes.
  */
 export function cacheProfileLocally(profile: Profile): void {
   const profiles = getAllProfiles();
   const index = profiles.findIndex(p => p.id === profile.id || p.username.toLowerCase() === profile.username.toLowerCase());
   if (index >= 0) {
+    const existing = profiles[index];
+    const existingTime = new Date(existing.updated_at || 0).getTime();
+    const incomingTime = new Date(profile.updated_at || 0).getTime();
+    
+    // If existing local profile has a newer update timestamp, preserve local edits!
+    if (existingTime > incomingTime && (existing.full_name || existing.profile_image)) {
+      return;
+    }
     profiles[index] = { ...profiles[index], ...profile };
   } else {
     profiles.push(profile);
@@ -438,8 +452,12 @@ export function saveProfile(profile: Profile): void {
   // Security / IDOR Guard: Verify that currentUser owns this profile or is an admin
   const currentUser = getCurrentUser();
   if (currentUser && currentUser.role !== 'admin' && profile.user_id && currentUser.id !== profile.user_id) {
-    console.warn(`[Security IDOR] Unauthorized attempt by ${currentUser.id} to save profile ${profile.id} (${profile.user_id})`);
-    return;
+    // Permit update if currentUser email matches profile email (handles OAuth UUID vs local user ID mapping)
+    const emailMatches = currentUser.email && profile.email && currentUser.email.toLowerCase() === profile.email.toLowerCase();
+    if (!emailMatches) {
+      console.warn(`[Security IDOR] Unauthorized attempt by ${currentUser.id} to save profile ${profile.id} (${profile.user_id})`);
+      return;
+    }
   }
 
   const profiles = getAllProfiles();
@@ -1074,6 +1092,22 @@ export function sendConnectionRequest(requester: Profile, recipient: Profile): C
   }
 
   setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
+
+  // Dispatch persistent notification to recipient
+  createNotification({
+    user_id: recipient.user_id,
+    sender_id: requester.user_id,
+    sender_name: requester.full_name,
+    sender_username: requester.username,
+    sender_image: requester.profile_image,
+    sender_headline: requester.headline || requester.title,
+    type: 'connection_request',
+    title: 'New Connection Request',
+    message: `${requester.full_name} sent you a connection request.`,
+    link: '/dashboard/network',
+    connection_id: newConn.id,
+  });
+
   return newConn;
 }
 
@@ -1090,12 +1124,37 @@ export function acceptConnectionRequest(connectionId: string): void {
     const reqProfile = profiles.find(p => p.user_id === conns[index].requester_id);
     const recProfile = profiles.find(p => p.user_id === conns[index].recipient_id);
     if (reqProfile) {
-      reqProfile.connections_count = (reqProfile.connections_count || 0) + 1;
+      reqProfile.connections_count = getConnectionsForUser(reqProfile.user_id).length;
       saveProfile(reqProfile);
     }
     if (recProfile) {
-      recProfile.connections_count = (recProfile.connections_count || 0) + 1;
+      recProfile.connections_count = getConnectionsForUser(recProfile.user_id).length;
       saveProfile(recProfile);
+    }
+
+    // Mark corresponding connection_request notification as read
+    const notifs = getAllNotifications();
+    const matchingNotif = notifs.find(n => n.connection_id === connectionId);
+    if (matchingNotif) {
+      matchingNotif.read = true;
+      setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+    }
+
+    // Dispatch accepted notification to requester
+    if (recProfile) {
+      createNotification({
+        user_id: conns[index].requester_id,
+        sender_id: recProfile.user_id,
+        sender_name: recProfile.full_name,
+        sender_username: recProfile.username,
+        sender_image: recProfile.profile_image,
+        sender_headline: recProfile.headline || recProfile.title,
+        type: 'connection_accepted',
+        title: 'Connection Accepted',
+        message: `${recProfile.full_name} accepted your connection request. You are now connected!`,
+        link: `/u/${recProfile.username}`,
+        connection_id: connectionId,
+      });
     }
   }
 }
@@ -1107,6 +1166,14 @@ export function declineConnectionRequest(connectionId: string): void {
     conns[index].status = 'declined';
     conns[index].updated_at = new Date().toISOString();
     setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
+
+    // Mark corresponding connection_request notification as read
+    const notifs = getAllNotifications();
+    const matchingNotif = notifs.find(n => n.connection_id === connectionId);
+    if (matchingNotif) {
+      matchingNotif.read = true;
+      setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+    }
   }
 }
 
@@ -1114,6 +1181,15 @@ export function removeConnection(connectionId: string): void {
   const conns = getAllConnections();
   const filtered = conns.filter(c => c.id !== connectionId);
   setLocalItem(STORAGE_KEYS.CONNECTIONS, filtered);
+}
+
+export function getLiveConnectionCount(userId: string): number {
+  return getConnectionsForUser(userId).length;
+}
+
+export function getLiveFollowersCount(userId: string): number {
+  const follows = getAllFollows();
+  return follows.filter(f => f.following_id === userId).length;
 }
 
 // -----------------------------------------------------------------------------
@@ -1136,13 +1212,14 @@ export function toggleFollow(followerId: string, followingId: string): boolean {
   const follows = getAllFollows();
   const index = follows.findIndex(f => f.follower_id === followerId && f.following_id === followingId);
   const profiles = getAllProfiles();
+  const followerProfile = profiles.find(p => p.user_id === followerId);
   const target = profiles.find(p => p.user_id === followingId);
 
   if (index >= 0) {
     follows.splice(index, 1);
     setLocalItem(STORAGE_KEYS.FOLLOWS, follows);
-    if (target && (target.followers_count || 0) > 0) {
-      target.followers_count = (target.followers_count || 1) - 1;
+    if (target) {
+      target.followers_count = getLiveFollowersCount(target.user_id);
       saveProfile(target);
     }
     return false;
@@ -1155,12 +1232,90 @@ export function toggleFollow(followerId: string, followingId: string): boolean {
     });
     setLocalItem(STORAGE_KEYS.FOLLOWS, follows);
     if (target) {
-      target.followers_count = (target.followers_count || 0) + 1;
+      target.followers_count = getLiveFollowersCount(target.user_id);
       saveProfile(target);
+
+      // Dispatch new follower notification to target
+      if (followerProfile) {
+        createNotification({
+          user_id: target.user_id,
+          sender_id: followerProfile.user_id,
+          sender_name: followerProfile.full_name,
+          sender_username: followerProfile.username,
+          sender_image: followerProfile.profile_image,
+          sender_headline: followerProfile.headline || followerProfile.title,
+          type: 'new_follower',
+          title: 'New Follower',
+          message: `${followerProfile.full_name} started following your profile updates.`,
+          link: `/u/${followerProfile.username}`
+        });
+      }
     }
     return true;
   }
 }
+
+// -----------------------------------------------------------------------------
+// Notifications Management
+// -----------------------------------------------------------------------------
+export function getAllNotifications(): AppNotification[] {
+  return getLocalItem<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
+}
+
+export function getNotificationsForUser(userId: string): AppNotification[] {
+  const notifs = getAllNotifications();
+  return notifs
+    .filter(n => n.user_id === userId)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function getUnreadNotificationCount(userId: string): number {
+  const notifs = getNotificationsForUser(userId);
+  return notifs.filter(n => !n.read).length;
+}
+
+export function createNotification(notif: Omit<AppNotification, 'id' | 'created_at' | 'read'>): AppNotification {
+  const notifs = getAllNotifications();
+  const newNotif: AppNotification = {
+    ...notif,
+    id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    read: false,
+    created_at: new Date().toISOString(),
+  };
+  notifs.unshift(newNotif);
+  setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+  return newNotif;
+}
+
+export function markNotificationAsRead(id: string): void {
+  const notifs = getAllNotifications();
+  const index = notifs.findIndex(n => n.id === id);
+  if (index >= 0) {
+    notifs[index].read = true;
+    setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+  }
+}
+
+export function markAllNotificationsAsRead(userId: string): void {
+  const notifs = getAllNotifications();
+  let updated = false;
+  notifs.forEach(n => {
+    if (n.user_id === userId && !n.read) {
+      n.read = true;
+      updated = true;
+    }
+  });
+  if (updated) {
+    setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+  }
+}
+
+export function deleteNotification(id: string): void {
+  const notifs = getAllNotifications();
+  const filtered = notifs.filter(n => n.id !== id);
+  setLocalItem(STORAGE_KEYS.NOTIFICATIONS, filtered);
+}
+
 
 // -----------------------------------------------------------------------------
 // Professional Activity Feed: Posts & Updates

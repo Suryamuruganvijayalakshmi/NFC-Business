@@ -184,37 +184,62 @@ export default function ProfileEditorPage() {
     }
   }, []);
 
-  const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+function compressAndEncodeImage(file: File, maxWidth: number, maxHeight: number, quality: number = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image is too large. Please select an image under 5MB.');
-        return;
+      try {
+        const compressed = await compressAndEncodeImage(file, 400, 400, 0.85);
+        setProfileImage(compressed);
+      } catch (err) {
+        console.error('Image processing failed:', err);
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          setProfileImage(ev.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
     }
   };
 
-  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 8 * 1024 * 1024) {
-        alert('Cover image is too large. Please select an image under 8MB.');
-        return;
+      try {
+        const compressed = await compressAndEncodeImage(file, 1200, 400, 0.80);
+        setCoverImage(compressed);
+      } catch (err) {
+        console.error('Cover processing failed:', err);
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          setCoverImage(ev.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
     }
   };
 
