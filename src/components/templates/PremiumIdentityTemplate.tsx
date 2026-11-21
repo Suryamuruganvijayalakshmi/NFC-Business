@@ -31,7 +31,8 @@ import {
   toggleLikePost,
   getAllProfiles,
   getAnalyticsSummary,
-  getUnreadMessageCount
+  getUnreadMessageCount,
+  getNewMemberStatus
 } from '@/lib/store';
 import { sanitizeUrl } from '@/lib/security';
 import { 
@@ -246,6 +247,7 @@ export default function PremiumIdentityTemplate({
 
   const isOwnProfile = currentUser?.id === profile.user_id;
   const isPremium = Boolean(profile.is_premium);
+  const newMemberStatus = getNewMemberStatus(profile.created_at, 20);
 
   // Extract initials for avatar
   const getInitials = (name: string): string => {
@@ -327,41 +329,51 @@ export default function PremiumIdentityTemplate({
                     </div>
                   ) : (
                     <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                      {searchResults.map((res) => (
-                        <div 
-                          key={res.id} 
-                          className="p-2.5 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors"
-                        >
-                          <Link 
-                            href={`/u/${res.username}`} 
-                            onClick={() => setIsSearchFocused(false)}
-                            className="flex items-center gap-2.5 min-w-0 flex-1"
+                      {searchResults.map((res) => {
+                        const resNewStatus = getNewMemberStatus(res.created_at, 20);
+                        return (
+                          <div 
+                            key={res.id} 
+                            className="p-2.5 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors"
                           >
-                            <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-xs text-slate-700">
-                              {res.profile_image ? (
-                                <img src={res.profile_image} alt={res.full_name} className="w-full h-full object-cover" />
-                              ) : (
-                                res.full_name?.charAt(0) || 'U'
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-900 truncate flex items-center gap-1">
-                                <span>{res.full_name}</span>
-                                {res.is_premium && <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />}
-                              </p>
-                              <p className="text-[10px] text-slate-500 truncate">{res.headline || res.title || 'Professional'}</p>
-                            </div>
-                          </Link>
+                            <Link 
+                              href={`/u/${res.username}`} 
+                              onClick={() => setIsSearchFocused(false)}
+                              className="flex items-center gap-2.5 min-w-0 flex-1"
+                            >
+                              <div className={`relative w-8 h-8 rounded-full bg-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-xs text-slate-700 ${
+                                resNewStatus.isNew ? 'ring-2 ring-emerald-500' : ''
+                              }`}>
+                                {res.profile_image ? (
+                                  <img src={res.profile_image} alt={res.full_name} className="w-full h-full object-cover" />
+                                ) : (
+                                  res.full_name?.charAt(0) || 'U'
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
+                                  <span>{res.full_name}</span>
+                                  {res.is_premium && <Crown className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
+                                  {resNewStatus.isNew && (
+                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                                      NEW
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-[10px] text-slate-500 truncate">{res.headline || res.title || 'Professional'}</p>
+                              </div>
+                            </Link>
 
-                          <Link
-                            href={`/u/${res.username}`}
-                            onClick={() => setIsSearchFocused(false)}
-                            className="py-1 px-2.5 rounded-lg border border-[#087CF0] text-[#087CF0] hover:bg-blue-50 text-[11px] font-bold flex-shrink-0"
-                          >
-                            View
-                          </Link>
-                        </div>
-                      ))}
+                            <Link
+                              href={`/u/${res.username}`} 
+                              onClick={() => setIsSearchFocused(false)}
+                              className="py-1 px-2.5 rounded-lg border border-[#087CF0] text-[#087CF0] hover:bg-blue-50 text-[11px] font-bold flex-shrink-0"
+                            >
+                              View
+                            </Link>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -518,7 +530,26 @@ export default function PremiumIdentityTemplate({
                   
                   {/* Avatar */}
                   <div className="relative group">
-                    <div className={`w-32 h-32 sm:w-36 sm:h-36 rounded-full p-1 bg-white ring-4 ${isPremium ? 'ring-amber-400 shadow-lg shadow-amber-200/50' : 'ring-white shadow-md'}`}>
+                    {/* Floating NEW badge on top of avatar if joined within 20 days */}
+                    {newMemberStatus.isNew && (
+                      <div 
+                        className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 px-3 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1.5 border-2 border-white animate-pulse"
+                        title={`New Member • Joined ${newMemberStatus.daysAgo === 0 ? 'today' : `${newMemberStatus.daysAgo} day${newMemberStatus.daysAgo > 1 ? 's' : ''} ago`} • Displayed as NEW for 20 days (${newMemberStatus.daysLeft} days left)`}
+                      >
+                        <Sparkles className="w-2.5 h-2.5 fill-white text-white" />
+                        <span>NEW</span>
+                      </div>
+                    )}
+
+                    <div 
+                      className={`w-32 h-32 sm:w-36 sm:h-36 rounded-full p-1 bg-white ring-4 transition-all ${
+                        isPremium 
+                          ? 'ring-amber-400 shadow-lg shadow-amber-200/50' 
+                          : newMemberStatus.isNew 
+                            ? 'ring-emerald-500 ring-offset-2 ring-offset-emerald-100 shadow-xl shadow-emerald-200/80 animate-pulse' 
+                            : 'ring-white shadow-md'
+                      }`}
+                    >
                       {profile.profile_image ? (
                         <img 
                           src={profile.profile_image} 
@@ -609,6 +640,18 @@ export default function PremiumIdentityTemplate({
                         </button>
                       )}
 
+                      {/* New Member Badge (Active for first 20 days) */}
+                      {newMemberStatus.isNew && (
+                        <span 
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-bold tracking-tight shadow-2xs"
+                          title={`New to SignTap • Joined within 20 days (${newMemberStatus.daysAgo === 0 ? 'today' : `${newMemberStatus.daysAgo} day${newMemberStatus.daysAgo > 1 ? 's' : ''} ago`}) • Highlighted as NEW for ${newMemberStatus.daysLeft} more days`}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                          <span>NEW MEMBER</span>
+                          <span className="text-[10px] text-emerald-600 font-semibold">({newMemberStatus.daysLeft}d left)</span>
+                        </span>
+                      )}
+
                       <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
                         @{profile.username}
                       </span>
@@ -643,6 +686,28 @@ export default function PremiumIdentityTemplate({
                         {profile.followers_count ?? 0} followers
                       </span>
                     </div>
+
+                    {/* 20-Day New Member Profile Highlight Banner */}
+                    {newMemberStatus.isNew && (
+                      <div className="mt-3.5 flex items-center justify-between gap-3 p-3 bg-gradient-to-r from-emerald-50/90 via-teal-50/60 to-emerald-50/90 rounded-xl border border-emerald-200/90 text-xs text-emerald-950 shadow-2xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm font-bold">
+                            <Sparkles className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-emerald-950 truncate">
+                              New Member on SignTap! Joined {newMemberStatus.daysAgo === 0 ? 'today' : `${newMemberStatus.daysAgo} day${newMemberStatus.daysAgo > 1 ? 's' : ''} ago`}
+                            </p>
+                            <p className="text-[11px] text-emerald-700">
+                              Say hello and give a warm welcome by connecting or messaging!
+                            </p>
+                          </div>
+                        </div>
+                        <span className="flex-shrink-0 text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
+                          NEW for {newMemberStatus.daysLeft} more day{newMemberStatus.daysLeft > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Side: Current Company & Primary Education (Exact LinkedIn Header Element!) */}
@@ -1337,37 +1402,47 @@ export default function PremiumIdentityTemplate({
                 </h3>
 
                 <div className="space-y-3.5">
-                  {suggestedProfiles.map((person) => (
-                    <div key={person.id} className="flex items-start justify-between gap-3 text-xs">
-                      <Link 
-                        href={`/u/${person.username}`}
-                        className="flex items-start gap-2.5 min-w-0 flex-1 hover:opacity-85 transition-opacity"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-slate-700 text-xs">
-                          {person.profile_image ? (
-                            <img src={person.profile_image} alt={person.full_name} className="w-full h-full object-cover" />
-                          ) : (
-                            getInitials(person.full_name)
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-slate-900 truncate flex items-center gap-1">
-                            <span>{person.full_name}</span>
-                            {person.is_premium && <Crown className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
-                          </p>
-                          <p className="text-[11px] text-slate-500 truncate">{person.headline || person.title || 'Professional'}</p>
-                          <p className="text-[10px] text-slate-400">{person.company}</p>
-                        </div>
-                      </Link>
+                  {suggestedProfiles.map((person) => {
+                    const personNewStatus = getNewMemberStatus(person.created_at, 20);
+                    return (
+                      <div key={person.id} className="flex items-start justify-between gap-3 text-xs">
+                        <Link 
+                          href={`/u/${person.username}`}
+                          className="flex items-start gap-2.5 min-w-0 flex-1 hover:opacity-85 transition-opacity"
+                        >
+                          <div className={`relative w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-slate-700 text-xs ${
+                            personNewStatus.isNew ? 'ring-2 ring-emerald-500' : ''
+                          }`}>
+                            {person.profile_image ? (
+                              <img src={person.profile_image} alt={person.full_name} className="w-full h-full object-cover" />
+                            ) : (
+                              getInitials(person.full_name)
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                              <span>{person.full_name}</span>
+                              {person.is_premium && <Crown className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
+                              {personNewStatus.isNew && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                                  NEW
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate">{person.headline || person.title || 'Professional'}</p>
+                            <p className="text-[10px] text-slate-400">{person.company}</p>
+                          </div>
+                        </Link>
 
-                      <Link
-                        href={`/u/${person.username}`}
-                        className="py-1 px-3 rounded-full border border-slate-400 hover:bg-slate-50 hover:border-slate-600 text-[11px] font-bold text-slate-700 transition-colors flex-shrink-0"
-                      >
-                        + Connect
-                      </Link>
-                    </div>
-                  ))}
+                        <Link
+                          href={`/u/${person.username}`}
+                          className="py-1 px-3 rounded-full border border-slate-400 hover:bg-slate-50 hover:border-slate-600 text-[11px] font-bold text-slate-700 transition-colors flex-shrink-0"
+                        >
+                          + Connect
+                        </Link>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

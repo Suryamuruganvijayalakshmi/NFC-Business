@@ -9,7 +9,7 @@ import {
 } from '@/lib/types';
 import { downloadVCard } from '@/lib/vcard';
 import QRCodeModal from '@/components/QRCodeModal';
-import { getCurrentUser, savePublicProfileAsContact } from '@/lib/store';
+import { getCurrentUser, savePublicProfileAsContact, getNewMemberStatus } from '@/lib/store';
 import { 
   MapPin, 
   Globe, 
@@ -65,6 +65,7 @@ export default function MinimalTemplate({
   const visibleLinks = links.filter(l => l.visible);
   const visibleProjects = projects;
   const visibleSections = sections.filter(s => s.visible);
+  const newStatus = getNewMemberStatus(profile.created_at, 20);
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] text-slate-800 font-sans py-8 sm:py-16 px-4 sm:px-6">
@@ -84,18 +85,30 @@ export default function MinimalTemplate({
         {/* Minimal Profile Header */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
           <div className="relative">
+            {newStatus.isNew && (
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-md border-2 border-white animate-pulse">
+                NEW
+              </span>
+            )}
             <img 
               src={profile.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'} 
               alt={profile.full_name} 
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-white shadow-md"
+              className={`w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ${
+                newStatus.isNew ? 'ring-emerald-400 shadow-md shadow-emerald-400/25' : 'ring-white'
+              } shadow-md`}
             />
             <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" title="Active NFC Identity" />
           </div>
 
           <div className="flex-1">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-                {profile.full_name}
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                <span>{profile.full_name}</span>
+                {newStatus.isNew && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    NEW ({newStatus.daysLeft}d left)
+                  </span>
+                )}
               </h1>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium capitalize">
                 {profile.profile_type}

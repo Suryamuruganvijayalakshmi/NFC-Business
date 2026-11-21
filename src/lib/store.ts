@@ -2134,3 +2134,22 @@ export function getUnreadMessageCount(userId: string): number {
   return messages.filter(m => m.receiver_id === userId && !m.read).length;
 }
 
+/**
+ * Checks whether a profile or user joined within the last 20 days.
+ * Returns isNew boolean, how many days ago they joined, and days left as 'New'.
+ * Automatically expires on day 21 (diffDays >= 20).
+ */
+export function getNewMemberStatus(createdAt?: string, daysLimit = 20): { isNew: boolean; daysAgo: number; daysLeft: number } {
+  if (!createdAt) return { isNew: false, daysAgo: 999, daysLeft: 0 };
+  const createdDate = new Date(createdAt).getTime();
+  if (isNaN(createdDate)) return { isNew: false, daysAgo: 999, daysLeft: 0 };
+  const now = Date.now();
+  const diffMs = now - createdDate;
+  // If created date is in the future due to slight clock drift, treat as 0
+  const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+  const isNew = diffDays < daysLimit;
+  const daysLeft = Math.max(0, daysLimit - diffDays);
+  return { isNew, daysAgo: diffDays, daysLeft };
+}
+
+

@@ -18,7 +18,8 @@ import {
   isFollowing, 
   toggleFollow, 
   getPostsByUserId,
-  savePublicProfileAsContact
+  savePublicProfileAsContact,
+  getNewMemberStatus
 } from '@/lib/store';
 import { 
   MapPin, 
@@ -136,6 +137,7 @@ export default function SignatureTemplate({
   const visibleLinks = links.filter(l => l.visible);
   const visibleProjects = projects;
   const isOwnProfile = currentUser?.id === profile.user_id;
+  const newStatus = getNewMemberStatus(profile.created_at, 20);
 
   const visibility = profile.section_visibility || {
     bio: true,
@@ -203,7 +205,16 @@ export default function SignatureTemplate({
         {/* Profile Identity Header */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="relative group">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden ring-2 ring-[#087CF0]/40 p-1 bg-gradient-to-br from-[#087CF0] to-[#FF7900] shadow-lg flex-shrink-0">
+            {newStatus.isNew && (
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-md border border-white animate-pulse">
+                NEW
+              </span>
+            )}
+            <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden p-1 ${
+              newStatus.isNew 
+                ? 'ring-2 ring-emerald-400 shadow-lg shadow-emerald-400/25 bg-gradient-to-br from-emerald-500 to-teal-600' 
+                : 'ring-2 ring-[#087CF0]/40 bg-gradient-to-br from-[#087CF0] to-[#FF7900] shadow-lg'
+            } flex-shrink-0`}>
               {profile.profile_image ? (
                 <img 
                   src={profile.profile_image} 
@@ -226,15 +237,24 @@ export default function SignatureTemplate({
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                {profile.full_name}
-                <ShieldCheck className="w-5 h-5 text-[#087CF0]" />
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#087CF0]/15 text-[#087CF0] border border-[#087CF0]/30">
-                {profile.profile_type}
-              </span>
-            </div>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                    {profile.full_name}
+                    <ShieldCheck className="w-5 h-5 text-[#087CF0]" />
+                  </h1>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#087CF0]/15 text-[#087CF0] border border-[#087CF0]/30">
+                    {profile.profile_type}
+                  </span>
+                  {newStatus.isNew && (
+                    <span 
+                      className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex items-center gap-1"
+                      title={`Joined within 20 days • Active for ${newStatus.daysLeft} more days`}
+                    >
+                      <Sparkles className="w-3 h-3 text-emerald-400" />
+                      <span>NEW MEMBER ({newStatus.daysLeft}d left)</span>
+                    </span>
+                  )}
+                </div>
 
             <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1 leading-relaxed">
               {profile.headline || profile.title || 'Digital Identity & Professional'}

@@ -9,6 +9,7 @@ import {
 } from '@/lib/types';
 import { downloadVCard } from '@/lib/vcard';
 import QRCodeModal from '@/components/QRCodeModal';
+import { getNewMemberStatus } from '@/lib/store';
 import { 
   MapPin, 
   Globe, 
@@ -52,6 +53,7 @@ export default function CreativeTemplate({
   const accentColor = profile.accent_color || '#FF7900';
   const visibleLinks = links.filter(l => l.visible);
   const visibleProjects = projects;
+  const newStatus = getNewMemberStatus(profile.created_at, 20);
   const visibleSections = sections.filter(s => s.visible);
 
   return (
@@ -73,7 +75,16 @@ export default function CreativeTemplate({
         {/* Creator Intro Header */}
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-4">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden p-1.5 bg-gradient-to-tr from-[#FF7900] via-pink-500 to-[#087CF0] shadow-xl">
+            {newStatus.isNew && (
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-md border-2 border-white animate-pulse">
+                NEW
+              </span>
+            )}
+            <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden p-1.5 ${
+              newStatus.isNew 
+                ? 'bg-gradient-to-tr from-emerald-400 via-teal-500 to-cyan-500 ring-4 ring-emerald-200 shadow-emerald-400/30' 
+                : 'bg-gradient-to-tr from-[#FF7900] via-pink-500 to-[#087CF0]'
+            } shadow-xl`}>
               <img 
                 src={profile.profile_image || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80'} 
                 alt={profile.full_name} 
@@ -86,8 +97,13 @@ export default function CreativeTemplate({
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 font-serif">
-            {profile.full_name}
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 font-serif flex items-center justify-center gap-2">
+            <span>{profile.full_name}</span>
+            {newStatus.isNew && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                NEW ({newStatus.daysLeft}d left)
+              </span>
+            )}
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 font-medium mt-1">

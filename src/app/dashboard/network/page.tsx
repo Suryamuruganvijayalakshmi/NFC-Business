@@ -16,7 +16,8 @@ import {
   getAllProfiles,
   getConnectionStatus,
   isFollowing,
-  toggleFollow
+  toggleFollow,
+  getNewMemberStatus
 } from '@/lib/store';
 import { Profile, Connection } from '@/lib/types';
 import { 
@@ -395,6 +396,7 @@ export default function NetworkPage() {
             {otherProfiles.map((prof) => {
               const connStatus = getConnectionStatus(profile.user_id, prof.user_id);
               const following = isFollowing(profile.user_id, prof.user_id);
+              const profNewStatus = getNewMemberStatus(prof.created_at, 20);
 
               return (
                 <div 
@@ -421,12 +423,21 @@ export default function NetworkPage() {
                     <div>
                       {/* Avatar */}
                       <div className="-mt-10 mb-3 flex justify-between items-end">
-                        <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-white shadow-md bg-slate-800">
-                          <img 
-                            src={prof.profile_image} 
-                            alt={prof.full_name} 
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="relative">
+                          {profNewStatus.isNew && (
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-xs border border-white">
+                              NEW
+                            </span>
+                          )}
+                          <div className={`w-16 h-16 rounded-2xl overflow-hidden ring-4 ${
+                            profNewStatus.isNew ? 'ring-emerald-400 shadow-emerald-400/20' : 'ring-white'
+                          } shadow-md bg-slate-800`}>
+                            <img 
+                              src={prof.profile_image} 
+                              alt={prof.full_name} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         </div>
 
                         <button
@@ -448,6 +459,11 @@ export default function NetworkPage() {
                       >
                         <span>{prof.full_name}</span>
                         <ShieldCheck className="w-4 h-4 text-[#087CF0]" />
+                        {profNewStatus.isNew && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            NEW
+                          </span>
+                        )}
                       </Link>
 
                       <p className="text-xs text-slate-600 line-clamp-2 mt-1 leading-relaxed">

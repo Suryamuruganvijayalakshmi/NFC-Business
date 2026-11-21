@@ -22,7 +22,8 @@ import {
   toggleFollow,
   getContactsByUserId,
   getFollowUpsByUserId,
-  toggleFollowUpComplete
+  toggleFollowUpComplete,
+  getNewMemberStatus
 } from '@/lib/store';
 import { Profile, AnalyticsSummary, NFCCard, Connection, PostItem, ContactFollowUp } from '@/lib/types';
 import QRCodeModal from '@/components/QRCodeModal';
@@ -243,91 +244,112 @@ export default function DashboardOverviewPage() {
       )}
 
       {/* 1. Hero Identity Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 rounded-3xl bg-gradient-to-r from-[#101828] via-[#1A253A] to-[#101828] text-white shadow-xl relative overflow-hidden">
-        <div className="relative z-10 space-y-2.5 max-w-2xl">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider font-semibold">
-              Live Professional Identity · NFC Ready
-            </span>
-          </div>
+      {(() => {
+        const newStatus = getNewMemberStatus(profile.created_at, 20);
+        return (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 rounded-3xl bg-gradient-to-r from-[#101828] via-[#1A253A] to-[#101828] text-white shadow-xl relative overflow-hidden">
+            <div className="relative z-10 space-y-2.5 max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider font-semibold">
+                  Live Professional Identity · NFC Ready
+                </span>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">
-            <span>Welcome back, {profile.full_name}</span>
-            <ShieldCheck className="w-6 h-6 text-[#087CF0]" />
-          </h1>
+                {newStatus.isNew && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>NEW Member Spotlight · Highlighted for {newStatus.daysLeft} more days</span>
+                  </span>
+                )}
+              </div>
 
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            {profile.headline || profile.title || 'Digital Identity Pioneer & Professional'}
-          </p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">
+                <span>Welcome back, {profile.full_name}</span>
+                <ShieldCheck className="w-6 h-6 text-[#087CF0]" />
+              </h1>
 
-          <p className="text-xs text-slate-400">
-            Public Profile URL: <code className="text-[#087CF0] bg-white/10 px-2 py-0.5 rounded font-mono">/u/{profile.username}</code> · Live Contactless Sync
-          </p>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {profile.headline || profile.title || 'Digital Identity Pioneer & Professional'}
+              </p>
 
-          {/* Quick Action Buttons */}
-          <div className="pt-3 flex flex-wrap items-center gap-2.5">
-            <a
-              href={`/u/${profile.username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-2.5 px-4 rounded-xl bg-[#087CF0] hover:bg-[#0668cc] text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-            >
-              <span>Preview Live Profile</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+              <p className="text-xs text-slate-400">
+                Public Profile URL: <code className="text-[#087CF0] bg-white/10 px-2 py-0.5 rounded font-mono">/u/{profile.username}</code> · Live Contactless Sync
+              </p>
 
-            <button
-              onClick={handleCopyLink}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-all flex items-center gap-1.5 border border-white/10 active:scale-95"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied URL' : 'Copy Profile Link'}</span>
-            </button>
+              {/* Quick Action Buttons */}
+              <div className="pt-3 flex flex-wrap items-center gap-2.5">
+                <a
+                  href={`/u/${profile.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-4 rounded-xl bg-[#087CF0] hover:bg-[#0668cc] text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  <span>Preview Live Profile</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
 
-            <button
-              onClick={() => setShowQR(true)}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-all flex items-center gap-1.5 border border-white/10 active:scale-95"
-            >
-              <QrCode className="w-3.5 h-3.5 text-[#FF7900]" />
-              <span>Share NFC QR</span>
-            </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-all flex items-center gap-1.5 border border-white/10 active:scale-95"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'Copied URL' : 'Copy Profile Link'}</span>
+                </button>
 
-            <Link
-              href="/dashboard/profile"
-              className="py-2.5 px-4 rounded-xl bg-[#FF7900] hover:bg-[#e06b00] text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Edit Sections</span>
-            </Link>
-          </div>
-        </div>
+                <button
+                  onClick={() => setShowQR(true)}
+                  className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-all flex items-center gap-1.5 border border-white/10 active:scale-95"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-[#FF7900]" />
+                  <span>Share NFC QR</span>
+                </button>
 
-        {/* User Identity Chip on Right */}
-        <div className="relative z-10 flex-shrink-0 flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md">
-          <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-[#087CF0]/50 bg-slate-800">
-            <img 
-              src={profile.profile_image} 
-              alt={profile.full_name} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
-              <Wifi className="w-3.5 h-3.5 text-[#087CF0] rotate-90" />
-              <span>NFC Hardware Linked</span>
+                <Link
+                  href="/dashboard/profile"
+                  className="py-2.5 px-4 rounded-xl bg-[#FF7900] hover:bg-[#e06b00] text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Edit Sections</span>
+                </Link>
+              </div>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              UID: {primaryCard?.card_uid || 'ST-NFC-NEW'}
-            </p>
-            <p className="text-[10px] text-emerald-400 font-semibold mt-1">
-              ● Card Active & Tap Ready
-            </p>
-          </div>
-        </div>
 
-        <div className="absolute right-0 top-0 w-80 h-80 bg-[#087CF0]/15 rounded-full blur-3xl pointer-events-none" />
-      </div>
+            {/* User Identity Chip on Right */}
+            <div className="relative z-10 flex-shrink-0 flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md">
+              <div className={`relative w-14 h-14 rounded-xl overflow-hidden ${
+                newStatus.isNew 
+                  ? 'ring-2 ring-emerald-400 shadow-md shadow-emerald-500/30' 
+                  : 'ring-2 ring-[#087CF0]/50'
+              } bg-slate-800`}>
+                <img 
+                  src={profile.profile_image} 
+                  alt={profile.full_name} 
+                  className="w-full h-full object-cover"
+                />
+                {newStatus.isNew && (
+                  <span className="absolute top-0 right-0 px-1 py-0.2 rounded-bl text-[8px] font-black uppercase bg-emerald-500 text-white">
+                    NEW
+                  </span>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                  <Wifi className="w-3.5 h-3.5 text-[#087CF0] rotate-90" />
+                  <span>NFC Hardware Linked</span>
+                </div>
+                <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+                  UID: {primaryCard?.card_uid || 'ST-NFC-NEW'}
+                </p>
+                <p className="text-[10px] text-emerald-400 font-semibold mt-1">
+                  ● Card Active & Tap Ready
+                </p>
+              </div>
+            </div>
+
+            <div className="absolute right-0 top-0 w-80 h-80 bg-[#087CF0]/15 rounded-full blur-3xl pointer-events-none" />
+          </div>
+        );
+      })()}
 
       {/* 2. Key Professional Telemetry Grid (Real user metrics, 0 for new user) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -671,24 +693,39 @@ export default function DashboardOverviewPage() {
             {recommendedPeople.map((person) => {
               const connStatus = getConnectionStatus(profile.user_id, person.user_id);
               const following = isFollowing(profile.user_id, person.user_id);
+              const personNewStatus = getNewMemberStatus(person.created_at, 20);
 
               return (
                 <div key={person.id} className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between space-y-3 hover:border-slate-300 transition-all">
                   <div>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <img 
-                          src={person.profile_image} 
-                          alt={person.full_name} 
-                          className="w-11 h-11 rounded-xl object-cover ring-2 ring-white shadow-xs"
-                        />
+                        <div className={`relative w-11 h-11 rounded-xl overflow-hidden ${
+                          personNewStatus.isNew ? 'ring-2 ring-emerald-500 shadow-sm' : 'ring-2 ring-white shadow-xs'
+                        }`}>
+                          <img 
+                            src={person.profile_image} 
+                            alt={person.full_name} 
+                            className="w-full h-full object-cover"
+                          />
+                          {personNewStatus.isNew && (
+                            <span className="absolute top-0 right-0 px-1 py-0.2 rounded-bl text-[7px] font-black uppercase bg-emerald-500 text-white">
+                              NEW
+                            </span>
+                          )}
+                        </div>
                         <div>
                           <Link 
                             href={`/u/${person.username}`}
                             target="_blank"
-                            className="text-xs font-bold text-[#101828] hover:text-[#087CF0] transition-colors truncate block"
+                            className="text-xs font-bold text-[#101828] hover:text-[#087CF0] transition-colors truncate block flex items-center gap-1"
                           >
-                            {person.full_name}
+                            <span>{person.full_name}</span>
+                            {personNewStatus.isNew && (
+                              <span className="px-1 py-0.2 rounded text-[8px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                NEW
+                              </span>
+                            )}
                           </Link>
                           <span className="text-[10px] font-mono text-slate-400">@{person.username}</span>
                         </div>

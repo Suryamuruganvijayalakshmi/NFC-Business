@@ -10,7 +10,8 @@ import {
   getConnectionStatus, 
   sendConnectionRequest,
   isFollowing,
-  toggleFollow
+  toggleFollow,
+  getNewMemberStatus
 } from '@/lib/store';
 import { Profile } from '@/lib/types';
 import { downloadVCard } from '@/lib/vcard';
@@ -219,6 +220,7 @@ export default function DiscoverPage() {
                 ? isFollowing(currentUserProfile.user_id, prof.user_id)
                 : false;
               const isOwnProfile = currentUserProfile?.user_id === prof.user_id;
+              const profNewStatus = getNewMemberStatus(prof.created_at, 20);
 
               return (
                 <div 
@@ -245,12 +247,21 @@ export default function DiscoverPage() {
                     <div>
                       {/* Avatar & Follow button */}
                       <div className="-mt-12 mb-3.5 flex justify-between items-end">
-                        <div className="w-20 h-20 rounded-2xl overflow-hidden ring-4 ring-white shadow-lg bg-slate-800">
-                          <img 
-                            src={prof.profile_image} 
-                            alt={prof.full_name} 
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="relative">
+                          {profNewStatus.isNew && (
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-sm border border-white">
+                              NEW
+                            </span>
+                          )}
+                          <div className={`w-20 h-20 rounded-2xl overflow-hidden ring-4 ${
+                            profNewStatus.isNew ? 'ring-emerald-400 shadow-md shadow-emerald-400/20' : 'ring-white shadow-lg'
+                          } bg-slate-800`}>
+                            <img 
+                              src={prof.profile_image} 
+                              alt={prof.full_name} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         </div>
 
                         {!isOwnProfile && (
@@ -270,14 +281,19 @@ export default function DiscoverPage() {
                       <div className="flex items-center gap-1.5">
                         <Link 
                           href={`/u/${prof.username}`}
-                          className="text-base font-bold text-[#101828] hover:text-[#087CF0] transition-colors"
+                          className="text-base font-bold text-[#101828] hover:text-[#087CF0] transition-colors flex items-center gap-1.5"
                         >
-                          {prof.full_name}
+                          <span>{prof.full_name}</span>
+                          {profNewStatus.isNew && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              NEW
+                            </span>
+                          )}
                         </Link>
                         <ShieldCheck className="w-4 h-4 text-[#087CF0]" />
                       </div>
 
-                      <p className="text-xs text-slate-600 line-clamp-2 mt-1 leading-relaxed">
+                          <p className="text-xs text-slate-600 line-clamp-2 mt-1 leading-relaxed">
                         {prof.headline || prof.title}
                       </p>
 
