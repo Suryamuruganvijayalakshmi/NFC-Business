@@ -27,6 +27,7 @@ import {
 } from '@/lib/store';
 import { Profile, AnalyticsSummary, NFCCard, Connection, PostItem, ContactFollowUp } from '@/lib/types';
 import QRCodeModal from '@/components/QRCodeModal';
+import PremiumUpgradeModal from '@/components/PremiumUpgradeModal';
 import { 
   Eye, 
   Wifi, 
@@ -44,6 +45,7 @@ import {
   Newspaper, 
   Building, 
   Plus, 
+  Crown, 
   UserCheck, 
   UserX, 
   UserPlus,
@@ -69,6 +71,7 @@ export default function DashboardOverviewPage() {
   const [recentPosts, setRecentPosts] = useState<PostItem[]>([]);
   const [recommendedPeople, setRecommendedPeople] = useState<Profile[]>([]);
   const [showQR, setShowQR] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -287,6 +290,23 @@ export default function DashboardOverviewPage() {
                   <span>Preview Live Profile</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
+
+                {/* Razorpay Premium Upgrade CTA */}
+                {profile.is_premium ? (
+                  <span className="py-2.5 px-4 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>Premium Active (₹1,000/yr)</span>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setShowPremiumModal(true)}
+                    className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                    title="Pay ₹1,000 via Razorpay for 1 Year Premium"
+                  >
+                    <Crown className="w-3.5 h-3.5 fill-white" />
+                    <span>Get Premium ₹1,000/yr</span>
+                  </button>
+                )}
 
                 <button
                   onClick={handleCopyLink}
@@ -1032,6 +1052,17 @@ export default function DashboardOverviewPage() {
         url={publicUrl}
         fullName={profile.full_name}
         username={profile.username}
+      />
+
+      {/* Razorpay Premium Upgrade Modal */}
+      <PremiumUpgradeModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        profile={profile}
+        onSuccess={() => {
+          const updated = getProfileByUserId(profile.user_id);
+          if (updated) setProfile(updated);
+        }}
       />
     </div>
   );
