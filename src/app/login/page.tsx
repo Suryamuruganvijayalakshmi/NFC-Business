@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import { loginUser, loginWithGoogle } from '@/lib/store';
+import { getSafeRedirectUrl } from '@/lib/security';
 import { ArrowRight, Lock, Mail, AlertCircle, Sparkles, Wifi } from 'lucide-react';
 
 export default function LoginPage() {
@@ -15,6 +16,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const getDestinationUrl = () => {
+    if (typeof window !== 'undefined') {
+      const raw = new URLSearchParams(window.location.search).get('redirect');
+      return getSafeRedirectUrl(raw, '/dashboard');
+    }
+    return '/dashboard';
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +42,7 @@ export default function LoginPage() {
         setError(res.error);
         setLoading(false);
       } else {
-        router.push('/dashboard');
+        router.push(getDestinationUrl());
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to login');
@@ -61,7 +70,7 @@ export default function LoginPage() {
     setPassword('demo123456');
     setLoading(true);
     await loginUser(demoEmail, 'demo123456');
-    router.push('/dashboard');
+    router.push(getDestinationUrl());
   };
 
   return (

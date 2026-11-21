@@ -54,6 +54,7 @@ import {
   INITIAL_FOLLOW_UPS
 } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { sanitizeUrl, sanitizeCsvCell, isAnalyticsRateLimited } from './security';
 
 const STORAGE_KEYS = {
   USER: 'sb_current_user',
@@ -410,12 +411,41 @@ export function getOrCreateProfileForUser(user: UserSession): Profile {
   return newProfile;
 }
 
+/**
+ * Read-only local cache updater for public profile visitors.
+ * Does NOT upsert to Supabase or mutate owner data.
+ */
+export function cacheProfileLocally(profile: Profile): void {
+  const profiles = getAllProfiles();
+  const index = profiles.findIndex(p => p.id === profile.id || p.username.toLowerCase() === profile.username.toLowerCase());
+  if (index >= 0) {
+    profiles[index] = { ...profiles[index], ...profile };
+  } else {
+    profiles.push(profile);
+  }
+  setLocalItem(STORAGE_KEYS.PROFILES, profiles);
+}
+
 export function saveProfile(profile: Profile): void {
+  // Security / IDOR Guard: Verify that currentUser owns this profile or is an admin
+  const currentUser = getCurrentUser();
+  if (currentUser && currentUser.role !== 'admin' && profile.user_id && currentUser.id !== profile.user_id) {
+    console.warn(`[Security IDOR] Unauthorized attempt by ${currentUser.id} to save profile ${profile.id} (${profile.user_id})`);
+    return;
+  }
+
   const profiles = getAllProfiles();
   const index = profiles.findIndex(p => p.id === profile.id || p.username.toLowerCase() === profile.username.toLowerCase());
   
+  // Sanitize all URLs to prevent XSS (javascript:, data:, vbscript:)
   const updatedProfile: Profile = {
     ...profile,
+    website: profile.website ? sanitizeUrl(profile.website) : undefined,
+    portfolio_url: profile.portfolio_url ? sanitizeUrl(profile.portfolio_url) : undefined,
+    resume_url: profile.resume_url ? sanitizeUrl(profile.resume_url) : undefined,
+    custom_links: Array.isArray(profile.custom_links) 
+      ? profile.custom_links.map(cl => ({ ...cl, url: sanitizeUrl(cl.url) }))
+      : [],
     updated_at: new Date().toISOString(),
   };
 
@@ -524,12 +554,16 @@ export function getProjectsByProfileId(profileId: string): PortfolioProject[] {
 }
 
 export function saveProject(project: PortfolioProject): void {
+  const safeProject: PortfolioProject = {
+    ...project,
+    project_url: project.project_url ? sanitizeUrl(project.project_url) : '',
+  };
   const allProjects = getLocalItem<PortfolioProject[]>(STORAGE_KEYS.PROJECTS, INITIAL_PROJECTS);
-  const index = allProjects.findIndex(p => p.id === project.id);
+  const index = allProjects.findIndex(p => p.id === safeProject.id);
   if (index >= 0) {
-    allProjects[index] = project;
+    allProjects[index] = safeProject;
   } else {
-    allProjects.push(project);
+    allProjects.push(safeProject);
   }
   setLocalItem(STORAGE_KEYS.PROJECTS, allProjects);
 }
@@ -549,12 +583,16 @@ export function getLinksByProfileId(profileId: string): SocialLink[] {
 }
 
 export function saveLink(link: SocialLink): void {
+  const safeLink: SocialLink = {
+    ...link,
+    url: sanitizeUrl(link.url),
+  };
   const allLinks = getLocalItem<SocialLink[]>(STORAGE_KEYS.LINKS, INITIAL_LINKS);
-  const index = allLinks.findIndex(l => l.id === link.id);
+  const index = allLinks.findIndex(l => l.id === safeLink.id);
   if (index >= 0) {
-    allLinks[index] = link;
+    allLinks[index] = safeLink;
   } else {
-    allLinks.push(link);
+    allLinks.push(safeLink);
   }
   setLocalItem(STORAGE_KEYS.LINKS, allLinks);
 }
@@ -842,6 +880,11 @@ export function deleteNFCCard(cardId: string): void {
 // Analytics
 // -----------------------------------------------------------------------------
 export function logAnalyticsEvent(profileId: string, eventType: AnalyticsEventType, linkId?: string): void {
+  // Rate-limiting check to prevent event spam / DOS on public endpoints
+  if (eventType === 'profile_view' && isAnalyticsRateLimited(profileId, 'profile_view')) {
+    return;
+  }
+
   const events = getLocalItem<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS, INITIAL_ANALYTICS);
   const newEvent: AnalyticsEvent = {
     id: `ev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -1645,7 +1688,7 @@ export function deleteFollowUp(followUpId: string, userId: string): void {
 
 function escapeCSV(val: string | number | boolean | undefined | null): string {
   if (val === undefined || val === null) return '""';
-  const str = String(val);
+  const str = sanitizeCsvCell(val);
   return `"${str.replace(/"/g, '""')}"`;
 }
 

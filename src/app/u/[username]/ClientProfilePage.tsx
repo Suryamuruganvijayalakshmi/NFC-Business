@@ -8,7 +8,7 @@ import {
   getSectionsByProfileId, 
   getProjectsByProfileId, 
   getLinksByProfileId, 
-  saveProfile,
+  cacheProfileLocally,
   logAnalyticsEvent,
   getCurrentUser
 } from '@/lib/store';
@@ -17,6 +17,7 @@ import { Profile, ProfileSection, PortfolioProject, SocialLink, UserSession } fr
 import MinimalTemplate from '@/components/templates/MinimalTemplate';
 import SignatureTemplate from '@/components/templates/SignatureTemplate';
 import CreativeTemplate from '@/components/templates/CreativeTemplate';
+import PremiumIdentityTemplate from '@/components/templates/PremiumIdentityTemplate';
 import { UserX, ArrowLeft, Sparkles, Wifi, ShieldAlert, Lock, Compass, ExternalLink } from 'lucide-react';
 
 function extractUsernameFromPath(paramUsername?: string): string {
@@ -161,7 +162,7 @@ function ProfileContent() {
               setLinks(getLinksByProfileId(unpackedProfile.id));
             }
 
-            saveProfile(unpackedProfile);
+            cacheProfileLocally(unpackedProfile);
             setProfile(unpackedProfile);
             setSections(getSectionsByProfileId(unpackedProfile.id));
             setProjects(getProjectsByProfileId(unpackedProfile.id));
@@ -350,7 +351,7 @@ function ProfileContent() {
       )}
 
       {(activeTheme === 'signature' || (activeTheme !== 'minimal' && activeTheme !== 'creative')) && (
-        <SignatureTemplate 
+        <PremiumIdentityTemplate 
           profile={profile} 
           sections={sections} 
           projects={projects} 

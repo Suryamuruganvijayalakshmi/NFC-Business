@@ -172,7 +172,13 @@ CREATE POLICY "Users can update their own profile"
 DROP POLICY IF EXISTS "Public can view social links" ON public.social_links;
 CREATE POLICY "Public can view social links" 
   ON public.social_links FOR SELECT 
-  USING (true);
+  USING (
+    visible = true AND EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE profiles.id = social_links.profile_id 
+      AND (profiles.published = true OR profiles.user_id = auth.uid() OR public.is_admin())
+    )
+  );
 
 DROP POLICY IF EXISTS "Users can manage their social links" ON public.social_links;
 CREATE POLICY "Users can manage their social links" 
@@ -188,7 +194,13 @@ CREATE POLICY "Users can manage their social links"
 DROP POLICY IF EXISTS "Public can view profile sections" ON public.profile_sections;
 CREATE POLICY "Public can view profile sections" 
   ON public.profile_sections FOR SELECT 
-  USING (true);
+  USING (
+    visible = true AND EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE profiles.id = profile_sections.profile_id 
+      AND (profiles.published = true OR profiles.user_id = auth.uid() OR public.is_admin())
+    )
+  );
 
 DROP POLICY IF EXISTS "Users can manage their profile sections" ON public.profile_sections;
 CREATE POLICY "Users can manage their profile sections" 
@@ -224,7 +236,13 @@ CREATE POLICY "Anyone can insert analytics events"
 DROP POLICY IF EXISTS "Profile owners can view analytics events" ON public.analytics_events;
 CREATE POLICY "Profile owners can view analytics events" 
   ON public.analytics_events FOR SELECT 
-  USING (true);
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE profiles.id = analytics_events.profile_id 
+      AND (profiles.user_id = auth.uid() OR public.is_admin())
+    )
+  );
 
 DROP POLICY IF EXISTS "Admins can view admin activity" ON public.admin_activity;
 CREATE POLICY "Admins can view admin activity" 
