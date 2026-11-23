@@ -284,21 +284,26 @@ export default function LinkedInNavbar() {
                 {showProfileMenu && (
                   <div className="absolute right-0 top-13 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-3 z-50 text-slate-800 animate-in fade-in slide-in-from-top-2 duration-150">
                     {/* Header Mini Info */}
-                    <div className="px-4 pb-3 border-b border-slate-100 flex items-start gap-3">
+                    <Link
+                      href={`/u/${username}`}
+                      onClick={() => setShowProfileMenu(false)}
+                      className="px-4 pb-3 border-b border-slate-100 flex items-start gap-3 hover:bg-slate-50 transition-colors group cursor-pointer"
+                      title="View Public Profile"
+                    >
                       {profile?.profile_image ? (
                         <img
                           src={profile.profile_image}
                           alt={profile.full_name}
-                          className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0"
+                          className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0 group-hover:opacity-90"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-lg shrink-0">
+                        <div className="w-12 h-12 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-lg shrink-0 group-hover:opacity-90">
                           {profile?.full_name?.charAt(0) || 'U'}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <h4 className="font-semibold text-slate-900 text-sm truncate">
+                          <h4 className="font-semibold text-slate-900 text-sm truncate group-hover:text-[#0A66C2] transition-colors">
                             {profile?.full_name || user.email}
                           </h4>
                           {isPremium && (
@@ -310,11 +315,11 @@ export default function LinkedInNavbar() {
                         <p className="text-xs text-slate-500 line-clamp-1">
                           {profile?.headline || profile?.title || 'SignTap Member'}
                         </p>
-                        <p className="text-[11px] text-slate-400">
-                          @{username}
+                        <p className="text-[11px] text-[#0A66C2] font-semibold">
+                          @{username} · View Profile
                         </p>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* View Profile Action Button */}
                     <div className="px-4 py-2.5">
@@ -413,8 +418,30 @@ export default function LinkedInNavbar() {
             )}
           </nav>
 
-          {/* Mobile Right Bar: Notification & Mobile Menu Toggle */}
+          {/* Mobile Right Bar: Profile Avatar, Notification & Mobile Menu Toggle */}
           <div className="flex md:hidden items-center gap-2">
+            {user && (
+              <Link
+                href={`/u/${username}`}
+                className="relative shrink-0 flex items-center justify-center group"
+                title="View My Profile"
+              >
+                {profile?.profile_image ? (
+                  <img
+                    src={profile.profile_image}
+                    alt={profile.full_name}
+                    className="w-7 h-7 rounded-full object-cover border border-slate-300 group-hover:scale-105 transition-transform"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-[#0A66C2] text-white flex items-center justify-center text-[11px] font-bold group-hover:scale-105 transition-transform">
+                    {profile?.full_name?.charAt(0) || 'U'}
+                  </div>
+                )}
+                {isPremium && (
+                  <Crown className="w-2.5 h-2.5 text-amber-500 absolute -bottom-0.5 -right-0.5 fill-amber-400 stroke-amber-600" />
+                )}
+              </Link>
+            )}
             <NotificationDropdown />
             <button
               onClick={() => setShowMobileDrawer(!showMobileDrawer)}
@@ -448,24 +475,25 @@ export default function LinkedInNavbar() {
         {showMobileDrawer && (
           <div className="md:hidden fixed inset-x-0 top-14 bg-white border-b border-slate-200 shadow-xl z-40 p-4 max-h-[85vh] overflow-y-auto animate-in slide-in-from-top-2">
             {user && profile ? (
-              <div className="pb-4 mb-4 border-b border-slate-100 flex items-center gap-3">
+              <Link
+                href={`/u/${username}`}
+                onClick={() => setShowMobileDrawer(false)}
+                className="pb-4 mb-4 border-b border-slate-100 flex items-center gap-3 group -mx-1 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                title="View Public Profile"
+              >
                 <img
                   src={profile.profile_image}
                   alt={profile.full_name}
-                  className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                  className="w-12 h-12 rounded-full object-cover border border-slate-200 group-hover:opacity-90"
                 />
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-slate-900 text-sm truncate">{profile.full_name}</h4>
+                <div className="flex-1 min-w-0 text-left">
+                  <h4 className="font-semibold text-slate-900 text-sm truncate group-hover:text-[#0A66C2] transition-colors">{profile.full_name}</h4>
                   <p className="text-xs text-slate-500 truncate">{profile.headline || profile.title}</p>
-                  <Link
-                    href={`/u/${username}`}
-                    onClick={() => setShowMobileDrawer(false)}
-                    className="text-xs text-[#0A66C2] font-semibold hover:underline inline-block mt-0.5"
-                  >
-                    View Public Profile
-                  </Link>
+                  <span className="text-xs text-[#0A66C2] font-semibold inline-block mt-0.5">
+                    View Public Profile →
+                  </span>
                 </div>
-              </div>
+              </Link>
             ) : null}
 
             <div className="space-y-1">

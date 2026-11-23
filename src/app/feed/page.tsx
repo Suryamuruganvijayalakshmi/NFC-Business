@@ -62,6 +62,7 @@ const REACTION_CONFIG: { type: ReactionType; label: string; icon: string; color:
 export default function FeedPage() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [previewProfile, setPreviewProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [feedFilter, setFeedFilter] = useState<'recent' | 'top'>('recent');
   const [peopleYouMayKnow, setPeopleYouMayKnow] = useState<Profile[]>([]);
@@ -94,14 +95,18 @@ export default function FeedPage() {
   const refreshFeed = () => {
     const currentUser = getCurrentUser();
     setUser(currentUser);
+    const allProfiles = getAllProfiles();
 
     if (currentUser) {
       const p = getProfileByUserId(currentUser.id);
       setProfile(p);
+      setPreviewProfile(p);
       setConnectionsCount(getLiveConnectionCount(currentUser.id));
     } else {
       setProfile(null);
-      setConnectionsCount(0);
+      const fallback = allProfiles.find(p => p.username === 'surya') || allProfiles[0] || null;
+      setPreviewProfile(fallback);
+      setConnectionsCount(fallback ? getLiveConnectionCount(fallback.user_id) : 0);
     }
 
     const all = getAllPosts();
@@ -113,7 +118,6 @@ export default function FeedPage() {
     setPosts([...all]);
 
     // Recommended members
-    const allProfiles = getAllProfiles();
     const recommended = allProfiles
       .filter(p => !currentUser || p.user_id !== currentUser.id)
       .slice(0, 4);
@@ -233,6 +237,9 @@ export default function FeedPage() {
     setTimeout(refreshFeed, 500);
   };
 
+  const displayProfile = profile || previewProfile;
+  const targetProfileUrl = profile ? `/u/${profile.username}` : (previewProfile ? `/u/${previewProfile.username}` : '/login');
+
   return (
     <div className="min-h-screen bg-[#F4F2EE] text-slate-800">
       <LinkedInNavbar />
@@ -248,45 +255,45 @@ export default function FeedPage() {
             {/* User Mini Profile Card */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
               {/* Cover Banner */}
-              <div className="h-16 bg-gradient-to-r from-[#0A66C2] via-[#004182] to-[#101828] relative">
-                {profile?.cover_image && (
+              <Link href={targetProfileUrl} className="block h-16 bg-gradient-to-r from-[#0A66C2] via-[#004182] to-[#101828] relative overflow-hidden group">
+                {displayProfile?.cover_image && (
                   <img
-                    src={profile.cover_image}
+                    src={displayProfile.cover_image}
                     alt="Cover"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
                 )}
-              </div>
+              </Link>
 
               {/* Avatar & Basic Info */}
               <div className="px-4 pb-4 -mt-9 text-center">
-                <Link href={profile ? `/u/${profile.username}` : '/login'} className="inline-block relative group">
-                  {profile?.profile_image ? (
+                <Link href={targetProfileUrl} className="inline-block relative group" title="Click to view profile">
+                  {displayProfile?.profile_image ? (
                     <img
-                      src={profile.profile_image}
-                      alt={profile.full_name}
-                      className="w-18 h-18 rounded-full object-cover border-2 border-white shadow-sm mx-auto group-hover:opacity-90 transition-opacity"
+                      src={displayProfile.profile_image}
+                      alt={displayProfile.full_name}
+                      className="w-18 h-18 rounded-full object-cover border-2 border-white shadow-sm mx-auto group-hover:opacity-90 group-hover:scale-105 transition-all"
                     />
                   ) : (
-                    <div className="w-18 h-18 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm mx-auto">
-                      {profile?.full_name?.charAt(0) || 'U'}
+                    <div className="w-18 h-18 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm mx-auto group-hover:scale-105 transition-all">
+                      {displayProfile?.full_name?.charAt(0) || 'U'}
                     </div>
                   )}
-                  {profile?.is_premium && (
+                  {displayProfile?.is_premium && (
                     <Crown className="w-4 h-4 text-amber-500 absolute bottom-0 right-0 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
                   )}
                 </Link>
 
                 <h3 className="font-bold text-slate-900 text-sm mt-2 hover:underline">
-                  <Link href={profile ? `/u/${profile.username}` : '/login'}>
-                    {profile?.full_name || 'SignTap Member'}
+                  <Link href={targetProfileUrl}>
+                    {displayProfile?.full_name || 'SignTap Member'}
                   </Link>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                  {profile?.headline || profile?.title || 'Connect and share your digital identity'}
+                  {displayProfile?.headline || displayProfile?.title || 'Connect and share your digital identity'}
                 </p>
 
-                {profile && (
+                {displayProfile && (
                   <div className="mt-3 pt-3 border-t border-slate-100 text-left space-y-2 text-xs">
                     <Link
                       href="/network"
@@ -306,7 +313,7 @@ export default function FeedPage() {
               {/* Digital NFC Card Shortcut */}
               <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 text-xs">
                 <Link
-                  href={profile ? `/u/${profile.username}` : '/login'}
+                  href={targetProfileUrl}
                   className="flex items-center gap-2 text-slate-700 hover:text-[#0A66C2] font-semibold"
                 >
                   <CreditCard className="w-4 h-4 text-[#0A66C2]" />
@@ -356,22 +363,94 @@ export default function FeedPage() {
           {/* ================================================================= */}
           <section className="flex-1 max-w-[580px] lg:max-w-[620px] space-y-3">
             
+            {/* ============================================================= */}
+            {/* MOBILE ONLY: Professional Profile Banner */}
+            {/* ============================================================= */}
+            <div className="md:hidden bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+              <Link href={targetProfileUrl} className="block h-12 bg-gradient-to-r from-[#0A66C2] via-[#004182] to-[#101828] relative overflow-hidden group">
+                {displayProfile?.cover_image && (
+                  <img
+                    src={displayProfile.cover_image}
+                    alt="Cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                )}
+              </Link>
+              <div className="px-3.5 pb-3 -mt-6 flex items-end justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Link
+                    href={targetProfileUrl}
+                    className="relative shrink-0 group"
+                    title="Click to view profile"
+                  >
+                    {displayProfile?.profile_image ? (
+                      <img
+                        src={displayProfile.profile_image}
+                        alt={displayProfile.full_name}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs group-hover:opacity-90"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-base border-2 border-white shadow-xs">
+                        {displayProfile?.full_name?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    {displayProfile?.is_premium && (
+                      <Crown className="w-3.5 h-3.5 text-amber-500 absolute -bottom-0.5 -right-0.5 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
+                    )}
+                  </Link>
+                  <div className="min-w-0 text-left">
+                    <Link
+                      href={targetProfileUrl}
+                      className="font-bold text-slate-900 text-sm truncate block hover:text-[#0A66C2] transition-colors"
+                    >
+                      {displayProfile?.full_name || 'SignTap Member'}
+                    </Link>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      {displayProfile?.headline || displayProfile?.title || 'Connect & explore'}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={targetProfileUrl}
+                  className="shrink-0 px-2.5 py-1 rounded-full border border-[#0A66C2] text-[#0A66C2] text-[11px] font-semibold hover:bg-blue-50 transition-colors"
+                >
+                  View Profile
+                </Link>
+              </div>
+            </div>
+
             {/* Create Post Card */}
             <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs">
               <div className="flex items-center gap-3">
-                {profile?.profile_image ? (
-                  <img
-                    src={profile.profile_image}
-                    alt={profile.full_name}
-                    className="w-11 h-11 rounded-full object-cover border border-slate-200 shrink-0"
-                  />
-                ) : (
-                  <div className="w-11 h-11 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm shrink-0">
-                    {profile?.full_name?.charAt(0) || 'U'}
-                  </div>
-                )}
+                <Link
+                  href={targetProfileUrl}
+                  className="shrink-0 group relative"
+                  title="View your profile"
+                >
+                  {displayProfile?.profile_image ? (
+                    <img
+                      src={displayProfile.profile_image}
+                      alt={displayProfile.full_name}
+                      className="w-11 h-11 rounded-full object-cover border border-slate-200 group-hover:opacity-90 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm group-hover:opacity-90 transition-opacity">
+                      {displayProfile?.full_name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  {displayProfile?.is_premium && (
+                    <Crown className="w-3 h-3 text-amber-500 absolute -bottom-0.5 -right-0.5 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
+                  )}
+                </Link>
+
                 <button
-                  onClick={() => setIsCreateModalOpen(true)}
+                  onClick={() => {
+                    if (!user) {
+                      window.location.href = '/login?redirect=/feed';
+                      return;
+                    }
+                    setIsCreateModalOpen(true);
+                  }}
                   className="flex-1 text-left px-4 py-2.5 rounded-full border border-slate-300 hover:bg-slate-100/80 text-xs sm:text-sm font-medium text-slate-500 transition-colors cursor-pointer"
                 >
                   Start a post, share a project, milestone...
@@ -620,17 +699,23 @@ export default function FeedPage() {
                       <div className="p-3.5 bg-slate-50 border-t border-slate-100 space-y-3">
                         {/* New Comment Input */}
                         <div className="flex items-start gap-2.5">
-                          {profile?.profile_image ? (
-                            <img
-                              src={profile.profile_image}
-                              alt={profile.full_name}
-                              className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0 mt-0.5"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                              {profile?.full_name?.charAt(0) || 'U'}
-                            </div>
-                          )}
+                          <Link
+                            href={targetProfileUrl}
+                            className="shrink-0 mt-0.5 group"
+                            title="View your profile"
+                          >
+                            {displayProfile?.profile_image ? (
+                              <img
+                                src={displayProfile.profile_image}
+                                alt={displayProfile.full_name}
+                                className="w-8 h-8 rounded-full object-cover border border-slate-200 group-hover:opacity-90"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xs group-hover:opacity-90">
+                                {displayProfile?.full_name?.charAt(0) || 'U'}
+                              </div>
+                            )}
+                          </Link>
                           <div className="flex-1 flex gap-2">
                             <input
                               type="text"
@@ -850,26 +935,30 @@ export default function FeedPage() {
           <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Header */}
             <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {profile?.profile_image ? (
+              <Link
+                href={targetProfileUrl}
+                className="flex items-center gap-3 group"
+                title="View your profile"
+              >
+                {displayProfile?.profile_image ? (
                   <img
-                    src={profile.profile_image}
-                    alt={profile.full_name}
-                    className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                    src={displayProfile.profile_image}
+                    alt={displayProfile.full_name}
+                    className="w-10 h-10 rounded-full object-cover border border-slate-200 group-hover:opacity-90"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm">
-                    {profile?.full_name?.charAt(0) || 'U'}
+                  <div className="w-10 h-10 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm group-hover:opacity-90">
+                    {displayProfile?.full_name?.charAt(0) || 'U'}
                   </div>
                 )}
                 <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{profile?.full_name || 'Member'}</h4>
+                  <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#0A66C2] transition-colors">{displayProfile?.full_name || 'Member'}</h4>
                   <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                     <Globe className="w-3 h-3" />
                     <span>Post to Anyone</span>
                   </div>
                 </div>
-              </div>
+              </Link>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full"

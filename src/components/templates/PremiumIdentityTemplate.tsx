@@ -301,7 +301,7 @@ export default function PremiumIdentityTemplate({
           
           {/* Logo & Working Search Bar */}
           <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-md" ref={searchRef}>
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <Link href="/feed" className="flex items-center gap-2 flex-shrink-0" title="SignTap Feed">
               <div className="w-8 h-8 rounded-lg bg-[#087CF0] flex items-center justify-center text-white font-black text-lg shadow-sm">
                 S
               </div>
@@ -391,11 +391,12 @@ export default function PremiumIdentityTemplate({
           {/* Center / Right LinkedIn Nav Icons */}
           <nav className="flex items-center gap-1 sm:gap-2">
             <Link
-              href="/"
+              href="/feed"
               className="hidden md:flex flex-col items-center justify-center py-1 px-3 text-slate-500 hover:text-slate-900 transition-colors"
+              title="Return to Home Feed"
             >
               <Home className="w-4 h-4" />
-              <span className="text-[10px] mt-0.5">Home</span>
+              <span className="text-[10px] mt-0.5 font-medium">Home</span>
             </Link>
 
             <Link
@@ -491,6 +492,15 @@ export default function PremiumIdentityTemplate({
                     <p className="text-[10px] text-slate-500 truncate">{currentUser.email}</p>
                   </div>
                 </div>
+
+                <Link
+                  href="/feed"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl bg-[#0A66C2] text-white text-xs font-bold shadow-xs hover:bg-blue-700 transition-colors"
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span>LinkedIn Home & Feed</span>
+                </Link>
 
                 <Link
                   href="/dashboard"

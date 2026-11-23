@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
 import Hero01 from '@/components/originkit/hero-01';
 import SignTapLoader from '@/components/SignTapLoader';
 import SignBridgeCard from '@/components/SignBridgeCard';
 import RazorpayBuyModal from '@/components/RazorpayBuyModal';
-import { getAllProducts, getAllProfiles } from '@/lib/store';
+import { getAllProducts, getAllProfiles, getCurrentUser } from '@/lib/store';
 import { Product, Profile } from '@/lib/types';
 import { 
   ArrowRight, 
@@ -29,6 +30,7 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const router = useRouter();
   const [siteReady, setSiteReady] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -44,12 +46,19 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    // If the user is logged in, automatically take them to their LinkedIn Home Feed
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      router.replace('/feed');
+      return;
+    }
+
     setProducts(getAllProducts());
     setProfiles(getAllProfiles());
     // Safe fallback so site is always revealed within 2.1s
     const timer = setTimeout(() => setSiteReady(true), 2100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [router]);
 
   const currentProfile = profiles.find(p => p.username === activePreviewProfile) || profiles[0] || {
     full_name: 'Surya Narayanan',
