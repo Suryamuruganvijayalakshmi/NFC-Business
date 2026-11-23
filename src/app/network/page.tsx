@@ -14,7 +14,9 @@ import {
   declineConnectionRequest,
   getLiveConnectionCount,
   getLiveFollowersCount,
-  getNewMemberStatus
+  getNewMemberStatus,
+  syncConnectionsFromSupabase,
+  syncProfilesFromSupabase
 } from '@/lib/store';
 import { Profile, Connection, UserSession } from '@/lib/types';
 import { 
@@ -63,6 +65,14 @@ export default function NetworkPage() {
 
   useEffect(() => {
     refreshNetwork();
+    const currentUser = getCurrentUser();
+    if (currentUser?.id) {
+      Promise.all([syncConnectionsFromSupabase(currentUser.id), syncProfilesFromSupabase()]).then(() => {
+        refreshNetwork();
+      }).catch(() => {});
+    } else {
+      syncProfilesFromSupabase().then(() => refreshNetwork()).catch(() => {});
+    }
     const interval = setInterval(refreshNetwork, 6000);
     return () => clearInterval(interval);
   }, []);

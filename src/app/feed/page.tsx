@@ -19,7 +19,9 @@ import {
   toggleFollow,
   isFollowing,
   getLiveConnectionCount,
-  getNewMemberStatus
+  getNewMemberStatus,
+  syncPostsFromSupabase,
+  syncProfilesFromSupabase
 } from '@/lib/store';
 import { Profile, PostItem, PostComment, ReactionType, UserSession } from '@/lib/types';
 import { 
@@ -126,6 +128,9 @@ export default function FeedPage() {
 
   useEffect(() => {
     refreshFeed();
+    Promise.all([syncPostsFromSupabase(), syncProfilesFromSupabase()]).then(() => {
+      refreshFeed();
+    }).catch(() => {});
   }, [feedFilter]);
 
   // Handle post image upload

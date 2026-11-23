@@ -10,7 +10,8 @@ import {
   getAllJobs, 
   createJobListing, 
   applyToJob, 
-  getApplicationsForUser 
+  getApplicationsForUser,
+  syncJobsFromSupabase
 } from '@/lib/store';
 import { JobListing, JobApplication, JobType, WorkplaceType, Profile, UserSession } from '@/lib/types';
 import { 
@@ -93,6 +94,7 @@ export default function JobsPage() {
 
   useEffect(() => {
     syncData();
+    syncJobsFromSupabase().then(() => syncData()).catch(() => {});
   }, []);
 
   const handleApplySubmit = (e: React.FormEvent) => {

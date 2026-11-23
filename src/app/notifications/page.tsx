@@ -11,7 +11,8 @@ import {
   markAllNotificationsAsRead, 
   deleteNotification,
   acceptConnectionRequest,
-  declineConnectionRequest
+  declineConnectionRequest,
+  syncNotificationsFromSupabase
 } from '@/lib/store';
 import { AppNotification, Profile, UserSession } from '@/lib/types';
 import { 
@@ -49,6 +50,12 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     syncNotifications();
+    const currentUser = getCurrentUser();
+    if (currentUser?.id) {
+      syncNotificationsFromSupabase(currentUser.id).then(() => {
+        syncNotifications();
+      }).catch(() => {});
+    }
     const interval = setInterval(syncNotifications, 6000);
     return () => clearInterval(interval);
   }, []);

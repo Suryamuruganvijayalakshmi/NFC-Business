@@ -418,9 +418,9 @@ export default function LinkedInNavbar() {
             )}
           </nav>
 
-          {/* Mobile Right Bar: Profile Avatar, Notification & Mobile Menu Toggle */}
+          {/* Mobile Right Bar: Profile Avatar or Login, Notification & Mobile Menu Toggle */}
           <div className="flex md:hidden items-center gap-2">
-            {user && (
+            {user ? (
               <Link
                 href={`/u/${username}`}
                 className="relative shrink-0 flex items-center justify-center group"
@@ -440,6 +440,13 @@ export default function LinkedInNavbar() {
                 {isPremium && (
                   <Crown className="w-2.5 h-2.5 text-amber-500 absolute -bottom-0.5 -right-0.5 fill-amber-400 stroke-amber-600" />
                 )}
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="px-2.5 py-1 text-xs font-semibold text-[#0A66C2] bg-blue-50/80 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+              >
+                Sign In
               </Link>
             )}
             <NotificationDropdown />

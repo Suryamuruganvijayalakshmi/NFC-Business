@@ -13,7 +13,9 @@ import {
   getMessagesBetween, 
   sendMessage, 
   markMessagesAsRead,
-  getAllPosts
+  getAllPosts,
+  syncMessagesFromSupabase,
+  syncProfilesFromSupabase
 } from '@/lib/store';
 import { Profile, ChatMessage, ChatConversation, UserSession } from '@/lib/types';
 import { 
@@ -102,6 +104,12 @@ function MessagesContent() {
 
   useEffect(() => {
     syncMessages();
+    const currentUser = getCurrentUser();
+    if (currentUser?.id) {
+      Promise.all([syncMessagesFromSupabase(currentUser.id), syncProfilesFromSupabase()]).then(() => {
+        syncMessages();
+      }).catch(() => {});
+    }
     const interval = setInterval(() => {
       if (user && selectedConversation) {
         const msgs = getMessagesBetween(user.id, selectedConversation.participant_id);

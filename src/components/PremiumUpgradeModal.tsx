@@ -153,7 +153,7 @@ export default function PremiumUpgradeModal({
           }
         };
 
-        const orderRes = await fetch('https://signbridge.click/api/create-order', {
+        const orderRes = await fetch('/api/razorpay/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(orderPayload),
@@ -179,7 +179,7 @@ export default function PremiumUpgradeModal({
         currency: 'INR',
         name: 'SignTap NFC',
         description: 'SignTap Professional Premium — 1 Year All-Access Pass',
-        image: 'https://signbridge.click/signbridge-emblem.webp',
+        image: '/images/signtap-logo.png',
         order_id: serverOrderId,
         prefill: {
           name: billingName.trim(),
@@ -201,8 +201,8 @@ export default function PremiumUpgradeModal({
         },
         handler: async (response: any) => {
           try {
-            // Optional: call verify payment endpoint
-            await fetch('https://signbridge.click/api/verify-payment', {
+            // Call server verify payment endpoint
+            await fetch('/api/razorpay/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -211,6 +211,10 @@ export default function PremiumUpgradeModal({
                 razorpay_signature: response.razorpay_signature,
                 amount: 1000,
                 currency: 'INR',
+                order_type: 'premium_upgrade',
+                user_id: getCurrentUser()?.id || profile.user_id,
+                profile_id: profile.id,
+                username: profile.username,
                 customer: {
                   name: billingName.trim(),
                   email: billingEmail.trim(),

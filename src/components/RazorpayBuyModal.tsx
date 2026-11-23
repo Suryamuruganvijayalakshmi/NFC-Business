@@ -176,7 +176,7 @@ export default function RazorpayBuyModal({
         }
       };
 
-      const orderRes = await fetch('https://signbridge.click/api/create-order', {
+      const orderRes = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload),
@@ -200,9 +200,9 @@ export default function RazorpayBuyModal({
         key: activeKey,
         amount: orderData.amount || amountPaise,
         currency: orderData.currency || 'INR',
-        name: 'SignBridge',
-        description: `SignBridge NFC Smart Card (${selectedPackage.label})`,
-        image: 'https://signbridge.click/signbridge-emblem.webp',
+        name: 'SignTap',
+        description: `SignTap NFC Smart Card (${selectedPackage.label})`,
+        image: '/images/signtap-logo.png',
         order_id: order_id,
         prefill: {
           name: nameOnCard.trim(),
@@ -217,7 +217,7 @@ export default function RazorpayBuyModal({
           card_type: cardType,
         },
         theme: {
-          color: cardType === 'business' ? '#18181b' : '#2563eb',
+          color: cardType === 'business' ? '#0A66C2' : '#2563eb',
         },
         modal: {
           ondismiss: () => {
@@ -227,7 +227,7 @@ export default function RazorpayBuyModal({
         handler: async (paymentResponse: any) => {
           try {
             // Verify payment on backend
-            await fetch('https://signbridge.click/api/verify-payment', {
+            await fetch('/api/razorpay/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -236,6 +236,8 @@ export default function RazorpayBuyModal({
                 razorpay_signature: paymentResponse.razorpay_signature,
                 amount: selectedPackage.price,
                 currency: 'INR',
+                order_type: 'card_purchase',
+                user_id: getCurrentUser()?.id,
                 customer: {
                   name: nameOnCard.trim(),
                   email: email.trim(),
@@ -243,7 +245,7 @@ export default function RazorpayBuyModal({
                   address: address.trim(),
                   pincode: cleanPincode,
                 },
-                package_label: selectedPackage.label,
+                package_label: `SignTap ${selectedPackage.label} (${cardType.toUpperCase()})`,
                 quantity: selectedPackage.qty,
               }),
             }).catch(console.warn);

@@ -45,6 +45,20 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Safe column extensions for existing profiles table
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS headline TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_premium BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS premium_until TIMESTAMPTZ;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS experiences JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS certifications JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS achievements JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS businesses JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS services JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS custom_links JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS qr_color TEXT DEFAULT '#0A66C2';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS qr_logo_enabled BOOLEAN DEFAULT true;
+
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
@@ -268,7 +282,11 @@ BEGIN
   v_username := COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
   v_full_name := COALESCE(new.raw_user_meta_data->>'full_name', 'SignTap Member');
   v_profile_type := COALESCE(new.raw_user_meta_data->>'profile_type', 'personal');
-  v_role := CASE WHEN new.email ILIKE '%admin@%' THEN 'admin' ELSE 'user' END;
+  v_role := CASE 
+    WHEN LOWER(new.email) IN ('vmsurya2007@gmail.com', 'vmsuurya2007@gmail.com', 'signbridge.aiauto@gmail.com') 
+    THEN 'admin' 
+    ELSE 'user' 
+  END;
 
   INSERT INTO public.profiles (
     user_id, 
@@ -277,7 +295,8 @@ BEGIN
     email, 
     role,
     profile_type, 
-    title, 
+    title,
+    headline,
     bio, 
     theme, 
     accent_color, 
@@ -291,6 +310,7 @@ BEGIN
     v_role,
     v_profile_type,
     'Digital Pioneer',
+    'SignTap Professional & Creator',
     'Welcome to my official SignTap digital identity. Tap my card to connect.',
     'signature',
     '#087CF0',
@@ -558,11 +578,20 @@ CREATE TABLE IF NOT EXISTS public.messages (
   sender_id TEXT NOT NULL,
   sender_name TEXT NOT NULL,
   sender_avatar TEXT,
+  sender_username TEXT,
+  receiver_id TEXT,
+  receiver_name TEXT,
+  receiver_username TEXT,
   content TEXT NOT NULL,
   media_url TEXT,
   read BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS sender_username TEXT;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS receiver_id TEXT;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS receiver_name TEXT;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS receiver_username TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_messages_conv ON public.messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created ON public.messages(created_at ASC);

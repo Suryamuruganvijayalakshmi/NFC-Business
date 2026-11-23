@@ -588,8 +588,10 @@ export function saveProfile(profile: Profile): void {
 
     Promise.resolve(
       supabase.from('profiles').upsert({
+        user_id: updatedProfile.user_id,
         username: updatedProfile.username,
         full_name: updatedProfile.full_name,
+        headline: updatedProfile.headline || updatedProfile.title,
         profile_type: updatedProfile.profile_type,
         title: updatedProfile.title,
         bio: updatedProfile.bio,
@@ -606,6 +608,15 @@ export function saveProfile(profile: Profile): void {
         portfolio_url: updatedProfile.portfolio_url,
         resume_url: updatedProfile.resume_url,
         skills: updatedProfile.skills,
+        is_premium: updatedProfile.is_premium || false,
+        premium_until: updatedProfile.premium_expires_at,
+        experiences: updatedProfile.experiences || [],
+        education: updatedProfile.education || [],
+        certifications: updatedProfile.certifications || [],
+        achievements: updatedProfile.achievements || [],
+        businesses: updatedProfile.businesses || [],
+        services: updatedProfile.services || [],
+        custom_links: updatedProfile.custom_links || [],
         theme: updatedProfile.theme,
         accent_color: updatedProfile.accent_color,
         button_style: updatedProfile.button_style,
@@ -1175,6 +1186,20 @@ export function sendConnectionRequest(requester: Profile, recipient: Profile): C
 
   setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
 
+  // Sync to Supabase PostgreSQL database
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(
+      supabase.from('connections').upsert({
+        id: newConn.id,
+        requester_id: newConn.requester_id,
+        receiver_id: newConn.recipient_id,
+        status: 'pending',
+        created_at: newConn.created_at,
+        updated_at: newConn.created_at,
+      }, { onConflict: 'requester_id,receiver_id' })
+    ).catch(err => console.warn('Supabase connection sync note:', err));
+  }
+
   // Dispatch persistent notification to recipient
   createNotification({
     user_id: recipient.user_id,
@@ -1200,6 +1225,16 @@ export function acceptConnectionRequest(connectionId: string): void {
     conns[index].status = 'connected';
     conns[index].updated_at = new Date().toISOString();
     setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
+
+    // Sync to Supabase PostgreSQL database
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(
+        supabase.from('connections').update({
+          status: 'accepted',
+          updated_at: conns[index].updated_at,
+        }).eq('id', connectionId)
+      ).catch(err => console.warn('Supabase connection accept note:', err));
+    }
 
     // Update connection count in local profiles
     const profiles = getAllProfiles();
@@ -1249,6 +1284,15 @@ export function declineConnectionRequest(connectionId: string): void {
     conns[index].updated_at = new Date().toISOString();
     setLocalItem(STORAGE_KEYS.CONNECTIONS, conns);
 
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(
+        supabase.from('connections').update({
+          status: 'rejected',
+          updated_at: conns[index].updated_at,
+        }).eq('id', connectionId)
+      ).catch(() => {});
+    }
+
     // Mark corresponding connection_request notification as read
     const notifs = getAllNotifications();
     const matchingNotif = notifs.find(n => n.connection_id === connectionId);
@@ -1263,6 +1307,12 @@ export function removeConnection(connectionId: string): void {
   const conns = getAllConnections();
   const filtered = conns.filter(c => c.id !== connectionId);
   setLocalItem(STORAGE_KEYS.CONNECTIONS, filtered);
+
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(
+      supabase.from('connections').delete().eq('id', connectionId)
+    ).catch(() => {});
+  }
 }
 
 export function getLiveConnectionCount(userId: string): number {
@@ -1300,19 +1350,30 @@ export function toggleFollow(followerId: string, followingId: string): boolean {
   if (index >= 0) {
     follows.splice(index, 1);
     setLocalItem(STORAGE_KEYS.FOLLOWS, follows);
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(
+        supabase.from('follows').delete().match({ follower_id: followerId, followed_id: followingId })
+      ).catch(() => {});
+    }
     if (target) {
       target.followers_count = getLiveFollowersCount(target.user_id);
       saveProfile(target);
     }
     return false;
   } else {
-    follows.push({
+    const newFollow = {
       id: `f-${Date.now()}`,
       follower_id: followerId,
       following_id: followingId,
       created_at: new Date().toISOString()
-    });
+    };
+    follows.push(newFollow);
     setLocalItem(STORAGE_KEYS.FOLLOWS, follows);
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(
+        supabase.from('follows').upsert(newFollow, { onConflict: 'follower_id,followed_id' })
+      ).catch(() => {});
+    }
     if (target) {
       target.followers_count = getLiveFollowersCount(target.user_id);
       saveProfile(target);
@@ -1366,6 +1427,26 @@ export function createNotification(notif: Omit<AppNotification, 'id' | 'created_
   };
   notifs.unshift(newNotif);
   setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(
+      supabase.from('notifications').insert({
+        id: newNotif.id,
+        recipient_id: newNotif.user_id,
+        actor_id: newNotif.sender_id || 'system',
+        actor_name: newNotif.sender_name || 'SignTap',
+        actor_username: newNotif.sender_username || 'signtap',
+        actor_avatar: newNotif.sender_image,
+        type: newNotif.type,
+        title: newNotif.title,
+        message: newNotif.message,
+        link: newNotif.link,
+        read: false,
+        created_at: newNotif.created_at,
+      })
+    ).catch(() => {});
+  }
+
   return newNotif;
 }
 
@@ -1375,6 +1456,12 @@ export function markNotificationAsRead(id: string): void {
   if (index >= 0) {
     notifs[index].read = true;
     setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(
+        supabase.from('notifications').update({ read: true }).eq('id', id)
+      ).catch(() => {});
+    }
   }
 }
 
@@ -1389,6 +1476,11 @@ export function markAllNotificationsAsRead(userId: string): void {
   });
   if (updated) {
     setLocalItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(
+        supabase.from('notifications').update({ read: true }).eq('recipient_id', userId)
+      ).catch(() => {});
+    }
   }
 }
 
@@ -1438,6 +1530,29 @@ export function createPost(postData: {
 
   posts.unshift(newPost);
   setLocalItem(STORAGE_KEYS.POSTS, posts);
+
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(
+      supabase.from('posts').insert({
+        id: newPost.id,
+        author_user_id: newPost.author_id,
+        author_name: newPost.author_name,
+        author_username: newPost.author_username,
+        author_avatar: newPost.author_image,
+        author_headline: newPost.author_headline,
+        content: newPost.content,
+        media_url: newPost.media_url,
+        media_type: newPost.media_type || 'text',
+        visibility: 'public',
+        likes_count: 0,
+        comments_count: 0,
+        shares_count: 0,
+        created_at: newPost.created_at,
+        updated_at: newPost.created_at,
+      })
+    ).catch(err => console.warn('Supabase post insert note:', err));
+  }
+
   return newPost;
 }
 
@@ -1465,6 +1580,12 @@ export function deletePost(postId: string): void {
   const posts = getAllPosts();
   const filtered = posts.filter(p => p.id !== postId);
   setLocalItem(STORAGE_KEYS.POSTS, filtered);
+
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(
+      supabase.from('posts').delete().eq('id', postId)
+    ).catch(err => console.warn('Supabase post delete note:', err));
+  }
 }
 
 export function deleteProfile(profileId: string): void {
@@ -1548,6 +1669,26 @@ export function addCommentToPost(postId: string, author: Profile, content: strin
   if (post) {
     post.comments_count = (post.comments_count || 0) + 1;
     setLocalItem(STORAGE_KEYS.POSTS, posts);
+  }
+
+  // Sync to Supabase PostgreSQL database
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(
+      supabase.from('post_comments').insert({
+        id: newComment.id,
+        post_id: postId,
+        user_id: author.user_id,
+        author_name: author.full_name,
+        author_avatar: author.profile_image,
+        author_username: author.username,
+        content: newComment.content,
+        created_at: newComment.created_at,
+      })
+    ).then(() => {
+      if (post && supabase) {
+        supabase.from('posts').update({ comments_count: post.comments_count }).eq('id', postId);
+      }
+    }).catch(err => console.warn('Supabase post_comment insert note:', err));
   }
 
   // Trigger notification to author if author is someone else
@@ -1646,6 +1787,29 @@ export function reactToPost(
   post.user_reaction = userCurrentReaction || undefined;
   setLocalItem(STORAGE_KEYS.POSTS, posts);
 
+  // Sync to Supabase PostgreSQL database
+  if (isSupabaseConfigured && supabase) {
+    if (userCurrentReaction) {
+      Promise.resolve(
+        supabase.from('post_reactions').upsert({
+          id: `react-${postId}-${userId}`,
+          post_id: postId,
+          user_id: userId,
+          type: userCurrentReaction,
+          created_at: new Date().toISOString()
+        }, { onConflict: 'post_id,user_id' })
+      ).catch(() => {});
+    } else {
+      Promise.resolve(
+        supabase.from('post_reactions').delete().match({ post_id: postId, user_id: userId })
+      ).catch(() => {});
+    }
+
+    Promise.resolve(
+      supabase.from('posts').update({ likes_count: post.likes_count }).eq('id', postId)
+    ).catch(() => {});
+  }
+
   return { reaction: userCurrentReaction, reactions: counts };
 }
 
@@ -1729,6 +1893,30 @@ export function applyToJob(
       message: `${applicationData.applicant_name} applied for "${job.title}".`,
       link: `/jobs`,
     });
+  }
+
+  // Sync application & count to Supabase PostgreSQL database
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(
+      supabase.from('job_applications').insert({
+        id: newApp.id,
+        job_id: jobId,
+        applicant_user_id: applicationData.applicant_user_id,
+        applicant_name: applicationData.applicant_name,
+        applicant_email: applicationData.applicant_email,
+        applicant_headline: applicationData.applicant_headline,
+        resume_url: applicationData.resume_url,
+        cover_note: applicationData.cover_note,
+        status: 'applied',
+        created_at: newApp.created_at
+      })
+    ).catch(err => console.warn('Supabase job application note:', err));
+
+    if (job) {
+      Promise.resolve(
+        supabase.from('job_listings').update({ applicants_count: job.applicants_count }).eq('id', jobId)
+      ).catch(() => {});
+    }
   }
 
   return newApp;
@@ -2473,6 +2661,7 @@ export function sendMessage(
   const senderName = 'full_name' in sender ? sender.full_name : (sender.user_metadata?.full_name || 'SignTap Member');
   const senderUsername = 'username' in sender ? sender.username : (sender.user_metadata?.username || 'member');
   const senderAvatar = 'profile_image' in sender ? sender.profile_image : (sender.user_metadata?.avatar_url || '');
+  const receiverId = receiver.user_id || receiver.id;
 
   const newMsg: ChatMessage = {
     id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -2480,7 +2669,7 @@ export function sendMessage(
     sender_name: senderName,
     sender_username: senderUsername,
     sender_avatar: senderAvatar,
-    receiver_id: receiver.user_id || receiver.id,
+    receiver_id: receiverId,
     receiver_name: receiver.full_name,
     receiver_username: receiver.username,
     content: content.trim(),
@@ -2490,6 +2679,51 @@ export function sendMessage(
 
   messages.push(newMsg);
   setLocalItem(STORAGE_KEYS.MESSAGES, messages);
+
+  // Sync to Supabase PostgreSQL database
+  if (isSupabaseConfigured && supabase) {
+    const convId = [senderId, receiverId].sort().join('_');
+    Promise.resolve(
+      supabase.from('conversations').upsert({
+        id: convId,
+        participant_ids: [senderId, receiverId],
+        last_message: content.trim(),
+        last_message_at: newMsg.created_at,
+        updated_at: newMsg.created_at,
+      }, { onConflict: 'id' })
+    ).then(() => {
+      if (!supabase) return;
+      return supabase.from('messages').insert({
+        id: newMsg.id,
+        conversation_id: convId,
+        sender_id: senderId,
+        sender_name: senderName,
+        sender_avatar: senderAvatar,
+        sender_username: senderUsername,
+        receiver_id: receiverId,
+        receiver_name: receiver.full_name,
+        receiver_username: receiver.username,
+        content: content.trim(),
+        read: false,
+        created_at: newMsg.created_at,
+      });
+    }).catch(err => console.warn('Supabase message sync note:', err));
+  }
+
+  // Create real-time notification for receiver
+  createNotification({
+    user_id: receiverId,
+    sender_id: senderId,
+    sender_name: senderName,
+    sender_username: senderUsername,
+    sender_image: senderAvatar,
+    sender_headline: 'SignTap Member',
+    type: 'system',
+    title: `New Message from ${senderName}`,
+    message: `${senderName}: "${content.length > 50 ? content.substring(0, 50) + '...' : content}"`,
+    link: `/messages?to=${senderUsername}`,
+  });
+
   return newMsg;
 }
 
@@ -2541,6 +2775,12 @@ export function markMessagesAsRead(userId: string, senderId: string): void {
   }
   if (changed) {
     setLocalItem(STORAGE_KEYS.MESSAGES, messages);
+    if (isSupabaseConfigured && supabase) {
+      const convId = [userId, senderId].sort().join('_');
+      Promise.resolve(
+        supabase.from('messages').update({ read: true }).match({ conversation_id: convId, receiver_id: userId })
+      ).catch(() => {});
+    }
   }
 }
 
@@ -2565,6 +2805,324 @@ export function getNewMemberStatus(createdAt?: string, daysLimit = 20): { isNew:
   const isNew = diffDays < daysLimit;
   const daysLeft = Math.max(0, daysLimit - diffDays);
   return { isNew, daysAgo: diffDays, daysLeft };
+}
+
+// -----------------------------------------------------------------------------
+// Live Supabase Database Synchronizers & Hydration
+// -----------------------------------------------------------------------------
+
+export async function syncPostsFromSupabase(): Promise<PostItem[]> {
+  if (!isSupabaseConfigured || !supabase) return getAllPosts();
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error || !data) return getAllPosts();
+
+    const localPosts = getAllPosts();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const remotePosts: PostItem[] = data.map((row: any) => ({
+      id: row.id,
+      author_id: row.author_user_id || row.author_id,
+      author_name: row.author_name || 'SignTap Member',
+      author_username: row.author_username || 'member',
+      author_image: row.author_avatar || row.author_image || '/images/default-avatar.png',
+      author_headline: row.author_headline || 'Professional',
+      content: row.content || '',
+      media_url: row.media_url,
+      media_type: row.media_type || 'text',
+      project_link: row.project_link,
+      likes_count: row.likes_count || 0,
+      comments_count: row.comments_count || 0,
+      shares_count: row.shares_count || 0,
+      liked_by: [],
+      bookmarked_by: [],
+      tags: row.tags || [],
+      created_at: row.created_at || new Date().toISOString(),
+    }));
+
+    const remoteIds = new Set(remotePosts.map(p => p.id));
+    const merged = [...remotePosts];
+    for (const lp of localPosts) {
+      if (!remoteIds.has(lp.id)) {
+        merged.push(lp);
+      }
+    }
+    merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setLocalItem(STORAGE_KEYS.POSTS, merged);
+    return merged;
+  } catch (err) {
+    console.warn('Sync posts from Supabase note:', err);
+    return getAllPosts();
+  }
+}
+
+export async function syncProfilesFromSupabase(): Promise<Profile[]> {
+  if (!isSupabaseConfigured || !supabase) return getAllProfiles();
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .limit(100);
+
+    if (error || !data) return getAllProfiles();
+
+    const localProfiles = getAllProfiles();
+    const profileMap = new Map<string, Profile>();
+    for (const p of localProfiles) {
+      profileMap.set(p.username.toLowerCase(), p);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of data as any[]) {
+      const existing = profileMap.get(row.username?.toLowerCase() || '');
+      const extended = row.section_visibility?._extended || {};
+      const mergedProfile: Profile = {
+        id: row.id || existing?.id || `prof-${row.username}`,
+        user_id: row.user_id || existing?.user_id || `user-${row.username}`,
+        username: row.username,
+        full_name: row.full_name || existing?.full_name || row.username,
+        headline: row.headline || extended.headline || row.title || existing?.headline || '',
+        title: row.title || existing?.title || '',
+        profile_type: row.profile_type || existing?.profile_type || 'personal',
+        bio: row.bio || existing?.bio || '',
+        about: row.about || extended.about || existing?.about || '',
+        profile_image: row.profile_image || existing?.profile_image,
+        cover_image: row.cover_image || existing?.cover_image,
+        location: row.location || existing?.location,
+        email: row.email || existing?.email,
+        phone: row.phone || existing?.phone,
+        website: row.website || existing?.website,
+        company: row.company || existing?.company,
+        business_name: row.business_name || existing?.business_name,
+        business_description: row.business_description || existing?.business_description,
+        skills: Array.isArray(row.skills) ? row.skills : (existing?.skills || []),
+        experiences: Array.isArray(row.experiences) ? row.experiences : (extended.experiences || existing?.experiences || []),
+        education: Array.isArray(row.education) ? row.education : (extended.education || existing?.education || []),
+        certifications: Array.isArray(row.certifications) ? row.certifications : (extended.certifications || existing?.certifications || []),
+        achievements: Array.isArray(row.achievements) ? row.achievements : (extended.achievements || existing?.achievements || []),
+        businesses: Array.isArray(row.businesses) ? row.businesses : (extended.businesses || existing?.businesses || []),
+        services: Array.isArray(row.services) ? row.services : (extended.services || existing?.services || []),
+        languages: Array.isArray(row.languages) ? row.languages : (extended.languages || existing?.languages || []),
+        custom_links: Array.isArray(row.custom_links) ? row.custom_links : (extended.custom_links || existing?.custom_links || []),
+        is_premium: row.is_premium ?? extended.is_premium ?? existing?.is_premium ?? false,
+        premium_plan: row.premium_plan ?? extended.premium_plan ?? existing?.premium_plan ?? 'none',
+        premium_expires_at: row.premium_until ?? extended.premium_expires_at ?? existing?.premium_expires_at,
+        theme: row.theme || existing?.theme || 'dark-modern',
+        accent_color: row.accent_color || existing?.accent_color || '#3B82F6',
+        button_style: row.button_style || existing?.button_style || 'rounded',
+        font_family: row.font_family || existing?.font_family || 'Inter',
+        background_style: row.background_style || existing?.background_style || 'mesh',
+        published: row.published !== false,
+        connections_count: existing?.connections_count || 0,
+        followers_count: existing?.followers_count || 0,
+        created_at: row.created_at || existing?.created_at || new Date().toISOString(),
+        updated_at: row.updated_at || existing?.updated_at || new Date().toISOString(),
+      };
+      profileMap.set(row.username.toLowerCase(), mergedProfile);
+    }
+
+    const mergedList = Array.from(profileMap.values());
+    setLocalItem(STORAGE_KEYS.PROFILES, mergedList);
+    return mergedList;
+  } catch (err) {
+    console.warn('Sync profiles from Supabase note:', err);
+    return getAllProfiles();
+  }
+}
+
+export async function syncConnectionsFromSupabase(userId: string): Promise<Connection[]> {
+  if (!isSupabaseConfigured || !supabase || !userId) return getAllConnections();
+  try {
+    const { data, error } = await supabase
+      .from('connections')
+      .select('*')
+      .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`);
+
+    if (error || !data) return getAllConnections();
+
+    const localConns = getAllConnections();
+    const connMap = new Map<string, Connection>();
+    for (const c of localConns) {
+      connMap.set(c.id, c);
+    }
+
+    const profiles = getAllProfiles();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of data as any[]) {
+      const reqProf = profiles.find(p => p.user_id === row.requester_id);
+      const recProf = profiles.find(p => p.user_id === row.receiver_id);
+      const conn: Connection = {
+        id: row.id,
+        requester_id: row.requester_id,
+        requester_name: reqProf?.full_name || 'SignTap Member',
+        requester_username: reqProf?.username || 'member',
+        requester_image: reqProf?.profile_image || '',
+        requester_headline: reqProf?.headline || reqProf?.title || '',
+        recipient_id: row.receiver_id,
+        recipient_name: recProf?.full_name || 'SignTap Member',
+        recipient_username: recProf?.username || 'member',
+        recipient_image: recProf?.profile_image || '',
+        recipient_headline: recProf?.headline || recProf?.title || '',
+        status: row.status === 'accepted' ? 'connected' : (row.status === 'rejected' ? 'declined' : 'pending'),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      };
+      connMap.set(row.id, conn);
+    }
+
+    const merged = Array.from(connMap.values());
+    setLocalItem(STORAGE_KEYS.CONNECTIONS, merged);
+    return merged;
+  } catch (err) {
+    console.warn('Sync connections from Supabase note:', err);
+    return getAllConnections();
+  }
+}
+
+export async function syncNotificationsFromSupabase(userId: string): Promise<AppNotification[]> {
+  if (!isSupabaseConfigured || !supabase || !userId) return getNotificationsForUser(userId);
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('recipient_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return getNotificationsForUser(userId);
+
+    const localNotifs = getAllNotifications();
+    const notifMap = new Map<string, AppNotification>();
+    for (const n of localNotifs) {
+      notifMap.set(n.id, n);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of data as any[]) {
+      const notif: AppNotification = {
+        id: row.id,
+        user_id: row.recipient_id,
+        sender_id: row.actor_id,
+        sender_name: row.actor_name,
+        sender_username: row.actor_username,
+        sender_image: row.actor_avatar,
+        type: row.type as NotificationType,
+        title: row.title,
+        message: row.message,
+        link: row.link,
+        read: Boolean(row.read),
+        created_at: row.created_at,
+      };
+      notifMap.set(row.id, notif);
+    }
+
+    const merged = Array.from(notifMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    setLocalItem(STORAGE_KEYS.NOTIFICATIONS, merged);
+    return merged.filter(n => n.user_id === userId);
+  } catch (err) {
+    console.warn('Sync notifications from Supabase note:', err);
+    return getNotificationsForUser(userId);
+  }
+}
+
+export async function syncMessagesFromSupabase(userId: string): Promise<ChatMessage[]> {
+  if (!isSupabaseConfigured || !supabase || !userId) return getAllMessages();
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order('created_at', { ascending: true });
+
+    if (error || !data) return getAllMessages();
+
+    const localMsgs = getAllMessages();
+    const msgMap = new Map<string, ChatMessage>();
+    for (const m of localMsgs) {
+      msgMap.set(m.id, m);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of data as any[]) {
+      const msg: ChatMessage = {
+        id: row.id,
+        sender_id: row.sender_id,
+        sender_name: row.sender_name,
+        sender_username: row.sender_username || 'member',
+        sender_avatar: row.sender_avatar,
+        receiver_id: row.receiver_id || '',
+        receiver_name: row.receiver_name || 'SignTap Member',
+        receiver_username: row.receiver_username || 'member',
+        content: row.content,
+        media_url: row.media_url,
+        read: Boolean(row.read),
+        created_at: row.created_at,
+      };
+      msgMap.set(row.id, msg);
+    }
+
+    const merged = Array.from(msgMap.values()).sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    setLocalItem(STORAGE_KEYS.MESSAGES, merged);
+    return merged;
+  } catch (err) {
+    console.warn('Sync messages from Supabase note:', err);
+    return getAllMessages();
+  }
+}
+
+export async function syncJobsFromSupabase(): Promise<JobListing[]> {
+  if (!isSupabaseConfigured || !supabase) return getAllJobs();
+  try {
+    const { data, error } = await supabase
+      .from('job_listings')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return getAllJobs();
+
+    const localJobs = getAllJobs();
+    const jobMap = new Map<string, JobListing>();
+    for (const j of localJobs) {
+      jobMap.set(j.id, j);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of data as any[]) {
+      const job: JobListing = {
+        id: row.id,
+        poster_user_id: row.poster_user_id,
+        title: row.title,
+        company: row.company,
+        company_logo: row.company_logo,
+        location: row.location,
+        type: row.type || 'Full-time',
+        workplace_type: row.workplace_type || 'Remote',
+        description: row.description,
+        requirements: row.requirements || [],
+        salary_range: row.salary_range,
+        experience_level: row.experience_level || 'Mid-Senior level',
+        applicants_count: row.applicants_count || 0,
+        status: row.status || 'active',
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      };
+      jobMap.set(row.id, job);
+    }
+
+    const merged = Array.from(jobMap.values());
+    setLocalItem(STORAGE_KEYS.JOBS, merged);
+    return merged;
+  } catch (err) {
+    console.warn('Sync jobs from Supabase note:', err);
+    return getAllJobs();
+  }
 }
 
 
