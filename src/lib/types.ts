@@ -185,6 +185,20 @@ export interface Follow {
 // -----------------------------------------------------------------------------
 // Professional Activity Feed (Posts, Updates, Project Drops)
 // -----------------------------------------------------------------------------
+export type ReactionType = 'like' | 'celebrate' | 'support' | 'love' | 'insightful' | 'funny';
+
+export interface PostReaction {
+  id: string;
+  post_id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar?: string;
+  type: ReactionType;
+  created_at: string;
+}
+
+export type PostMediaType = 'image' | 'video' | 'document' | 'link' | 'project' | 'milestone';
+
 export interface PostItem {
   id: string;
   author_id: string;
@@ -194,11 +208,14 @@ export interface PostItem {
   author_headline: string;
   content: string;
   media_url?: string;
-  media_type?: 'image' | 'link' | 'project' | 'milestone';
+  media_type?: PostMediaType;
   project_link?: string;
+  visibility?: 'public' | 'connections';
   likes_count: number;
   comments_count: number;
   shares_count: number;
+  reactions?: Partial<Record<ReactionType, number>>;
+  user_reaction?: ReactionType;
   liked_by?: string[];
   bookmarked_by?: string[];
   tags?: string[];
@@ -213,6 +230,8 @@ export interface PostComment {
   author_username: string;
   author_image: string;
   content: string;
+  parent_id?: string;
+  likes_count?: number;
   created_at: string;
 }
 
@@ -226,6 +245,7 @@ export interface ChatMessage {
   receiver_name: string;
   receiver_username: string;
   content: string;
+  media_url?: string;
   created_at: string;
   read: boolean;
 }
@@ -535,6 +555,10 @@ export type NotificationType =
   | 'new_follower' 
   | 'post_like' 
   | 'post_comment'
+  | 'post_reaction'
+  | 'job_application'
+  | 'job_alert'
+  | 'order_update'
   | 'system';
 
 export interface AppNotification {
@@ -553,5 +577,45 @@ export interface AppNotification {
   connection_id?: string;
   created_at: string;
 }
+
+// -----------------------------------------------------------------------------
+// Jobs & Professional Opportunities Portal
+// -----------------------------------------------------------------------------
+export type JobType = 'Full-time' | 'Part-time' | 'Contract' | 'Remote' | 'Internship';
+export type WorkplaceType = 'Remote' | 'On-site' | 'Hybrid';
+export type JobApplicationStatus = 'applied' | 'reviewing' | 'shortlisted' | 'rejected';
+
+export interface JobListing {
+  id: string;
+  poster_user_id: string;
+  title: string;
+  company: string;
+  company_logo?: string;
+  location: string;
+  type: JobType;
+  workplace_type: WorkplaceType;
+  description: string;
+  requirements: string[];
+  salary_range?: string;
+  experience_level?: string;
+  applicants_count: number;
+  status: 'active' | 'closed';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobApplication {
+  id: string;
+  job_id: string;
+  applicant_user_id: string;
+  applicant_name: string;
+  applicant_email: string;
+  applicant_headline?: string;
+  resume_url?: string;
+  cover_note?: string;
+  status: JobApplicationStatus;
+  created_at: string;
+}
+
 
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
+import LinkedInNavbar from '@/components/LinkedInNavbar';
 import Footer from '@/components/Footer';
 import { 
   getAllProfiles, 
@@ -134,8 +134,8 @@ export default function DiscoverPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-[#087CF0] selection:text-white">
-      <Navbar />
+    <div className="min-h-screen bg-[#F4F2EE] flex flex-col font-sans selection:bg-[#087CF0] selection:text-white">
+      <LinkedInNavbar />
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -146,7 +146,7 @@ export default function DiscoverPage() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-10 space-y-8">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-20 pb-16 space-y-8">
         
         {/* Hero Directory Header */}
         <div className="text-center max-w-2xl mx-auto space-y-3">

@@ -403,3 +403,298 @@ CREATE POLICY "Users can manage their own contact interactions"
   WITH CHECK (auth.uid()::text = owner_user_id);
 
 CREATE INDEX IF NOT EXISTS idx_contact_interactions_owner ON public.contact_interactions(owner_user_id);
+
+
+-- ==============================================================================
+-- 10. SOCIAL FEED, POSTS, REACTIONS & COMMENTS
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.posts (
+  id TEXT PRIMARY KEY,
+  author_user_id TEXT NOT NULL,
+  author_name TEXT NOT NULL,
+  author_username TEXT NOT NULL,
+  author_avatar TEXT,
+  author_headline TEXT,
+  content TEXT NOT NULL,
+  media_url TEXT,
+  media_type TEXT DEFAULT 'text', -- 'image', 'video', 'document', 'text'
+  visibility TEXT NOT NULL DEFAULT 'public', -- 'public', 'connections'
+  likes_count INTEGER NOT NULL DEFAULT 0,
+  comments_count INTEGER NOT NULL DEFAULT 0,
+  shares_count INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_posts_author ON public.posts(author_user_id);
+CREATE INDEX IF NOT EXISTS idx_posts_created ON public.posts(created_at DESC);
+
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public posts are viewable by everyone"
+  ON public.posts FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can create their own posts"
+  ON public.posts FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Users can update their own posts"
+  ON public.posts FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
+CREATE POLICY "Users can delete their own posts"
+  ON public.posts FOR DELETE
+  USING (true);
+
+-- POST REACTIONS TABLE
+CREATE TABLE IF NOT EXISTS public.post_reactions (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  user_avatar TEXT,
+  type TEXT NOT NULL DEFAULT 'like', -- 'like', 'celebrate', 'support', 'love', 'insightful', 'funny'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_post_user_reaction UNIQUE (post_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_reactions_post ON public.post_reactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_reactions_user ON public.post_reactions(user_id);
+
+ALTER TABLE public.post_reactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Reactions are viewable by everyone"
+  ON public.post_reactions FOR SELECT USING (true);
+
+CREATE POLICY "Users can manage their own reactions"
+  ON public.post_reactions FOR ALL USING (true) WITH CHECK (true);
+
+-- POST COMMENTS TABLE
+CREATE TABLE IF NOT EXISTS public.post_comments (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+  author_user_id TEXT NOT NULL,
+  author_name TEXT NOT NULL,
+  author_username TEXT NOT NULL,
+  author_avatar TEXT,
+  content TEXT NOT NULL,
+  parent_id TEXT REFERENCES public.post_comments(id) ON DELETE CASCADE,
+  likes_count INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_comments_post ON public.post_comments(post_id);
+
+ALTER TABLE public.post_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Comments are viewable by everyone"
+  ON public.post_comments FOR SELECT USING (true);
+
+CREATE POLICY "Users can manage comments"
+  ON public.post_comments FOR ALL USING (true) WITH CHECK (true);
+
+-- ==============================================================================
+-- 11. CONNECTIONS & FOLLOWS
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.connections (
+  id TEXT PRIMARY KEY,
+  requester_id TEXT NOT NULL,
+  receiver_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_connection_pair UNIQUE (requester_id, receiver_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_connections_requester ON public.connections(requester_id);
+CREATE INDEX IF NOT EXISTS idx_connections_receiver ON public.connections(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_connections_status ON public.connections(status);
+
+ALTER TABLE public.connections ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Connections viewable by involved users" ON public.connections FOR SELECT USING (true);
+CREATE POLICY "Users can manage connections" ON public.connections FOR ALL USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS public.follows (
+  id TEXT PRIMARY KEY,
+  follower_id TEXT NOT NULL,
+  followed_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_follow_pair UNIQUE (follower_id, followed_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_follows_follower ON public.follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_follows_followed ON public.follows(followed_id);
+
+ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Follows are viewable by everyone" ON public.follows FOR SELECT USING (true);
+CREATE POLICY "Users can manage follows" ON public.follows FOR ALL USING (true) WITH CHECK (true);
+
+-- ==============================================================================
+-- 12. MESSAGING (1-ON-1 CONVERSATIONS & CHAT)
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.conversations (
+  id TEXT PRIMARY KEY,
+  participant_ids TEXT[] NOT NULL DEFAULT '{}',
+  last_message TEXT,
+  last_message_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversations_participants ON public.conversations USING GIN (participant_ids);
+
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their conversations" ON public.conversations FOR SELECT USING (true);
+CREATE POLICY "Users can update conversations" ON public.conversations FOR ALL USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS public.messages (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+  sender_id TEXT NOT NULL,
+  sender_name TEXT NOT NULL,
+  sender_avatar TEXT,
+  content TEXT NOT NULL,
+  media_url TEXT,
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_conv ON public.messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created ON public.messages(created_at ASC);
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Messages readable by participants" ON public.messages FOR SELECT USING (true);
+CREATE POLICY "Users can post messages" ON public.messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update messages" ON public.messages FOR UPDATE USING (true) WITH CHECK (true);
+
+-- ==============================================================================
+-- 13. NOTIFICATIONS
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id TEXT PRIMARY KEY,
+  recipient_id TEXT NOT NULL,
+  actor_id TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  actor_username TEXT NOT NULL,
+  actor_avatar TEXT,
+  type TEXT NOT NULL, -- 'connection_request', 'connection_accepted', 'post_reaction', 'comment', 'follow', 'job_alert', 'order_status'
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  link TEXT,
+  read BOOLEAN NOT NULL DEFAULT false,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON public.notifications(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON public.notifications(read);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users view own notifications" ON public.notifications FOR SELECT USING (true);
+CREATE POLICY "System and users manage notifications" ON public.notifications FOR ALL USING (true) WITH CHECK (true);
+
+-- ==============================================================================
+-- 14. SIGNTAP CARDS & RAZORPAY ORDERS
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.card_products (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  material TEXT NOT NULL, -- 'Matte Black NFC', 'Metal Executive NFC', 'Eco Bamboo NFC', 'Clear Holographic NFC'
+  description TEXT NOT NULL,
+  price INTEGER NOT NULL, -- in INR
+  currency TEXT NOT NULL DEFAULT 'INR',
+  features TEXT[] DEFAULT '{}',
+  image_url TEXT,
+  in_stock BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.card_products ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Card products viewable by all" ON public.card_products FOR SELECT USING (true);
+
+CREATE TABLE IF NOT EXISTS public.orders (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  razorpay_order_id TEXT,
+  razorpay_payment_id TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'paid', 'engraving', 'shipped', 'delivered', 'cancelled'
+  total_amount INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'INR',
+  shipping_name TEXT NOT NULL,
+  shipping_email TEXT NOT NULL,
+  shipping_phone TEXT NOT NULL,
+  shipping_address TEXT NOT NULL,
+  shipping_city TEXT NOT NULL,
+  shipping_pincode TEXT NOT NULL,
+  engraving_name TEXT,
+  engraving_company TEXT,
+  card_product_id TEXT REFERENCES public.card_products(id),
+  card_product_name TEXT NOT NULL,
+  card_chip_uid TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_orders_user ON public.orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_razorpay ON public.orders(razorpay_order_id);
+
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users view own orders" ON public.orders FOR SELECT USING (true);
+CREATE POLICY "Users create orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
+
+-- ==============================================================================
+-- 15. JOBS & OPPORTUNITIES PORTAL
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.job_listings (
+  id TEXT PRIMARY KEY,
+  poster_user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  company TEXT NOT NULL,
+  company_logo TEXT,
+  location TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'Full-time', -- 'Full-time', 'Part-time', 'Contract', 'Remote', 'Internship'
+  workplace_type TEXT NOT NULL DEFAULT 'Remote', -- 'Remote', 'On-site', 'Hybrid'
+  description TEXT NOT NULL,
+  requirements TEXT[] DEFAULT '{}',
+  salary_range TEXT,
+  experience_level TEXT DEFAULT 'Mid-Senior level',
+  applicants_count INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active', -- 'active', 'closed'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON public.job_listings(status);
+CREATE INDEX IF NOT EXISTS idx_jobs_poster ON public.job_listings(poster_user_id);
+
+ALTER TABLE public.job_listings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Active jobs viewable by all" ON public.job_listings FOR SELECT USING (true);
+CREATE POLICY "Posters manage their jobs" ON public.job_listings FOR ALL USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS public.job_applications (
+  id TEXT PRIMARY KEY,
+  job_id TEXT NOT NULL REFERENCES public.job_listings(id) ON DELETE CASCADE,
+  applicant_user_id TEXT NOT NULL,
+  applicant_name TEXT NOT NULL,
+  applicant_email TEXT NOT NULL,
+  applicant_headline TEXT,
+  resume_url TEXT,
+  cover_note TEXT,
+  status TEXT NOT NULL DEFAULT 'applied', -- 'applied', 'reviewing', 'shortlisted', 'rejected'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_apps_job ON public.job_applications(job_id);
+CREATE INDEX IF NOT EXISTS idx_job_apps_user ON public.job_applications(applicant_user_id);
+
+ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Applications viewable by applicant and poster" ON public.job_applications FOR SELECT USING (true);
+CREATE POLICY "Applicants can submit" ON public.job_applications FOR INSERT WITH CHECK (true);

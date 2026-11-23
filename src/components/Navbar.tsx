@@ -17,13 +17,12 @@ export default function Navbar() {
   }, [pathname]);
 
   const navLinks = [
-    { label: 'Home', href: '/' },
+    { label: 'Feed', href: '/feed' },
+    { label: 'My Network', href: '/network' },
+    { label: 'Jobs', href: '/jobs' },
+    { label: 'SignTap Cards', href: '/cards' },
     { label: 'Discover', href: '/discover' },
-    { label: 'How It Works', href: '/how-it-works' },
-    { label: 'Explore Cards', href: '/explore-cards' },
-    { label: 'Features', href: '/features' },
     { label: 'Pricing', href: '/pricing' },
-    { label: 'FAQ', href: '/faq' },
     { label: 'Contact', href: '/contact' },
   ];
 

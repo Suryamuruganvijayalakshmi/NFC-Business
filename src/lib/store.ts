@@ -21,6 +21,9 @@ import {
   Follow,
   PostItem,
   PostComment,
+  ReactionType,
+  PostReaction,
+  PostMediaType,
   WorkExperience,
   EducationItem,
   CertificationItem,
@@ -37,9 +40,13 @@ import {
   ChatMessage,
   ChatConversation,
   AppNotification,
-  NotificationType
+  NotificationType,
+  JobListing,
+  JobApplication,
+  JobType,
+  WorkplaceType
 } from './types';
-export type { AppNotification, NotificationType };
+export type { AppNotification, NotificationType, ReactionType, PostReaction, JobListing, JobApplication };
 import { 
   INITIAL_PROFILES, 
   INITIAL_SECTIONS, 
@@ -83,7 +90,82 @@ const STORAGE_KEYS = {
   CRM_CATEGORIES: 'sb_crm_categories',
   MESSAGES: 'sb_chat_messages',
   NOTIFICATIONS: 'sb_notifications',
+  JOBS: 'sb_jobs',
+  JOB_APPLICATIONS: 'sb_job_applications',
+  POST_REACTIONS: 'sb_post_reactions',
 };
+
+export const INITIAL_JOBS: JobListing[] = [
+  {
+    id: 'job-1',
+    poster_user_id: 'user-surya-01',
+    title: 'Senior Embedded IoT & NFC Hardware Engineer',
+    company: 'SignTap Labs',
+    company_logo: '/images/nfc-smart-card.webp',
+    location: 'Bengaluru, Karnataka (Hybrid)',
+    type: 'Full-time',
+    workplace_type: 'Hybrid',
+    description: 'We are looking for an experienced Embedded Systems & RF Hardware Engineer to architect next-generation NFC contactless cards and physical web devices. You will design micro-antennas, optimize ISO 14443 protocols, and collaborate with our cloud web engineers.',
+    requirements: [
+      '4+ years designing embedded microcontrollers (ARM, ESP32, STM32)',
+      'Hands-on expertise with NFC / RFID protocols (ISO 14443, ISO 15693, NTAG216)',
+      'Experience with PCB antenna simulation and impedance matching',
+      'Strong C/C++ firmware programming skills'
+    ],
+    salary_range: '₹18,00,000 - ₹28,00,000 / year',
+    experience_level: 'Mid-Senior level',
+    applicants_count: 14,
+    status: 'active',
+    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+    updated_at: new Date(Date.now() - 86400000 * 3).toISOString()
+  },
+  {
+    id: 'job-2',
+    poster_user_id: 'user-alex-03',
+    title: 'Lead Full-Stack Next.js & Edge Systems Architect',
+    company: 'NeuralFlow Technologies',
+    company_logo: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=400&q=80',
+    location: 'Remote (Global)',
+    type: 'Full-time',
+    workplace_type: 'Remote',
+    description: 'Join NeuralFlow to build real-time AI agents and low-latency edge gateways. You will lead Next.js 15 App Router architecture, Cloudflare Workers integrations, and real-time WebSocket communication pipelines.',
+    requirements: [
+      '5+ years with React, Next.js, TypeScript and Node.js',
+      'Experience with distributed edge architectures and Supabase / Postgres',
+      'Proven track record with high-performance responsive UI systems',
+      'Knowledge of WebSockets, Server-Sent Events, or WebRTC'
+    ],
+    salary_range: '₹24,00,000 - ₹38,00,000 / year',
+    experience_level: 'Director / Lead level',
+    applicants_count: 28,
+    status: 'active',
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+    updated_at: new Date(Date.now() - 86400000 * 5).toISOString()
+  },
+  {
+    id: 'job-3',
+    poster_user_id: 'user-elena-02',
+    title: 'Senior Brand & 3D Interactive Motion Designer',
+    company: 'Studio Rostova',
+    company_logo: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=400&q=80',
+    location: 'Remote / Berlin',
+    type: 'Contract',
+    workplace_type: 'Remote',
+    description: 'We are seeking an imaginative visual brand designer to craft physical packaging, 3D interactive web experiences (Three.js/WebGL), and spatial motion identities for premier tech hardware brands.',
+    requirements: [
+      '3+ years in interactive digital product design and branding',
+      'Strong portfolio in Blender / Cinema 4D and WebGL / Spline',
+      'Obsessive attention to typography, micro-interactions, and lighting',
+      'Ability to translate physical industrial design into digital web representations'
+    ],
+    salary_range: '₹14,00,000 - ₹22,00,000 / year',
+    experience_level: 'Mid-Senior level',
+    applicants_count: 9,
+    status: 'active',
+    created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
+    updated_at: new Date(Date.now() - 86400000 * 7).toISOString()
+  }
+];
 
 // Helper to access localStorage safely
 function getLocalItem<T>(key: string, defaultValue: T): T {
@@ -1337,7 +1419,7 @@ export function createPost(postData: {
   author_headline: string;
   content: string;
   media_url?: string;
-  media_type?: 'image' | 'link' | 'project' | 'milestone';
+  media_type?: PostMediaType;
   project_link?: string;
   tags?: string[];
 }): PostItem {
@@ -1468,7 +1550,196 @@ export function addCommentToPost(postId: string, author: Profile, content: strin
     setLocalItem(STORAGE_KEYS.POSTS, posts);
   }
 
+  // Trigger notification to author if author is someone else
+  if (post && post.author_id && post.author_id !== author.user_id) {
+    createNotification({
+      user_id: post.author_id,
+      sender_id: author.user_id,
+      sender_name: author.full_name,
+      sender_username: author.username,
+      sender_image: author.profile_image,
+      sender_headline: author.headline || author.title,
+      type: 'post_comment',
+      title: `${author.full_name} commented on your post`,
+      message: `${author.full_name}: "${content.length > 50 ? content.substring(0, 50) + '...' : content}"`,
+      link: `/feed?post=${postId}`,
+    });
+  }
+
   return newComment;
+}
+
+export function reactToPost(
+  postId: string, 
+  userId: string, 
+  reactionType: ReactionType,
+  userProfile?: Profile | null
+): { reaction: ReactionType | null; reactions: Record<ReactionType, number> } {
+  const posts = getAllPosts();
+  const post = posts.find(p => p.id === postId);
+  if (!post) {
+    return { reaction: null, reactions: { like: 0, celebrate: 0, support: 0, love: 0, insightful: 0, funny: 0 } };
+  }
+
+  const allReactions = getLocalItem<PostReaction[]>(STORAGE_KEYS.POST_REACTIONS, []);
+  const existingIndex = allReactions.findIndex(r => r.post_id === postId && r.user_id === userId);
+
+  let userCurrentReaction: ReactionType | null = null;
+
+  if (existingIndex >= 0) {
+    if (allReactions[existingIndex].type === reactionType) {
+      allReactions.splice(existingIndex, 1);
+      userCurrentReaction = null;
+    } else {
+      allReactions[existingIndex].type = reactionType;
+      userCurrentReaction = reactionType;
+    }
+  } else {
+    const newReaction: PostReaction = {
+      id: `react-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      post_id: postId,
+      user_id: userId,
+      user_name: userProfile?.full_name || 'SignTap Member',
+      user_avatar: userProfile?.profile_image,
+      type: reactionType,
+      created_at: new Date().toISOString()
+    };
+    allReactions.push(newReaction);
+    userCurrentReaction = reactionType;
+
+    if (post.author_id && post.author_id !== userId && userProfile) {
+      createNotification({
+        user_id: post.author_id,
+        sender_id: userId,
+        sender_name: userProfile.full_name,
+        sender_username: userProfile.username,
+        sender_image: userProfile.profile_image,
+        sender_headline: userProfile.headline || userProfile.title,
+        type: 'post_like',
+        title: `${userProfile.full_name} reacted to your post`,
+        message: `${userProfile.full_name} reacted (${reactionType}) to your post.`,
+        link: `/feed?post=${postId}`,
+      });
+    }
+  }
+
+  setLocalItem(STORAGE_KEYS.POST_REACTIONS, allReactions);
+
+  const counts: Record<ReactionType, number> = {
+    like: 0,
+    celebrate: 0,
+    support: 0,
+    love: 0,
+    insightful: 0,
+    funny: 0
+  };
+
+  const postReactions = allReactions.filter(r => r.post_id === postId);
+  for (const r of postReactions) {
+    if (counts[r.type] !== undefined) {
+      counts[r.type]++;
+    }
+  }
+
+  post.reactions = counts;
+  post.likes_count = postReactions.length;
+  post.user_reaction = userCurrentReaction || undefined;
+  setLocalItem(STORAGE_KEYS.POSTS, posts);
+
+  return { reaction: userCurrentReaction, reactions: counts };
+}
+
+export function sharePost(postId: string, user: Profile, commentary?: string): PostItem | null {
+  const posts = getAllPosts();
+  const original = posts.find(p => p.id === postId);
+  if (!original) return null;
+
+  original.shares_count = (original.shares_count || 0) + 1;
+  setLocalItem(STORAGE_KEYS.POSTS, posts);
+
+  const sharedPost = createPost({
+    author_id: user.user_id,
+    author_name: user.full_name,
+    author_username: user.username,
+    author_image: user.profile_image,
+    author_headline: user.headline || user.title || 'SignTap Member',
+    content: commentary ? `${commentary}\n\n[Shared from ${original.author_name}]:\n"${original.content}"` : `[Shared from ${original.author_name}]:\n"${original.content}"`,
+    media_url: original.media_url,
+    media_type: original.media_type,
+    project_link: original.project_link,
+    tags: original.tags,
+  });
+
+  return sharedPost;
+}
+
+// -----------------------------------------------------------------------------
+// Jobs & Professional Opportunities Portal
+// -----------------------------------------------------------------------------
+export function getAllJobs(): JobListing[] {
+  return getLocalItem<JobListing[]>(STORAGE_KEYS.JOBS, INITIAL_JOBS);
+}
+
+export function createJobListing(jobData: Omit<JobListing, 'id' | 'created_at' | 'updated_at' | 'applicants_count'>): JobListing {
+  const jobs = getAllJobs();
+  const newJob: JobListing = {
+    ...jobData,
+    id: `job-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    applicants_count: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  jobs.unshift(newJob);
+  setLocalItem(STORAGE_KEYS.JOBS, jobs);
+  return newJob;
+}
+
+export function getAllJobApplications(): JobApplication[] {
+  return getLocalItem<JobApplication[]>(STORAGE_KEYS.JOB_APPLICATIONS, []);
+}
+
+export function applyToJob(
+  jobId: string, 
+  applicationData: Omit<JobApplication, 'id' | 'created_at' | 'status' | 'job_id'>
+): JobApplication {
+  const applications = getAllJobApplications();
+  const newApp: JobApplication = {
+    ...applicationData,
+    id: `app-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    job_id: jobId,
+    status: 'applied',
+    created_at: new Date().toISOString()
+  };
+  applications.unshift(newApp);
+  setLocalItem(STORAGE_KEYS.JOB_APPLICATIONS, applications);
+
+  const jobs = getAllJobs();
+  const job = jobs.find(j => j.id === jobId);
+  if (job) {
+    job.applicants_count = (job.applicants_count || 0) + 1;
+    setLocalItem(STORAGE_KEYS.JOBS, jobs);
+
+    createNotification({
+      user_id: job.poster_user_id,
+      sender_id: applicationData.applicant_user_id,
+      sender_name: applicationData.applicant_name,
+      sender_headline: applicationData.applicant_headline,
+      type: 'job_application',
+      title: 'New Job Application Received',
+      message: `${applicationData.applicant_name} applied for "${job.title}".`,
+      link: `/jobs`,
+    });
+  }
+
+  return newApp;
+}
+
+export function getApplicationsForJob(jobId: string): JobApplication[] {
+  return getAllJobApplications().filter(a => a.job_id === jobId);
+}
+
+export function getApplicationsForUser(userId: string): JobApplication[] {
+  return getAllJobApplications().filter(a => a.applicant_user_id === userId);
 }
 
 // -----------------------------------------------------------------------------
