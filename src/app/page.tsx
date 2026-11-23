@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import Hero02SignTap from '@/components/Hero02SignTap';
+import Hero01 from '@/components/originkit/hero-01';
 import SignTapLoader from '@/components/SignTapLoader';
 import SignBridgeCard from '@/components/SignBridgeCard';
 import RazorpayBuyModal from '@/components/RazorpayBuyModal';
@@ -163,13 +163,9 @@ export default function HomePage() {
         }`}
       >
         {/* =====================================================================
-            ORIGINKIT HERO 02 SECTION ADAPTED FOR SIGNTAP
+            ORIGINKIT HERO 01 SECTION ADAPTED FOR SIGNTAP
         ===================================================================== */}
-        <Hero02SignTap
-          currentProfile={currentProfile}
-          onCardTap={handleCardTapSimulation}
-          tapSuccess={tapSuccess}
-        />
+        <Hero01 />
 
       <div className="w-full px-2.5 sm:px-4 space-y-12 sm:space-y-16">
         

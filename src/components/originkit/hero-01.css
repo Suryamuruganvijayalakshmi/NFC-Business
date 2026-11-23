@@ -5,13 +5,8 @@
   to { transform: translateX(-50%); }
 }
 
-:root {
-  --animate-trusted-marquee: trusted-marquee 36s linear infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   @keyframes trusted-marquee {
     from, to { transform: none; }
   }
 }
-
