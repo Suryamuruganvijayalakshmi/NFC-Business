@@ -170,7 +170,7 @@ export default function HomePage() {
       <div className="w-full px-2.5 sm:px-4 space-y-12 sm:space-y-16">
         
         {/* =====================================================================
-            C. HOW IT WORKS — HERO-02 STYLED CARD CONTAINER
+            C. HOW IT WORKS — INTERACTIVE 3-STEP EXPERIENCE
         ===================================================================== */}
         <section id="how-it-works" className="max-w-7xl mx-auto rounded-3xl md:rounded-[2rem] bg-white border border-[#dee5ed] p-6 sm:p-10 lg:p-14 shadow-xs">
           <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14">

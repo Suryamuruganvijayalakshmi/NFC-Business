@@ -7,6 +7,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import SpotlightReveal from "@/components/originkit/ui/hero-01/spotlight-reveal";
 import TrustedBy from "@/components/originkit/ui/hero-01/trusted-by";
+import SignTapDashboardMockup from "@/components/originkit/ui/hero-01/signtap-dashboard-mockup";
 
 /** Public asset URLs — use a function so preview rewriters stay stable. */
 function asset(file: string) {
@@ -89,34 +90,6 @@ const MenuIcon = () => {
   );
 };
 
-const VideoPlayerButton = () => {
-  return (
-    <button
-      type="button"
-      aria-label="Play preview video"
-      className="absolute top-1/2 left-1/2 z-10 flex size-14 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-t border-[#bfbfbf] bg-linear-to-b from-[#eaeaea] to-white p-2.5 shadow-[inset_0_6px_13px_rgba(0,0,0,0.10)] transition-transform duration-200 ease will-change-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#010110] active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.04]"
-    >
-      <span className="relative flex size-full items-center justify-center overflow-hidden rounded-full bg-linear-to-b from-[#e0e0e0] to-white shadow-[0_4px_10px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06),0_0_0_3px_rgba(255,255,255,0.65)]">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-full bg-white"
-        />
-        <img
-          alt=""
-          aria-hidden="true"
-          src={asset("play.svg")}
-          width={32}
-          height={32}
-          className="relative ml-px size-6"
-        />
-      </span>
-    </button>
-  );
-};
-
-const PREVIEW_IMAGE_CLASSNAME =
-  "m-0 mx-auto block w-full object-top p-0 h-[300px] md:h-[320px] ipad:h-auto [mask-image:linear-gradient(to_bottom,black_0%,black_68%,rgba(0,0,0,0.45)_84%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_68%,rgba(0,0,0,0.45)_84%,transparent_100%)]";
-
 const BrowserPreview = ({ active }: { active: boolean }) => {
   const prefersReducedMotion = useReducedMotion();
 
@@ -125,7 +98,7 @@ const BrowserPreview = ({ active }: { active: boolean }) => {
 
   return (
     <motion.div
-      className="relative mx-auto mt-4 mb-[-72px] w-full min-w-0 max-w-[56rem] self-center will-change-transform ipad:mb-0 ipad:mt-6 laptop:mt-8"
+      className="relative mx-auto mt-4 mb-[-72px] w-full min-w-0 max-w-[58rem] self-center will-change-transform ipad:mb-0 ipad:mt-6 laptop:mt-8"
       initial={hidden}
       animate={active ? visible : hidden}
       transition={{
@@ -134,29 +107,9 @@ const BrowserPreview = ({ active }: { active: boolean }) => {
         ease: easeOutCubic,
       }}
     >
-      <div className="translate-y-6 rounded-[14px] bg-[#f4f0e8] p-[8.5px] shadow-[0_0_6px_1px_rgba(0,0,0,0.05),0_0_200px_rgba(0,0,0,0.08),0_15px_20px_-17px_rgba(0,0,0,0.13),0_7px_14px_-10px_rgba(0,0,0,0.08)] ipad:translate-y-14 ipad:rounded-[18px]">
-        <div className="relative overflow-hidden rounded-[5.5px] ipad:rounded-[9.5px]">
-          <img
-            alt="Mirror Pro dashboard preview in a browser mockup"
-            src={asset("dashboard-preview.png")}
-            width={2500}
-            height={1280}
-            className={`md:block hidden ${PREVIEW_IMAGE_CLASSNAME}`}
-          />
-          <img
-            alt="Mirror Pro dashboard preview in a browser mockup"
-            src={asset("mobile-dashboard.png")}
-            width={2500}
-            height={1280}
-            className={`block md:hidden  ${PREVIEW_IMAGE_CLASSNAME}`}
-          />
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-linear-to-t from-[#f4f0e8] from-0% via-[#f4f0e8]/85 via-30% to-transparent ipad:h-28 laptop:h-32"
-          />
-
-          <VideoPlayerButton />
+      <div className="translate-y-6 rounded-[16px] bg-[#f4f0e8] p-[7px] sm:p-[9px] shadow-[0_0_6px_1px_rgba(0,0,0,0.05),0_0_200px_rgba(0,0,0,0.08),0_15px_20px_-17px_rgba(0,0,0,0.13),0_7px_14px_-10px_rgba(0,0,0,0.08)] ipad:translate-y-12 ipad:rounded-[20px]">
+        <div className="relative overflow-hidden rounded-[8px] ipad:rounded-[12px] bg-[#F4F2EE]">
+          <SignTapDashboardMockup />
         </div>
       </div>
     </motion.div>
