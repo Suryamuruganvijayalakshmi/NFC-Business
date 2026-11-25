@@ -250,6 +250,7 @@ export async function loginUser(email: string, password?: string): Promise<{ use
           user_metadata: data.user.user_metadata,
         };
         setCurrentUser(user);
+        getOrCreateProfileForUser(user);
         return { user };
       }
     } catch (err: any) {
@@ -273,6 +274,7 @@ export async function loginUser(email: string, password?: string): Promise<{ use
   };
 
   setCurrentUser(user);
+  getOrCreateProfileForUser(user);
   return { user };
 }
 
@@ -2903,7 +2905,8 @@ export async function syncProfilesFromSupabase(): Promise<Profile[]> {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .limit(100);
+      .order('created_at', { ascending: false })
+      .limit(500);
 
     if (error || !data) return getAllProfiles();
 

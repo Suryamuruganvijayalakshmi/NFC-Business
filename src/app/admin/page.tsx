@@ -26,7 +26,9 @@ import {
   deletePost,
   deleteProfile,
   toggleProfilePremium,
-  isSuperAdminUser
+  isSuperAdminUser,
+  syncProfilesFromSupabase,
+  syncPostsFromSupabase
 } from '@/lib/store';
 import { Profile, NFCCard, Order, Product, AdminActivity, OrderStatus, PostItem } from '@/lib/types';
 import { 
@@ -111,13 +113,24 @@ export default function AdminConsolePage() {
     refreshData();
   }, [router]);
 
+  const sortProfilesNewest = (list: Profile[]) =>
+    [...list].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
   const refreshData = () => {
-    setProfiles(getAllProfiles());
+    setProfiles(sortProfilesNewest(getAllProfiles()));
     setCards(getAllNFCCards());
     setOrders(getAllOrders());
     setProducts(getAllProducts());
     setActivities(getAdminActivities());
     setAllPosts(getAllPosts());
+
+    // Pull latest registered/logged-in users & posts from Supabase
+    syncProfilesFromSupabase()
+      .then((synced) => setProfiles(sortProfilesNewest(synced)))
+      .catch(() => {});
+    syncPostsFromSupabase()
+      .then((synced) => setAllPosts(synced))
+      .catch(() => {});
   };
 
   const showToast = (msg: string) => {
@@ -228,11 +241,16 @@ export default function AdminConsolePage() {
   };
 
   // Filters
-  const filteredProfiles = profiles.filter(p => 
-    p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProfiles = profiles.filter(p => {
+    const q = searchQuery.toLowerCase();
+    return (
+      (p.full_name || '').toLowerCase().includes(q) ||
+      (p.username || '').toLowerCase().includes(q) ||
+      (p.email || '').toLowerCase().includes(q) ||
+      (p.user_id || '').toLowerCase().includes(q) ||
+      (p.id || '').toLowerCase().includes(q)
+    );
+  });
 
   const filteredOrders = orders.filter(o => {
     const matchesStatus = orderStatusFilter === 'all' || o.status === orderStatusFilter;
@@ -538,7 +556,10 @@ export default function AdminConsolePage() {
                             />
                             <div>
                               <p className="font-bold text-slate-900 text-sm">{prof.full_name}</p>
-                              <p className="text-slate-500 text-[11px]">{prof.email}</p>
+                              <p className="text-slate-500 text-[11px]">{prof.email || 'No email'}</p>
+                              <p className="text-[10px] font-mono text-slate-400 mt-0.5 truncate max-w-[200px]" title={prof.user_id || prof.id}>
+                                ID: {prof.user_id || prof.id}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -888,12 +909,22 @@ export default function AdminConsolePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {profiles
-                .filter(p => !profileSearch || p.full_name?.toLowerCase().includes(profileSearch.toLowerCase()) || p.username?.toLowerCase().includes(profileSearch.toLowerCase()) || p.email?.toLowerCase().includes(profileSearch.toLowerCase()))
+                .filter(p => {
+                  if (!profileSearch) return true;
+                  const q = profileSearch.toLowerCase();
+                  return (
+                    (p.full_name || '').toLowerCase().includes(q) ||
+                    (p.username || '').toLowerCase().includes(q) ||
+                    (p.email || '').toLowerCase().includes(q) ||
+                    (p.user_id || '').toLowerCase().includes(q) ||
+                    (p.id || '').toLowerCase().includes(q)
+                  );
+                })
                 .map(prof => (
                 <div key={prof.id} className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:border-[#087CF0]/40 transition-all space-y-4 flex flex-col justify-between">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono text-[#087CF0] uppercase font-bold">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono text-[#087CF0] uppercase font-bold truncate">
                         /u/{prof.username}
                       </span>
                       <div className="flex items-center gap-1.5">
@@ -930,6 +961,9 @@ export default function AdminConsolePage() {
                         </h4>
                         <p className="text-xs text-slate-500 truncate">{prof.headline || prof.title}</p>
                         <p className="text-[11px] text-[#FF7900] font-semibold truncate">{prof.company || prof.email}</p>
+                        <p className="text-[10px] font-mono text-slate-400 truncate mt-0.5" title={prof.user_id || prof.id}>
+                          ID: {prof.user_id || prof.id}
+                        </p>
                       </div>
                     </div>
 
