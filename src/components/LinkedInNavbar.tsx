@@ -9,6 +9,8 @@ import NotificationDropdown from '@/components/NotificationDropdown';
 import { 
   getCurrentUser, 
   getProfileByUserId, 
+  getOrCreateProfileForUser,
+  syncProfilesFromSupabase,
   getAllConnections, 
   getUnreadMessageCount,
   logoutUser,
@@ -55,7 +57,7 @@ export default function LinkedInNavbar() {
     const currentUser = getCurrentUser();
     setUser(currentUser);
     if (currentUser) {
-      const p = getProfileByUserId(currentUser.id);
+      const p = getProfileByUserId(currentUser.id) || getOrCreateProfileForUser(currentUser);
       setProfile(p);
 
       // Pending received requests count
@@ -77,6 +79,7 @@ export default function LinkedInNavbar() {
 
   useEffect(() => {
     syncState();
+    syncProfilesFromSupabase().then(() => syncState()).catch(() => {});
     const interval = setInterval(syncState, 6000);
     return () => clearInterval(interval);
   }, [pathname]);
@@ -111,7 +114,10 @@ export default function LinkedInNavbar() {
   };
 
   const isSuperAdmin = isSuperAdminUser(user);
-  const username = profile?.username || 'member';
+  const username =
+    profile?.username ||
+    (user?.user_metadata?.username as string | undefined) ||
+    (user?.email ? user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_-]/g, '') : 'surya');
   const isPremium = profile?.is_premium;
 
   const navItems = [

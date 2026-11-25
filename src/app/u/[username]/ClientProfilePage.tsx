@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   getProfileByUsername, 
+  getOrCreateProfileForUser,
   getSectionsByProfileId, 
   getProjectsByProfileId, 
   getLinksByProfileId, 
@@ -89,6 +90,9 @@ function ProfileContent() {
 
       // 1. Check local cached store first for immediate render
       let localProfile = getProfileByUsername(username);
+      if (!localProfile && username === 'member' && user) {
+        localProfile = getOrCreateProfileForUser(user);
+      }
 
       if (localProfile) {
         if (isSubscribed) {
@@ -115,7 +119,7 @@ function ProfileContent() {
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .eq('username', username.toLowerCase())
+            .ilike('username', username.toLowerCase())
             .maybeSingle();
 
           if (!isSubscribed) return;
