@@ -300,243 +300,73 @@ export default function FeedPage() {
       />
       <LinkedInNavbar />
 
-      <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
-        <div className="flex justify-center gap-6">
-
-          {/* ================================================================= */}
-          {/* LEFT COLUMN: User Identity Card & Digital NFC Card Shortcut */}
-          {/* ================================================================= */}
-          <aside className="hidden md:block w-56 lg:w-60 xl:w-64 shrink-0 space-y-3">
-            
-            {/* User Mini Profile Card */}
-            <div className="bg-white rounded-2xl border border-[#E8E8EF] shadow-xs overflow-hidden">
-              {/* Cover Banner */}
-              <Link href={targetProfileUrl} className="block h-14 bg-gradient-to-r from-[#EEF2FF] via-[#F3E8FF] to-[#FCE7F3] relative overflow-hidden group">
-                {displayProfile?.cover_image && (
+      <main className="max-w-6xl mx-auto px-4 sm:px-8 pt-24 pb-24 md:pb-16 space-y-8">
+        {/* ================================================================= */}
+        {/* TOP CREATOR HERO + INLINE COMPOSER (Replaces 3-Column LinkedIn UI) */}
+        {/* ================================================================= */}
+        <section className="rounded-3xl bg-white/90 backdrop-blur-sm border border-[#E8E8EF] p-5 sm:p-7 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            {/* Creator Identity & Bold Inline Stats */}
+            <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+              <Link href={targetProfileUrl} className="relative shrink-0 group" title="View your SignTap profile">
+                {displayProfile?.profile_image ? (
                   <img
-                    src={displayProfile.cover_image}
-                    alt="Cover"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    src={displayProfile.profile_image}
+                    alt={displayProfile.full_name}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-white shadow-sm group-hover:scale-105 transition-transform"
                   />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
+                    {displayProfile?.full_name?.charAt(0) || 'U'}
+                  </div>
+                )}
+                {displayProfile?.is_premium && (
+                  <Crown className="w-4 h-4 text-amber-500 absolute bottom-0 right-0 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
                 )}
               </Link>
 
-              {/* Avatar & Basic Info */}
-              <div className="px-4 pb-4 -mt-9 text-center">
-                <Link href={targetProfileUrl} className="inline-block relative group" title="Click to view profile">
-                  {displayProfile?.profile_image ? (
-                    <img
-                      src={displayProfile.profile_image}
-                      alt={displayProfile.full_name}
-                      className="w-18 h-18 rounded-full object-cover border-2 border-white shadow-sm mx-auto group-hover:opacity-90 group-hover:scale-105 transition-all"
-                    />
-                  ) : (
-                    <div className="w-18 h-18 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm mx-auto group-hover:scale-105 transition-all">
-                      {displayProfile?.full_name?.charAt(0) || 'U'}
-                    </div>
-                  )}
-                  {displayProfile?.is_premium && (
-                    <Crown className="w-4 h-4 text-amber-500 absolute bottom-0 right-0 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
-                  )}
-                </Link>
-
-                <h3 className="font-bold text-slate-900 text-sm mt-2 hover:underline">
-                  <Link href={targetProfileUrl}>
-                    {displayProfile?.full_name || 'SignTap Member'}
-                  </Link>
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                  {displayProfile?.headline || displayProfile?.title || 'Connect and share your digital identity'}
-                </p>
-
-                {displayProfile && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 text-left space-y-2 text-xs">
-                    <Link
-                      href="/network"
-                      className="flex items-center justify-between text-slate-600 hover:text-[#6969F5] font-medium transition-colors"
-                    >
-                      <span>Connections</span>
-                      <span className="font-bold text-[#6969F5]">{connectionsCount}</span>
-                    </Link>
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>Profile impressions</span>
-                      <span className="font-bold text-slate-900">{profileImpressions}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Digital NFC Card Shortcut */}
-              <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 text-xs">
-                <Link
-                  href={targetProfileUrl}
-                  className="flex items-center gap-2 text-slate-700 hover:text-[#6969F5] font-semibold"
-                >
-                  <CreditCard className="w-4 h-4 text-[#6969F5]" />
-                  <span>My Digital Identity Card</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Profile Completion Widget (for incomplete profiles) */}
-            {user && profile && !dismissedCompletion && (() => {
-              const comp = calculateProfileCompletion(
-                profile,
-                getProjectsByProfileId(profile.id),
-                getLinksByProfileId(profile.id)
-              );
-              if (comp.percentage >= 100) return null;
-              return (
-                <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900">Profile Completion: {comp.percentage}%</span>
-                    <button
-                      onClick={() => setDismissedCompletion(true)}
-                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                      aria-label="Dismiss profile completion"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#6969F5] transition-all" style={{ width: `${comp.percentage}%` }} />
-                  </div>
-                  <div className="space-y-1">
-                    {comp.suggestions.slice(0, 2).map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/u/${profile.username}?edit=${s.tab}`}
-                        className="block text-[11px] text-[#6969F5] hover:underline font-medium"
-                      >
-                        + {s.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Premium Upgrade CTA Card */}
-            {!profile?.is_premium && (
-              <div className="bg-gradient-to-br from-amber-50/80 to-amber-100/50 rounded-xl border border-amber-200/80 p-3.5 shadow-xs">
-                <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs">
-                  <Crown className="w-4 h-4 text-amber-600 fill-amber-400" />
-                  <span>SignTap Premium PRO</span>
-                </div>
-                <p className="text-[11px] text-amber-800/90 mt-1 leading-relaxed">
-                  Get verified gold crown badge, unlimited contactless profile shares & priority discovery.
-                </p>
-                <Link
-                  href="/cards"
-                  className="mt-2.5 block text-center py-1.5 px-3 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition-colors"
-                >
-                  Unlock PRO · ₹1,000/yr
-                </Link>
-              </div>
-            )}
-
-            {/* Quick Navigation Drawer */}
-            <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs text-xs space-y-2 text-slate-600">
-              <Link href="/network" className="flex items-center gap-2 hover:text-[#6969F5] transition-colors">
-                <Users className="w-4 h-4 text-slate-400" />
-                <span>My Network ({connectionsCount})</span>
-              </Link>
-              <Link href="/jobs" className="flex items-center gap-2 hover:text-[#6969F5] transition-colors">
-                <Briefcase className="w-4 h-4 text-slate-400" />
-                <span>Saved Jobs & Alerts</span>
-              </Link>
-              <Link href="/cards" className="flex items-center gap-2 hover:text-[#6969F5] transition-colors">
-                <CreditCard className="w-4 h-4 text-slate-400" />
-                <span>Order Physical NFC Card</span>
-              </Link>
-            </div>
-          </aside>
-
-          {/* ================================================================= */}
-          {/* CENTER COLUMN: Create Post & Social Activity Stream */}
-          {/* ================================================================= */}
-          <section className="flex-1 max-w-[580px] lg:max-w-[620px] space-y-3">
-            
-            {/* ============================================================= */}
-            {/* MOBILE ONLY: Professional Profile Banner */}
-            {/* ============================================================= */}
-            <div className="md:hidden bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-              <Link href={targetProfileUrl} className="block h-12 bg-gradient-to-r from-[#6969F5] via-[#5858E6] to-[#101828] relative overflow-hidden group">
-                {displayProfile?.cover_image && (
-                  <img
-                    src={displayProfile.cover_image}
-                    alt="Cover"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                )}
-              </Link>
-              <div className="px-3.5 pb-3 -mt-6 flex items-end justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Link
                     href={targetProfileUrl}
-                    className="relative shrink-0 group"
-                    title="Click to view profile"
+                    className="text-lg sm:text-xl font-bold text-[#202124] hover:text-[#6969F5] transition-colors truncate"
                   >
-                    {displayProfile?.profile_image ? (
-                      <img
-                        src={displayProfile.profile_image}
-                        alt={displayProfile.full_name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs group-hover:opacity-90"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-base border-2 border-white shadow-xs">
-                        {displayProfile?.full_name?.charAt(0) || 'U'}
-                      </div>
-                    )}
-                    {displayProfile?.is_premium && (
-                      <Crown className="w-3.5 h-3.5 text-amber-500 absolute -bottom-0.5 -right-0.5 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
-                    )}
+                    {displayProfile?.full_name || 'SignTap Member'}
                   </Link>
-                  <div className="min-w-0 text-left">
-                    <Link
-                      href={targetProfileUrl}
-                      className="font-bold text-slate-900 text-sm truncate block hover:text-[#6969F5] transition-colors"
-                    >
-                      {displayProfile?.full_name || 'SignTap Member'}
-                    </Link>
-                    <p className="text-[11px] text-slate-500 truncate">
-                      {displayProfile?.headline || displayProfile?.title || 'Connect & explore'}
-                    </p>
+                  {displayProfile?.username && (
+                    <span className="text-xs font-semibold text-[#6969F5] bg-[#F7F7FB] border border-[#E8E8EF] px-2.5 py-0.5 rounded-full">
+                      @{displayProfile.username}
+                    </span>
+                  )}
+                </div>
+
+                {/* 3 Bold Inline Stats */}
+                <div className="flex items-center gap-5 sm:gap-7 mt-2.5">
+                  <Link href="/network" className="group">
+                    <span className="text-base sm:text-lg font-bold text-[#202124] group-hover:text-[#6969F5] transition-colors">
+                      {connectionsCount}
+                    </span>
+                    <span className="block text-[11px] text-[#777783] font-medium">Connections</span>
+                  </Link>
+                  <div>
+                    <span className="text-base sm:text-lg font-bold text-[#202124]">
+                      {profileImpressions}
+                    </span>
+                    <span className="block text-[11px] text-[#777783] font-medium">Profile Views</span>
+                  </div>
+                  <div>
+                    <span className="text-base sm:text-lg font-bold text-[#6969F5]">
+                      {posts.length}
+                    </span>
+                    <span className="block text-[11px] text-[#777783] font-medium">Published</span>
                   </div>
                 </div>
-                <Link
-                  href={targetProfileUrl}
-                  className="shrink-0 px-2.5 py-1 rounded-full border border-[#6969F5] text-[#6969F5] text-[11px] font-semibold hover:bg-blue-50 transition-colors"
-                >
-                  View Profile
-                </Link>
               </div>
             </div>
 
-            {/* Create Post Card */}
-            <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs">
-              <div className="flex items-center gap-3">
-                <Link
-                  href={targetProfileUrl}
-                  className="shrink-0 group relative"
-                  title="View your profile"
-                >
-                  {displayProfile?.profile_image ? (
-                    <img
-                      src={displayProfile.profile_image}
-                      alt={displayProfile.full_name}
-                      className="w-11 h-11 rounded-full object-cover border border-slate-200 group-hover:opacity-90 transition-opacity"
-                    />
-                  ) : (
-                    <div className="w-11 h-11 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm group-hover:opacity-90 transition-opacity">
-                      {displayProfile?.full_name?.charAt(0) || 'U'}
-                    </div>
-                  )}
-                  {displayProfile?.is_premium && (
-                    <Crown className="w-3 h-3 text-amber-500 absolute -bottom-0.5 -right-0.5 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
-                  )}
-                </Link>
-
+            {/* Right: Sleek Pill Composer + Quick Media Actions */}
+            <div className="flex-1 max-w-xl space-y-3">
+              <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => {
                     if (!user) {
@@ -545,88 +375,178 @@ export default function FeedPage() {
                     }
                     setIsCreateModalOpen(true);
                   }}
-                  className="flex-1 text-left px-4 py-2.5 rounded-full border border-slate-300 hover:bg-slate-100/80 text-xs sm:text-sm font-medium text-slate-500 transition-colors cursor-pointer"
+                  className="flex-1 text-left px-5 py-3 rounded-full bg-[#F7F7FB] hover:bg-[#EFEFF7] border border-[#E8E8EF] text-xs sm:text-sm font-medium text-[#777783] transition-colors cursor-pointer"
                 >
-                  Start a post, share a project, milestone...
+                  Share a milestone, project, or update...
                 </button>
+                <Link
+                  href={targetProfileUrl}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#202124] hover:bg-black text-white text-xs font-semibold transition-colors shrink-0"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>My Card</span>
+                </Link>
               </div>
 
-              {/* Action Buttons Row */}
-              <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100">
+              <div className="flex items-center flex-wrap gap-2">
                 <button
                   onClick={() => {
                     setIsCreateModalOpen(true);
                     setPostMediaType('image');
                   }}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-xs font-semibold text-slate-600 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F7F7FB] hover:bg-[#EFEFF7] text-xs font-semibold text-[#202124] transition-colors cursor-pointer"
                 >
-                  <ImageIcon className="w-4 h-4 text-blue-500" />
+                  <ImageIcon className="w-3.5 h-3.5 text-[#6969F5]" />
                   <span>Media</span>
                 </button>
-
                 <button
                   onClick={() => {
                     setIsCreateModalOpen(true);
                     setPostMediaType('video');
                   }}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-xs font-semibold text-slate-600 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F7F7FB] hover:bg-[#EFEFF7] text-xs font-semibold text-[#202124] transition-colors cursor-pointer"
                 >
-                  <Video className="w-4 h-4 text-emerald-500" />
+                  <Video className="w-3.5 h-3.5 text-emerald-500" />
                   <span>Video</span>
                 </button>
-
                 <button
                   onClick={() => {
                     setIsCreateModalOpen(true);
                     setPostMediaType('project');
                   }}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-xs font-semibold text-slate-600 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F7F7FB] hover:bg-[#EFEFF7] text-xs font-semibold text-[#202124] transition-colors cursor-pointer"
                 >
-                  <Briefcase className="w-4 h-4 text-purple-500" />
+                  <Briefcase className="w-3.5 h-3.5 text-purple-500" />
                   <span>Project</span>
                 </button>
-
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-xs font-semibold text-slate-600 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F7F7FB] hover:bg-[#EFEFF7] text-xs font-semibold text-[#202124] transition-colors cursor-pointer"
                 >
-                  <FileText className="w-4 h-4 text-amber-500" />
+                  <FileText className="w-3.5 h-3.5 text-amber-500" />
                   <span>Article</span>
                 </button>
+                <Link
+                  href="/cards"
+                  className="ml-auto inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#6969F5]/10 hover:bg-[#6969F5]/20 text-xs font-semibold text-[#6969F5] transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Get NFC Card</span>
+                </Link>
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Filter / Sort Pill Tabs */}
-            <div className="flex items-center justify-between gap-3 px-1">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setFeedFilter('recent')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    feedFilter === 'recent'
-                      ? 'bg-[#6969F5] text-white shadow-sm shadow-[#6969F5]/25'
-                      : 'bg-[#F7F7FB] text-[#202124] hover:bg-[#EFEFF7]'
-                  }`}
-                >
-                  Recent
-                </button>
-                <button
-                  onClick={() => setFeedFilter('top')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    feedFilter === 'top'
-                      ? 'bg-[#6969F5] text-white shadow-sm shadow-[#6969F5]/25'
-                      : 'bg-[#F7F7FB] text-[#202124] hover:bg-[#EFEFF7]'
-                  }`}
-                >
-                  Top
-                </button>
-              </div>
-              <span className="text-[11px] text-[#777783] font-medium">
-                {posts.length} {posts.length === 1 ? 'post' : 'posts'}
-              </span>
+        {/* ================================================================= */}
+        {/* HORIZONTAL CREATORS TO CONNECT STRIP                              */}
+        {/* ================================================================= */}
+        {peopleYouMayKnow.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-sm font-bold text-[#202124] flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#6969F5]" />
+                <span>Creators &amp; Builders on SignTap</span>
+              </h2>
+              <Link
+                href="/network"
+                className="text-xs font-semibold text-[#6969F5] hover:underline inline-flex items-center gap-1"
+              >
+                <span>Explore all</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
 
-            {/* Posts Stream */}
-            <div className="space-y-4">
+            <div className="flex items-stretch gap-3.5 overflow-x-auto pb-2 no-scrollbar">
+              {peopleYouMayKnow.map((person) => {
+                const hasConnected = connectingMap[person.user_id];
+                return (
+                  <div
+                    key={person.id}
+                    className="min-w-[220px] max-w-[240px] shrink-0 rounded-2xl bg-[#F7F7FB] hover:bg-[#EFEFF7] border border-[#E8E8EF] p-3.5 flex items-center gap-3 transition-colors"
+                  >
+                    <Link href={`/u/${person.username || 'user'}`} className="shrink-0">
+                      {person.profile_image ? (
+                        <img
+                          src={person.profile_image}
+                          alt={person.full_name}
+                          className="w-11 h-11 rounded-full object-cover border border-white shadow-2xs"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-xs">
+                          {(person.full_name || 'S').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </Link>
+
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/u/${person.username || 'user'}`}
+                        className="font-bold text-[#202124] text-xs hover:text-[#6969F5] block truncate"
+                      >
+                        {person.full_name || 'SignTap Member'}
+                      </Link>
+                      <p className="text-[11px] text-[#777783] truncate">
+                        @{person.username || 'member'}
+                      </p>
+                      <button
+                        onClick={(e) => handleConnect(person.user_id, e)}
+                        disabled={hasConnected}
+                        className="mt-1.5 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-[#E8E8EF] hover:border-[#6969F5] text-[#6969F5] text-[11px] font-semibold transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                      >
+                        {hasConnected ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            <span>Pending</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-3 h-3" />
+                            <span>Connect</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ================================================================= */}
+        {/* PILL FILTER BAR + 2-COLUMN EDITORIAL SHOWCASE STREAM              */}
+        {/* ================================================================= */}
+        <section className="space-y-5">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setFeedFilter('recent')}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  feedFilter === 'recent'
+                    ? 'bg-[#6969F5] text-white shadow-sm shadow-[#6969F5]/25'
+                    : 'bg-[#F7F7FB] text-[#202124] hover:bg-[#EFEFF7]'
+                }`}
+              >
+                Recent
+              </button>
+              <button
+                onClick={() => setFeedFilter('top')}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  feedFilter === 'top'
+                    ? 'bg-[#6969F5] text-white shadow-sm shadow-[#6969F5]/25'
+                    : 'bg-[#F7F7FB] text-[#202124] hover:bg-[#EFEFF7]'
+                }`}
+              >
+                Top Highlights
+              </button>
+            </div>
+            <span className="text-xs text-[#777783] font-medium">
+              {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
               {posts.slice(0, visibleCount).map((post) => {
                 const userReaction = post.user_reaction;
                 const activeReaction = REACTION_CONFIG.find(r => r.type === userReaction);
@@ -635,7 +555,7 @@ export default function FeedPage() {
                 return (
                   <article
                     key={post.id}
-                    className="bg-white rounded-2xl border border-[#E8E8EF] shadow-xs hover:shadow-sm transition-shadow overflow-hidden"
+                    className="bg-white rounded-3xl border border-[#E8E8EF] shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden"
                   >
                     {/* Author Header */}
                     <div className="p-3.5 pb-2 flex items-start justify-between gap-3">
@@ -938,166 +858,52 @@ export default function FeedPage() {
                   </article>
                 );
               })}
+          </div>
 
               {posts.length > visibleCount && (
-                <div className="pt-2 flex justify-center">
+                <div className="pt-4 flex justify-center">
                   <button
                     onClick={() => setVisibleCount((prev) => prev + 10)}
-                    className="px-6 py-2.5 rounded-full bg-white border border-slate-300 hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                    className="px-6 py-2.5 rounded-full bg-[#F7F7FB] hover:bg-[#EFEFF7] border border-[#E8E8EF] text-xs font-bold text-[#202124] transition-colors cursor-pointer"
                   >
                     Load more posts ({posts.length - visibleCount} remaining)
                   </button>
                 </div>
               )}
-            </div>
-          </section>
+        </section>
 
-          {/* ================================================================= */}
-          {/* RIGHT COLUMN: Trending Topics, People You May Know, NFC Cards */}
-          {/* ================================================================= */}
-          <aside className="hidden lg:block w-72 xl:w-80 shrink-0 space-y-3">
-            
-            {/* Trending Topics & News */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-[#6969F5]" />
-                  <span>SignTap Professional News</span>
-                </h4>
-              </div>
+        {/* Bottom NFC Hardware Banner & Minimal Footer */}
+        <section className="rounded-3xl bg-[#202124] text-white p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
+          <div className="absolute -top-12 right-12 w-48 h-48 bg-[#6969F5]/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#A78BFA]">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>SignTap NFC Smart Hardware</span>
+            </span>
+            <h3 className="text-lg font-bold mt-1">Tap any phone to share your SignTap identity</h3>
+            <p className="text-xs text-white/70 mt-1">
+              Laser-engraved contactless cards starting at ₹199 · Free delivery across India.
+            </p>
+          </div>
+          <Link
+            href="/cards"
+            className="relative px-5 py-2.5 rounded-full bg-[#6969F5] hover:bg-[#5858E6] text-white text-xs font-semibold transition-colors shrink-0"
+          >
+            Explore NFC Cards
+          </Link>
+        </section>
 
-              <div className="space-y-3 text-xs">
-                <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
-                    • Physical NFC web cards surge across India
-                  </h5>
-                  <p className="text-[11px] text-slate-400 mt-0.5">2d ago • 3,420 readers</p>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
-                    • Edge computing & microchip contactless identity
-                  </h5>
-                  <p className="text-[11px] text-slate-400 mt-0.5">1d ago • 1,980 readers</p>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
-                    • Replacing paper visiting cards with Smart CRM
-                  </h5>
-                  <p className="text-[11px] text-slate-400 mt-0.5">3d ago • 985 readers</p>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
-                    • Next.js 15 App Router architecture in production
-                  </h5>
-                  <p className="text-[11px] text-slate-400 mt-0.5">4d ago • 1,450 readers</p>
-                </div>
-              </div>
-            </div>
-
-            {/* People You May Know */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
-              <h4 className="font-bold text-slate-900 text-sm mb-3">
-                People You May Know
-              </h4>
-
-              <div className="space-y-3">
-                {peopleYouMayKnow.map((person) => {
-                  const hasConnected = connectingMap[person.user_id];
-                  return (
-                    <div key={person.id} className="flex items-start justify-between gap-2.5">
-                      <Link href={`/u/${person.username}`} className="shrink-0 mt-0.5">
-                        {person.profile_image ? (
-                          <img
-                            src={person.profile_image}
-                            alt={person.full_name}
-                            className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-xs">
-                            {(person.full_name || 'S').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </Link>
-
-                      <div className="flex-1 min-w-0">
-                        <Link
-                          href={`/u/${person.username || 'user'}`}
-                          className="font-bold text-slate-900 text-xs hover:text-[#6969F5] hover:underline block truncate"
-                        >
-                          {person.full_name || 'SignTap Member'}
-                        </Link>
-                        <p className="text-[11px] text-slate-500 line-clamp-1">{person.headline || person.title}</p>
-                        
-                        <button
-                          onClick={() => handleConnect(person.user_id)}
-                          disabled={hasConnected}
-                          className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full border border-[#6969F5] text-[#6969F5] hover:bg-blue-50 text-[11px] font-semibold transition-colors disabled:opacity-60"
-                        >
-                          {hasConnected ? (
-                            <>
-                              <Check className="w-3 h-3" />
-                              <span>Pending</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="w-3 h-3" />
-                              <span>Connect</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-slate-100 text-center">
-                <Link
-                  href="/network"
-                  className="text-xs font-semibold text-[#6969F5] hover:underline inline-flex items-center gap-1"
-                >
-                  <span>View All Network Suggestions</span>
-                  <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </div>
-
-            {/* SignTap NFC Smart Card Showcase */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#6969F5]/20 rounded-full blur-2xl" />
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>SignTap Physical Hardware</span>
-              </div>
-              <h4 className="font-bold text-sm mt-1">Get Your Laser-Engraved NFC Card</h4>
-              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Tap any phone to share your verified profile instantly. No app required. Free courier delivery.
-              </p>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="font-bold text-amber-400 text-sm">₹199 only</span>
-                <Link
-                  href="/cards"
-                  className="px-3 py-1.5 rounded-full bg-[#6969F5] hover:bg-blue-600 text-white text-xs font-semibold transition-colors shadow-xs"
-                >
-                  Order Card
-                </Link>
-              </div>
-            </div>
-
-            {/* Footer mini links */}
-            <div className="text-[11px] text-slate-400 space-x-2 text-center pt-2">
-              <Link href="/about" className="hover:underline">About</Link>
-              <span>•</span>
-              <Link href="/privacy" className="hover:underline">Privacy</Link>
-              <span>•</span>
-              <Link href="/terms" className="hover:underline">Terms</Link>
-              <span>•</span>
-              <Link href="/contact" className="hover:underline">Help Center</Link>
-              <p className="mt-1">SignTap Corporation © 2026</p>
-            </div>
-          </aside>
-
-        </div>
+        <footer className="text-[11px] text-[#777783] flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Link href="/about" className="hover:text-[#202124]">About</Link>
+          <span>•</span>
+          <Link href="/privacy" className="hover:text-[#202124]">Privacy</Link>
+          <span>•</span>
+          <Link href="/terms" className="hover:text-[#202124]">Terms</Link>
+          <span>•</span>
+          <Link href="/contact" className="hover:text-[#202124]">Help Center</Link>
+          <span>•</span>
+          <span>SignTap © 2026</span>
+        </footer>
       </main>
 
       {/* ===================================================================== */}
