@@ -97,7 +97,7 @@ export default function NotificationsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-800">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-800">
       <LinkedInNavbar />
 
       <main className="max-w-5xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
@@ -114,7 +114,7 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('all')}
                   className={`w-full text-left px-3 py-2 rounded-lg font-semibold transition-colors ${
-                    filter === 'all' ? 'bg-blue-50 text-[#0A66C2]' : 'text-slate-700 hover:bg-slate-50'
+                    filter === 'all' ? 'bg-blue-50 text-[#6969F5]' : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   All Notifications ({notifications.length})
@@ -122,7 +122,7 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('unread')}
                   className={`w-full text-left px-3 py-2 rounded-lg font-semibold transition-colors ${
-                    filter === 'unread' ? 'bg-blue-50 text-[#0A66C2]' : 'text-slate-700 hover:bg-slate-50'
+                    filter === 'unread' ? 'bg-blue-50 text-[#6969F5]' : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   Unread ({notifications.filter(n => !n.read).length})
@@ -136,14 +136,14 @@ export default function NotificationsPage() {
             {/* Header */}
             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Bell className="w-4 h-4 text-[#0A66C2]" />
+                <Bell className="w-4 h-4 text-[#6969F5]" />
                 <span>Notifications</span>
               </h2>
 
               {notifications.some(n => !n.read) && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="text-xs font-semibold text-[#0A66C2] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-semibold text-[#6969F5] hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   <span>Mark all as read</span>
@@ -182,7 +182,7 @@ export default function NotificationsPage() {
                             className="w-11 h-11 rounded-full object-cover border border-slate-200 shrink-0"
                           />
                         ) : (
-                          <div className="w-11 h-11 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                          <div className="w-11 h-11 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm shrink-0">
                             {notif.sender_name ? notif.sender_name.charAt(0) : 'S'}
                           </div>
                         )}
@@ -211,7 +211,7 @@ export default function NotificationsPage() {
                               </button>
                               <button
                                 onClick={() => handleAcceptConnection(notif.connection_id, notif.id)}
-                                className="px-4 py-1 rounded-full bg-[#0A66C2] hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                className="px-4 py-1 rounded-full bg-[#6969F5] hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                               >
                                 Accept
                               </button>

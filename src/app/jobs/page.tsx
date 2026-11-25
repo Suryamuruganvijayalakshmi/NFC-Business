@@ -165,7 +165,7 @@ export default function JobsPage() {
   const hasAppliedToSelected = selectedJob && myApplications.some(a => a.job_id === selectedJob.id);
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-800">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-800">
       <LinkedInNavbar />
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
@@ -180,7 +180,7 @@ export default function JobsPage() {
                 value={searchTitle}
                 onChange={(e) => setSearchTitle(e.target.value)}
                 placeholder="Search job title, skill, or company"
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 focus:bg-white text-xs sm:text-sm rounded-lg border border-slate-200 focus:border-[#0A66C2] focus:outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 focus:bg-white text-xs sm:text-sm rounded-lg border border-slate-200 focus:border-[#6969F5] focus:outline-none transition-all"
               />
             </div>
 
@@ -191,14 +191,14 @@ export default function JobsPage() {
                 value={searchLocation}
                 onChange={(e) => setSearchLocation(e.target.value)}
                 placeholder="City, state, or 'Remote'"
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 focus:bg-white text-xs sm:text-sm rounded-lg border border-slate-200 focus:border-[#0A66C2] focus:outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 focus:bg-white text-xs sm:text-sm rounded-lg border border-slate-200 focus:border-[#6969F5] focus:outline-none transition-all"
               />
             </div>
 
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="w-full md:w-auto px-4 py-2 bg-slate-50 text-xs sm:text-sm font-semibold rounded-lg border border-slate-200 focus:outline-none focus:border-[#0A66C2] cursor-pointer"
+              className="w-full md:w-auto px-4 py-2 bg-slate-50 text-xs sm:text-sm font-semibold rounded-lg border border-slate-200 focus:outline-none focus:border-[#6969F5] cursor-pointer"
             >
               <option value="all">All Job Types</option>
               <option value="Full-time">Full-time</option>
@@ -226,7 +226,7 @@ export default function JobsPage() {
                 <button
                   onClick={() => setActiveTab('explore')}
                   className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
-                    activeTab === 'explore' ? 'bg-blue-50 text-[#0A66C2] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                    activeTab === 'explore' ? 'bg-blue-50 text-[#6969F5] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -239,14 +239,14 @@ export default function JobsPage() {
                 <button
                   onClick={() => setActiveTab('applied')}
                   className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
-                    activeTab === 'applied' ? 'bg-blue-50 text-[#0A66C2] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                    activeTab === 'applied' ? 'bg-blue-50 text-[#6969F5] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4" />
                     <span>My Applications</span>
                   </div>
-                  <span className="font-bold text-[#0A66C2]">{myApplications.length}</span>
+                  <span className="font-bold text-[#6969F5]">{myApplications.length}</span>
                 </button>
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function JobsPage() {
               </p>
               <button
                 onClick={() => setIsPostJobModalOpen(true)}
-                className="mt-3 w-full py-2 px-4 rounded-full border border-[#0A66C2] text-[#0A66C2] hover:bg-blue-50 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="mt-3 w-full py-2 px-4 rounded-full border border-[#6969F5] text-[#6969F5] hover:bg-blue-50 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Post a Free Job</span>
@@ -299,7 +299,7 @@ export default function JobsPage() {
                               Applied on {new Date(app.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                             </p>
                           </div>
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#0A66C2] border border-blue-200">
+                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#6969F5] border border-blue-200">
                             {app.status.toUpperCase()}
                           </span>
                         </div>
@@ -327,12 +327,12 @@ export default function JobsPage() {
                           onClick={() => setSelectedJob(job)}
                           className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${
                             isSelected
-                              ? 'border-[#0A66C2] ring-1 ring-[#0A66C2] shadow-sm'
+                              ? 'border-[#6969F5] ring-1 ring-[#6969F5] shadow-sm'
                               : 'border-slate-200 hover:border-slate-300 shadow-2xs'
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="w-11 h-11 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 font-bold text-[#0A66C2] text-sm overflow-hidden">
+                            <div className="w-11 h-11 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 font-bold text-[#6969F5] text-sm overflow-hidden">
                               {job.company_logo ? (
                                 <img src={job.company_logo} alt={job.company} className="w-full h-full object-cover" />
                               ) : (
@@ -340,7 +340,7 @@ export default function JobsPage() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-slate-900 text-sm truncate hover:text-[#0A66C2]">
+                              <h4 className="font-bold text-slate-900 text-sm truncate hover:text-[#6969F5]">
                                 {job.title}
                               </h4>
                               <p className="text-xs text-slate-600 truncate">{job.company}</p>
@@ -408,7 +408,7 @@ export default function JobsPage() {
                             className={`px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer ${
                               hasAppliedToSelected
                                 ? 'bg-slate-100 text-slate-500 border border-slate-300'
-                                : 'bg-[#0A66C2] hover:bg-blue-700 text-white'
+                                : 'bg-[#6969F5] hover:bg-blue-700 text-white'
                             }`}
                           >
                             {hasAppliedToSelected ? (
@@ -497,7 +497,7 @@ export default function JobsPage() {
                     required
                     value={applicantName}
                     onChange={(e) => setApplicantName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                   />
                 </div>
 
@@ -509,7 +509,7 @@ export default function JobsPage() {
                       required
                       value={applicantEmail}
                       onChange={(e) => setApplicantEmail(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                     />
                   </div>
                   <div>
@@ -519,7 +519,7 @@ export default function JobsPage() {
                       value={applicantPhone}
                       onChange={(e) => setApplicantPhone(e.target.value)}
                       placeholder="+91..."
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                     />
                   </div>
                 </div>
@@ -530,7 +530,7 @@ export default function JobsPage() {
                     type="text"
                     value={applicantHeadline}
                     onChange={(e) => setApplicantHeadline(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                   />
                 </div>
 
@@ -541,7 +541,7 @@ export default function JobsPage() {
                     value={resumeUrl}
                     onChange={(e) => setResumeUrl(e.target.value)}
                     placeholder="https://yourportfolio.com or drive link"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                   />
                 </div>
 
@@ -552,7 +552,7 @@ export default function JobsPage() {
                     onChange={(e) => setCoverNote(e.target.value)}
                     rows={3}
                     placeholder="Briefly state why you're a great fit for this position..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2] resize-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5] resize-none"
                   />
                 </div>
 
@@ -566,7 +566,7 @@ export default function JobsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-full bg-[#0A66C2] hover:bg-blue-700 text-white font-semibold shadow-xs"
+                    className="px-5 py-2 rounded-full bg-[#6969F5] hover:bg-blue-700 text-white font-semibold shadow-xs"
                   >
                     Submit Application
                   </button>
@@ -605,7 +605,7 @@ export default function JobsPage() {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g. Lead Full-Stack Architect"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                 />
               </div>
 
@@ -618,7 +618,7 @@ export default function JobsPage() {
                     value={newCompany}
                     onChange={(e) => setNewCompany(e.target.value)}
                     placeholder="e.g. SignBridge Labs"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                   />
                 </div>
                 <div>
@@ -628,7 +628,7 @@ export default function JobsPage() {
                     value={newLocation}
                     onChange={(e) => setNewLocation(e.target.value)}
                     placeholder="e.g. Bengaluru / Remote"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                   />
                 </div>
               </div>
@@ -639,7 +639,7 @@ export default function JobsPage() {
                   <select
                     value={newType}
                     onChange={(e) => setNewType(e.target.value as JobType)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                   >
                     <option value="Full-time">Full-time</option>
                     <option value="Part-time">Part-time</option>
@@ -653,7 +653,7 @@ export default function JobsPage() {
                   <select
                     value={newWorkplace}
                     onChange={(e) => setNewWorkplace(e.target.value as WorkplaceType)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                   >
                     <option value="Remote">Remote</option>
                     <option value="Hybrid">Hybrid</option>
@@ -669,7 +669,7 @@ export default function JobsPage() {
                   value={newSalary}
                   onChange={(e) => setNewSalary(e.target.value)}
                   placeholder="e.g. ₹20,00,000 - ₹30,00,000 / yr"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                 />
               </div>
 
@@ -681,7 +681,7 @@ export default function JobsPage() {
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   placeholder="Describe key responsibilities and mission of this role..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                 />
               </div>
 
@@ -692,7 +692,7 @@ export default function JobsPage() {
                   value={newRequirements}
                   onChange={(e) => setNewRequirements(e.target.value)}
                   placeholder="5+ years Next.js experience&#10;Strong TypeScript skills&#10;Experience with embedded IoT"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0A66C2]"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-[#6969F5]"
                 />
               </div>
 
@@ -706,7 +706,7 @@ export default function JobsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-full bg-[#0A66C2] hover:bg-blue-700 text-white font-semibold shadow-xs"
+                  className="px-5 py-2 rounded-full bg-[#6969F5] hover:bg-blue-700 text-white font-semibold shadow-xs"
                 >
                   Publish Listing
                 </button>

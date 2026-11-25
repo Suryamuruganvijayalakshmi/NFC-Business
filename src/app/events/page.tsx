@@ -101,7 +101,7 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-900 pb-20 md:pb-12">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-900 pb-20 md:pb-12">
       <LinkedInNavbar />
       <main className="max-w-6xl mx-auto px-4 pt-20 space-y-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -114,7 +114,7 @@ export default function EventsPage() {
           {profile && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-4 py-2.5 rounded-full bg-[#6969F5] hover:bg-[#5858E6] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Host Event
@@ -132,12 +132,12 @@ export default function EventsPage() {
                 <div
                   key={evt.id}
                   className={`bg-white rounded-2xl border p-6 shadow-xs transition-all ${
-                    selectedEvent?.id === evt.id ? 'border-[#0A66C2]' : 'border-slate-200'
+                    selectedEvent?.id === evt.id ? 'border-[#6969F5]' : 'border-slate-200'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <span className="inline-block text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-[#0A66C2]">
+                      <span className="inline-block text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-[#6969F5]">
                         {evt.category}
                       </span>
                       <h2 className="text-lg font-bold text-slate-900 mt-2">{evt.title}</h2>
@@ -181,20 +181,20 @@ export default function EventsPage() {
                       ) : (
                         <button
                           onClick={() => handleRegister(evt.id)}
-                          className="px-4 py-2 rounded-full bg-[#0A66C2] text-white text-xs font-bold hover:bg-[#004182] cursor-pointer"
+                          className="px-4 py-2 rounded-full bg-[#6969F5] text-white text-xs font-bold hover:bg-[#5858E6] cursor-pointer"
                         >
                           Register to Attend
                         </button>
                       )
                     ) : (
-                      <Link href="/login" className="px-4 py-2 rounded-full bg-[#0A66C2] text-white text-xs font-bold">
+                      <Link href="/login" className="px-4 py-2 rounded-full bg-[#6969F5] text-white text-xs font-bold">
                         Sign in to Register
                       </Link>
                     )}
 
                     <Link
                       href={`/connect?event=${encodeURIComponent(evt.id)}&eventName=${encodeURIComponent(evt.title)}`}
-                      className="px-4 py-2 rounded-full border border-[#0A66C2] text-[#0A66C2] text-xs font-semibold hover:bg-blue-50 flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-full border border-[#6969F5] text-[#6969F5] text-xs font-semibold hover:bg-blue-50 flex items-center gap-1.5"
                     >
                       <QrCode className="w-3.5 h-3.5" />
                       Event Contact Exchange
@@ -239,14 +239,14 @@ export default function EventsPage() {
                       .map((att) => (
                         <div key={att.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                           <div className="min-w-0">
-                            <Link href={`/u/${att.username}`} className="text-xs font-bold text-slate-900 hover:text-[#0A66C2] truncate block">
+                            <Link href={`/u/${att.username}`} className="text-xs font-bold text-slate-900 hover:text-[#6969F5] truncate block">
                               {att.full_name}
                             </Link>
                             <p className="text-[11px] text-slate-500 truncate">{att.headline || `@${att.username}`}</p>
                           </div>
                           <Link
                             href={`/connect?with=${att.username}&method=link&event=${encodeURIComponent(selectedEvent.id)}&eventName=${encodeURIComponent(selectedEvent.title)}`}
-                            className="px-2.5 py-1 rounded-full bg-blue-50 text-[#0A66C2] text-[11px] font-semibold shrink-0"
+                            className="px-2.5 py-1 rounded-full bg-blue-50 text-[#6969F5] text-[11px] font-semibold shrink-0"
                           >
                             Exchange
                           </Link>
@@ -321,7 +321,7 @@ export default function EventsPage() {
                 />
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-[#0A66C2] text-white text-sm font-bold cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[#6969F5] text-white text-sm font-bold cursor-pointer"
                 >
                   Publish Event
                 </button>
@@ -333,3 +333,4 @@ export default function EventsPage() {
     </div>
   );
 }
+

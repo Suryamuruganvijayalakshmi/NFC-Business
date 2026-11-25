@@ -96,3 +96,4 @@ test('security helpers block XSS URIs, open redirects, and CSV formula injection
   assert.equal(sanitizeCsvCell('=CMD("calc")'), "'=CMD(\"calc\")");
   assert.equal(sanitizeCsvCell('Safe Value'), 'Safe Value');
 });
+

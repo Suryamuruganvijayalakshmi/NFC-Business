@@ -30,6 +30,7 @@ import {
   submitAbuseReport
 } from '@/lib/store';
 import { calculateProfileCompletion } from '@/lib/profileCompletion';
+import { popMiniPapers } from '@/lib/celebrate';
 import { Profile, PostItem, PostComment, ReactionType, UserSession } from '@/lib/types';
 import { 
   ThumbsUp, 
@@ -238,9 +239,12 @@ export default function FeedPage() {
     }
   };
 
-  const handleReaction = (postId: string, reactionType: ReactionType) => {
+  const handleReaction = (postId: string, reactionType: ReactionType, e?: React.MouseEvent<HTMLElement>) => {
     if (!user) return;
-    reactToPost(postId, user.id, reactionType, profile);
+    const res = reactToPost(postId, user.id, reactionType, profile);
+    if (res.reaction) {
+      popMiniPapers(e);
+    }
     setHoveredReactionPostId(null);
     refreshFeed();
   };
@@ -271,11 +275,12 @@ export default function FeedPage() {
     refreshFeed();
   };
 
-  const handleConnect = (targetUserId: string) => {
+  const handleConnect = (targetUserId: string, e?: React.MouseEvent<HTMLElement>) => {
     if (!profile) return;
     const targetProfile = getAllProfiles().find(p => p.user_id === targetUserId);
     if (!targetProfile) return;
     sendConnectionRequest(profile, targetProfile);
+    popMiniPapers(e);
     setConnectingMap(prev => ({ ...prev, [targetUserId]: true }));
     setTimeout(refreshFeed, 500);
   };
@@ -284,10 +289,12 @@ export default function FeedPage() {
   const targetProfileUrl = profile ? `/u/${profile.username}` : (previewProfile ? `/u/${previewProfile.username}` : '/login');
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-800">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#202124] relative">
+      {/* Subtle Top Editorial Glow */}
+      <div className="pointer-events-none fixed inset-x-0 top-14 h-64 bg-gradient-to-b from-[#EEF2FF]/70 via-[#F5F3FF]/30 to-transparent -z-10" />
       <LinkedInNavbar />
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
+      <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
         <div className="flex justify-center gap-6">
 
           {/* ================================================================= */}
@@ -298,7 +305,7 @@ export default function FeedPage() {
             {/* User Mini Profile Card */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
               {/* Cover Banner */}
-              <Link href={targetProfileUrl} className="block h-16 bg-gradient-to-r from-[#0A66C2] via-[#004182] to-[#101828] relative overflow-hidden group">
+              <Link href={targetProfileUrl} className="block h-14 bg-gradient-to-r from-[#EEF2FF] via-[#F3E8FF] to-[#FCE7F3] relative overflow-hidden group">
                 {displayProfile?.cover_image && (
                   <img
                     src={displayProfile.cover_image}
@@ -318,7 +325,7 @@ export default function FeedPage() {
                       className="w-18 h-18 rounded-full object-cover border-2 border-white shadow-sm mx-auto group-hover:opacity-90 group-hover:scale-105 transition-all"
                     />
                   ) : (
-                    <div className="w-18 h-18 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm mx-auto group-hover:scale-105 transition-all">
+                    <div className="w-18 h-18 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm mx-auto group-hover:scale-105 transition-all">
                       {displayProfile?.full_name?.charAt(0) || 'U'}
                     </div>
                   )}
@@ -340,10 +347,10 @@ export default function FeedPage() {
                   <div className="mt-3 pt-3 border-t border-slate-100 text-left space-y-2 text-xs">
                     <Link
                       href="/network"
-                      className="flex items-center justify-between text-slate-600 hover:text-[#0A66C2] font-medium transition-colors"
+                      className="flex items-center justify-between text-slate-600 hover:text-[#6969F5] font-medium transition-colors"
                     >
                       <span>Connections</span>
-                      <span className="font-bold text-[#0A66C2]">{connectionsCount}</span>
+                      <span className="font-bold text-[#6969F5]">{connectionsCount}</span>
                     </Link>
                     <div className="flex items-center justify-between text-slate-600">
                       <span>Profile impressions</span>
@@ -357,9 +364,9 @@ export default function FeedPage() {
               <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 text-xs">
                 <Link
                   href={targetProfileUrl}
-                  className="flex items-center gap-2 text-slate-700 hover:text-[#0A66C2] font-semibold"
+                  className="flex items-center gap-2 text-slate-700 hover:text-[#6969F5] font-semibold"
                 >
-                  <CreditCard className="w-4 h-4 text-[#0A66C2]" />
+                  <CreditCard className="w-4 h-4 text-[#6969F5]" />
                   <span>My Digital Identity Card</span>
                 </Link>
               </div>
@@ -386,14 +393,14 @@ export default function FeedPage() {
                     </button>
                   </div>
                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#0A66C2] transition-all" style={{ width: `${comp.percentage}%` }} />
+                    <div className="h-full bg-[#6969F5] transition-all" style={{ width: `${comp.percentage}%` }} />
                   </div>
                   <div className="space-y-1">
                     {comp.suggestions.slice(0, 2).map((s) => (
                       <Link
                         key={s.id}
                         href={`/u/${profile.username}?edit=${s.tab}`}
-                        className="block text-[11px] text-[#0A66C2] hover:underline font-medium"
+                        className="block text-[11px] text-[#6969F5] hover:underline font-medium"
                       >
                         + {s.label}
                       </Link>
@@ -424,15 +431,15 @@ export default function FeedPage() {
 
             {/* Quick Navigation Drawer */}
             <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs text-xs space-y-2 text-slate-600">
-              <Link href="/network" className="flex items-center gap-2 hover:text-[#0A66C2] transition-colors">
+              <Link href="/network" className="flex items-center gap-2 hover:text-[#6969F5] transition-colors">
                 <Users className="w-4 h-4 text-slate-400" />
                 <span>My Network ({connectionsCount})</span>
               </Link>
-              <Link href="/jobs" className="flex items-center gap-2 hover:text-[#0A66C2] transition-colors">
+              <Link href="/jobs" className="flex items-center gap-2 hover:text-[#6969F5] transition-colors">
                 <Briefcase className="w-4 h-4 text-slate-400" />
                 <span>Saved Jobs & Alerts</span>
               </Link>
-              <Link href="/cards" className="flex items-center gap-2 hover:text-[#0A66C2] transition-colors">
+              <Link href="/cards" className="flex items-center gap-2 hover:text-[#6969F5] transition-colors">
                 <CreditCard className="w-4 h-4 text-slate-400" />
                 <span>Order Physical NFC Card</span>
               </Link>
@@ -448,7 +455,7 @@ export default function FeedPage() {
             {/* MOBILE ONLY: Professional Profile Banner */}
             {/* ============================================================= */}
             <div className="md:hidden bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-              <Link href={targetProfileUrl} className="block h-12 bg-gradient-to-r from-[#0A66C2] via-[#004182] to-[#101828] relative overflow-hidden group">
+              <Link href={targetProfileUrl} className="block h-12 bg-gradient-to-r from-[#6969F5] via-[#5858E6] to-[#101828] relative overflow-hidden group">
                 {displayProfile?.cover_image && (
                   <img
                     src={displayProfile.cover_image}
@@ -471,7 +478,7 @@ export default function FeedPage() {
                         className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs group-hover:opacity-90"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-base border-2 border-white shadow-xs">
+                      <div className="w-12 h-12 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-base border-2 border-white shadow-xs">
                         {displayProfile?.full_name?.charAt(0) || 'U'}
                       </div>
                     )}
@@ -482,7 +489,7 @@ export default function FeedPage() {
                   <div className="min-w-0 text-left">
                     <Link
                       href={targetProfileUrl}
-                      className="font-bold text-slate-900 text-sm truncate block hover:text-[#0A66C2] transition-colors"
+                      className="font-bold text-slate-900 text-sm truncate block hover:text-[#6969F5] transition-colors"
                     >
                       {displayProfile?.full_name || 'SignTap Member'}
                     </Link>
@@ -493,7 +500,7 @@ export default function FeedPage() {
                 </div>
                 <Link
                   href={targetProfileUrl}
-                  className="shrink-0 px-2.5 py-1 rounded-full border border-[#0A66C2] text-[#0A66C2] text-[11px] font-semibold hover:bg-blue-50 transition-colors"
+                  className="shrink-0 px-2.5 py-1 rounded-full border border-[#6969F5] text-[#6969F5] text-[11px] font-semibold hover:bg-blue-50 transition-colors"
                 >
                   View Profile
                 </Link>
@@ -515,7 +522,7 @@ export default function FeedPage() {
                       className="w-11 h-11 rounded-full object-cover border border-slate-200 group-hover:opacity-90 transition-opacity"
                     />
                   ) : (
-                    <div className="w-11 h-11 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm group-hover:opacity-90 transition-opacity">
+                    <div className="w-11 h-11 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm group-hover:opacity-90 transition-opacity">
                       {displayProfile?.full_name?.charAt(0) || 'U'}
                     </div>
                   )}
@@ -622,7 +629,7 @@ export default function FeedPage() {
                               className="w-11 h-11 rounded-full object-cover border border-slate-200"
                             />
                           ) : (
-                            <div className="w-11 h-11 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm">
+                            <div className="w-11 h-11 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm">
                               {post.author_name.charAt(0)}
                             </div>
                           )}
@@ -631,7 +638,7 @@ export default function FeedPage() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <Link
                               href={`/u/${post.author_username}`}
-                              className="font-bold text-slate-900 text-sm hover:text-[#0A66C2] hover:underline truncate"
+                              className="font-bold text-slate-900 text-sm hover:text-[#6969F5] hover:underline truncate"
                             >
                               {post.author_name}
                             </Link>
@@ -649,8 +656,8 @@ export default function FeedPage() {
                       <div className="flex items-center gap-1 shrink-0 relative">
                         {!isAuthor && (
                           <button
-                            onClick={() => handleConnect(post.author_id)}
-                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#0A66C2] hover:bg-blue-50 transition-colors cursor-pointer"
+                            onClick={(e) => handleConnect(post.author_id, e)}
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#6969F5] hover:bg-[#6969F5]/10 active:scale-95 transition-all cursor-pointer"
                           >
                             <UserPlus className="w-3.5 h-3.5" />
                             <span>Connect</span>
@@ -721,7 +728,7 @@ export default function FeedPage() {
                       {post.tags && post.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {post.tags.map(t => (
-                            <span key={t} className="text-xs font-medium text-[#0A66C2] hover:underline cursor-pointer">
+                            <span key={t} className="text-xs font-medium text-[#6969F5] hover:underline cursor-pointer">
                               #{t}
                             </span>
                           ))}
@@ -781,8 +788,8 @@ export default function FeedPage() {
                             {REACTION_CONFIG.map((rc) => (
                               <button
                                 key={rc.type}
-                                onClick={() => handleReaction(post.id, rc.type)}
-                                className="hover:scale-130 transition-transform p-1 text-lg leading-none rounded-full"
+                                onClick={(e) => handleReaction(post.id, rc.type, e)}
+                                className="hover:scale-130 active:scale-95 transition-transform p-1 text-lg leading-none rounded-full cursor-pointer"
                                 title={rc.label}
                               >
                                 {rc.icon}
@@ -792,9 +799,9 @@ export default function FeedPage() {
                         )}
 
                         <button
-                          onClick={() => handleReaction(post.id, userReaction || 'like')}
-                          className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-md hover:bg-slate-100 text-xs font-semibold transition-colors ${
-                            activeReaction ? activeReaction.color : 'text-slate-600'
+                          onClick={(e) => handleReaction(post.id, userReaction || 'like', e)}
+                          className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl hover:bg-[#F7F7FB] active:scale-95 text-xs font-semibold transition-all cursor-pointer ${
+                            activeReaction ? 'text-[#6969F5]' : 'text-[#777783]'
                           }`}
                         >
                           <ThumbsUp className={`w-4 h-4 ${userReaction ? 'fill-current' : ''}`} />
@@ -847,7 +854,7 @@ export default function FeedPage() {
                                 className="w-8 h-8 rounded-full object-cover border border-slate-200 group-hover:opacity-90"
                               />
                             ) : (
-                              <div className="w-8 h-8 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xs group-hover:opacity-90">
+                              <div className="w-8 h-8 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-xs group-hover:opacity-90">
                                 {displayProfile?.full_name?.charAt(0) || 'U'}
                               </div>
                             )}
@@ -861,12 +868,12 @@ export default function FeedPage() {
                                 if (e.key === 'Enter') handleAddComment(post.id);
                               }}
                               placeholder="Add a professional comment..."
-                              className="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-full text-xs focus:outline-none focus:border-[#0A66C2]"
+                              className="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-full text-xs focus:outline-none focus:border-[#6969F5]"
                             />
                             <button
                               onClick={() => handleAddComment(post.id)}
                               disabled={!commentInputs[post.id]?.trim()}
-                              className="px-3 py-1 bg-[#0A66C2] disabled:opacity-50 text-white rounded-full text-xs font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+                              className="px-3 py-1 bg-[#6969F5] disabled:opacity-50 text-white rounded-full text-xs font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
                             >
                               Post
                             </button>
@@ -885,7 +892,7 @@ export default function FeedPage() {
                                     className="w-7 h-7 rounded-full object-cover border border-slate-200"
                                   />
                                 ) : (
-                                  <div className="w-7 h-7 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-[10px]">
+                                  <div className="w-7 h-7 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-[10px]">
                                     {comm.author_name.charAt(0)}
                                   </div>
                                 )}
@@ -935,32 +942,32 @@ export default function FeedPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-[#0A66C2]" />
+                  <TrendingUp className="w-4 h-4 text-[#6969F5]" />
                   <span>SignTap Professional News</span>
                 </h4>
               </div>
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#0A66C2] cursor-pointer">
+                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
                     • Physical NFC web cards surge across India
                   </h5>
                   <p className="text-[11px] text-slate-400 mt-0.5">2d ago • 3,420 readers</p>
                 </div>
                 <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#0A66C2] cursor-pointer">
+                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
                     • Edge computing & microchip contactless identity
                   </h5>
                   <p className="text-[11px] text-slate-400 mt-0.5">1d ago • 1,980 readers</p>
                 </div>
                 <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#0A66C2] cursor-pointer">
+                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
                     • Replacing paper visiting cards with Smart CRM
                   </h5>
                   <p className="text-[11px] text-slate-400 mt-0.5">3d ago • 985 readers</p>
                 </div>
                 <div>
-                  <h5 className="font-semibold text-slate-800 hover:text-[#0A66C2] cursor-pointer">
+                  <h5 className="font-semibold text-slate-800 hover:text-[#6969F5] cursor-pointer">
                     • Next.js 15 App Router architecture in production
                   </h5>
                   <p className="text-[11px] text-slate-400 mt-0.5">4d ago • 1,450 readers</p>
@@ -987,7 +994,7 @@ export default function FeedPage() {
                             className="w-10 h-10 rounded-full object-cover border border-slate-200"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xs">
+                          <div className="w-10 h-10 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-xs">
                             {person.full_name.charAt(0)}
                           </div>
                         )}
@@ -996,7 +1003,7 @@ export default function FeedPage() {
                       <div className="flex-1 min-w-0">
                         <Link
                           href={`/u/${person.username}`}
-                          className="font-bold text-slate-900 text-xs hover:text-[#0A66C2] hover:underline block truncate"
+                          className="font-bold text-slate-900 text-xs hover:text-[#6969F5] hover:underline block truncate"
                         >
                           {person.full_name}
                         </Link>
@@ -1005,7 +1012,7 @@ export default function FeedPage() {
                         <button
                           onClick={() => handleConnect(person.user_id)}
                           disabled={hasConnected}
-                          className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full border border-[#0A66C2] text-[#0A66C2] hover:bg-blue-50 text-[11px] font-semibold transition-colors disabled:opacity-60"
+                          className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full border border-[#6969F5] text-[#6969F5] hover:bg-blue-50 text-[11px] font-semibold transition-colors disabled:opacity-60"
                         >
                           {hasConnected ? (
                             <>
@@ -1028,7 +1035,7 @@ export default function FeedPage() {
               <div className="mt-3 pt-3 border-t border-slate-100 text-center">
                 <Link
                   href="/network"
-                  className="text-xs font-semibold text-[#0A66C2] hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-semibold text-[#6969F5] hover:underline inline-flex items-center gap-1"
                 >
                   <span>View All Network Suggestions</span>
                   <ArrowRight className="w-3 h-3" />
@@ -1038,7 +1045,7 @@ export default function FeedPage() {
 
             {/* SignTap NFC Smart Card Showcase */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#0A66C2]/20 rounded-full blur-2xl" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#6969F5]/20 rounded-full blur-2xl" />
               <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>SignTap Physical Hardware</span>
@@ -1051,7 +1058,7 @@ export default function FeedPage() {
                 <span className="font-bold text-amber-400 text-sm">₹199 only</span>
                 <Link
                   href="/cards"
-                  className="px-3 py-1.5 rounded-full bg-[#0A66C2] hover:bg-blue-600 text-white text-xs font-semibold transition-colors shadow-xs"
+                  className="px-3 py-1.5 rounded-full bg-[#6969F5] hover:bg-blue-600 text-white text-xs font-semibold transition-colors shadow-xs"
                 >
                   Order Card
                 </Link>
@@ -1094,12 +1101,12 @@ export default function FeedPage() {
                     className="w-10 h-10 rounded-full object-cover border border-slate-200 group-hover:opacity-90"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm group-hover:opacity-90">
+                  <div className="w-10 h-10 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm group-hover:opacity-90">
                     {displayProfile?.full_name?.charAt(0) || 'U'}
                   </div>
                 )}
                 <div>
-                  <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#0A66C2] transition-colors">{displayProfile?.full_name || 'Member'}</h4>
+                  <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#6969F5] transition-colors">{displayProfile?.full_name || 'Member'}</h4>
                   <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                     <Globe className="w-3 h-3" />
                     <span>Post to Anyone</span>
@@ -1145,7 +1152,7 @@ export default function FeedPage() {
               {/* Media Attachments Bar */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <label className="p-2 text-slate-500 hover:text-[#0A66C2] hover:bg-blue-50 rounded-lg cursor-pointer">
+                  <label className="p-2 text-slate-500 hover:text-[#6969F5] hover:bg-blue-50 rounded-lg cursor-pointer">
                     <ImageIcon className="w-5 h-5" />
                     <input
                       type="file"
@@ -1163,7 +1170,7 @@ export default function FeedPage() {
                         setPostMediaType('video');
                       }
                     }}
-                    className="p-2 text-slate-500 hover:text-[#0A66C2] hover:bg-blue-50 rounded-lg cursor-pointer"
+                    className="p-2 text-slate-500 hover:text-[#6969F5] hover:bg-blue-50 rounded-lg cursor-pointer"
                   >
                     <Video className="w-5 h-5" />
                   </button>
@@ -1172,7 +1179,7 @@ export default function FeedPage() {
                 <button
                   type="submit"
                   disabled={(!postContent.trim() && !postMediaUrl) || isSubmittingPost}
-                  className="px-5 py-2 rounded-full bg-[#0A66C2] hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  className="px-5 py-2 rounded-full bg-[#6969F5] hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
                   {isSubmittingPost ? 'Posting...' : 'Post'}
                 </button>
@@ -1190,7 +1197,7 @@ export default function FeedPage() {
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-5 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                <Repeat className="w-4 h-4 text-[#0A66C2]" />
+                <Repeat className="w-4 h-4 text-[#6969F5]" />
                 <span>Repost to Feed</span>
               </h4>
               <button onClick={() => setSharingPost(null)} className="text-slate-400 hover:text-slate-600">
@@ -1203,7 +1210,7 @@ export default function FeedPage() {
               onChange={(e) => setShareCommentary(e.target.value)}
               placeholder="Add your thoughts about this post..."
               rows={3}
-              className="w-full text-xs text-slate-800 border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-[#0A66C2]"
+              className="w-full text-xs text-slate-800 border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-[#6969F5]"
             />
 
             <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 text-xs">
@@ -1220,7 +1227,7 @@ export default function FeedPage() {
               </button>
               <button
                 onClick={handleShareSubmit}
-                className="px-4 py-1.5 rounded-full bg-[#0A66C2] text-white text-xs font-semibold hover:bg-blue-700"
+                className="px-4 py-1.5 rounded-full bg-[#6969F5] text-white text-xs font-semibold hover:bg-blue-700"
               >
                 Repost
               </button>

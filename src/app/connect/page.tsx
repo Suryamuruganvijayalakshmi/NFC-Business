@@ -139,12 +139,12 @@ function ConnectContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-900 pb-20 md:pb-12">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-900 pb-20 md:pb-12">
       <LinkedInNavbar />
       <main className="max-w-5xl mx-auto px-4 pt-20 space-y-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0A66C2] bg-blue-50 px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#6969F5] bg-blue-50 px-2.5 py-1 rounded-full">
               <Sparkles className="w-3.5 h-3.5" /> SignTap Connect
             </span>
             <h1 className="text-2xl font-extrabold text-slate-900 mt-2">
@@ -176,7 +176,7 @@ function ConnectContent() {
 
         {/* Mutual Reveal Card when a target user is scanned/selected */}
         {targetProfile && (
-          <div className="bg-white rounded-2xl border-2 border-[#0A66C2]/30 p-6 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl border-2 border-[#6969F5]/30 p-6 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <img
@@ -187,13 +187,13 @@ function ConnectContent() {
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">{targetProfile.full_name}</h2>
                   <p className="text-xs text-slate-600">{targetProfile.headline || targetProfile.title}</p>
-                  <p className="text-xs text-[#0A66C2] font-semibold mt-0.5">@{targetProfile.username}</p>
+                  <p className="text-xs text-[#6969F5] font-semibold mt-0.5">@{targetProfile.username}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => handleConfirmExchange(targetProfile, methodParam)}
-                  className="px-4 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-full bg-[#6969F5] hover:bg-[#5858E6] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <UserPlus className="w-4 h-4" />
                   Confirm Exchange & Save to CRM
@@ -213,7 +213,7 @@ function ConnectContent() {
           {/* My QR & Shareable Link */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col items-center text-center">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-4">
-              <QrCode className="w-4 h-4 text-[#0A66C2]" />
+              <QrCode className="w-4 h-4 text-[#6969F5]" />
               <span>Your SignTap Connect QR</span>
             </div>
 
@@ -245,7 +245,7 @@ function ConnectContent() {
                 <p className="text-sm text-slate-600">Sign in to generate your personal SignTap Connect QR & NFC link.</p>
                 <Link
                   href="/login"
-                  className="inline-block px-5 py-2 rounded-full bg-[#0A66C2] text-white text-xs font-bold"
+                  className="inline-block px-5 py-2 rounded-full bg-[#6969F5] text-white text-xs font-bold"
                 >
                   Sign In to Connect
                 </Link>
@@ -258,7 +258,7 @@ function ConnectContent() {
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Wifi className="w-4 h-4 text-[#0A66C2] rotate-90" />
+                  <Wifi className="w-4 h-4 text-[#6969F5] rotate-90" />
                   NFC Tap Reader
                 </h2>
                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
@@ -280,7 +280,7 @@ function ConnectContent() {
 
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-3">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Hash className="w-4 h-4 text-[#0A66C2]" />
+                <Hash className="w-4 h-4 text-[#6969F5]" />
                 Exchange by Handle / Code
               </h2>
               <form onSubmit={handleCodeLookup} className="flex gap-2">
@@ -289,11 +289,11 @@ function ConnectContent() {
                   value={shortCodeInput}
                   onChange={(e) => setShortCodeInput(e.target.value)}
                   placeholder="Enter username (e.g. surya, elena)"
-                  className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#0A66C2]"
+                  className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#6969F5]"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#0A66C2] text-white text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#6969F5] text-white text-xs font-bold cursor-pointer"
                 >
                   Find
                 </button>
@@ -310,7 +310,7 @@ function ConnectContent() {
                 <Clock className="w-4 h-4 text-slate-500" />
                 Recent Contact Exchanges ({exchanges.length})
               </h2>
-              <Link href="/dashboard/contacts" className="text-xs font-semibold text-[#0A66C2] hover:underline">
+              <Link href="/dashboard/contacts" className="text-xs font-semibold text-[#6969F5] hover:underline">
                 Open Private CRM →
               </Link>
             </div>
@@ -329,7 +329,7 @@ function ConnectContent() {
                   return (
                     <div key={ex.id} className="py-3 flex items-center justify-between gap-3">
                       <div>
-                        <Link href={`/u/${peerUsername}`} className="text-sm font-bold text-slate-900 hover:text-[#0A66C2]">
+                        <Link href={`/u/${peerUsername}`} className="text-sm font-bold text-slate-900 hover:text-[#6969F5]">
                           {peerName}
                         </Link>
                         <p className="text-xs text-slate-500">{peerHeadline || `@${peerUsername}`}</p>
@@ -358,8 +358,9 @@ function ConnectContent() {
 
 export default function ConnectPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F4F2EE]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#FFFFFF]" />}>
       <ConnectContent />
     </Suspense>
   );
 }
+

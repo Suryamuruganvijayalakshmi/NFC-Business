@@ -43,3 +43,4 @@ export function getPlanLabel(profile?: Profile | null): string {
   if (profile?.premium_plan === 'lifetime') return 'SignTap Lifetime PRO';
   return 'SignTap Professional PRO';
 }
+

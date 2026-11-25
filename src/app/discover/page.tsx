@@ -14,6 +14,7 @@ import {
   getNewMemberStatus
 } from '@/lib/store';
 import { Profile } from '@/lib/types';
+import { popMiniPapers } from '@/lib/celebrate';
 import { downloadVCard } from '@/lib/vcard';
 import { 
   Search, 
@@ -59,12 +60,13 @@ export default function DiscoverPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleConnect = (targetProfile: Profile) => {
+  const handleConnect = (targetProfile: Profile, e?: React.MouseEvent<HTMLElement>) => {
     if (!currentUserProfile) {
       window.location.href = '/login';
       return;
     }
     sendConnectionRequest(currentUserProfile, targetProfile);
+    popMiniPapers(e);
     showToast(`Connection request sent to ${targetProfile.full_name}!`);
     loadData();
   };
@@ -134,7 +136,7 @@ export default function DiscoverPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] flex flex-col font-sans selection:bg-[#087CF0] selection:text-white">
+    <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans selection:bg-[#087CF0] selection:text-white">
       <LinkedInNavbar />
 
       {/* Toast Notification */}
@@ -351,7 +353,7 @@ export default function DiscoverPage() {
                             </span>
                           ) : (
                             <button
-                              onClick={() => handleConnect(prof)}
+                              onClick={(e) => handleConnect(prof, e)}
                               className="w-full py-2 rounded-xl bg-[#087CF0] hover:bg-[#0668cc] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-xs active:scale-95"
                             >
                               <UserPlus className="w-3.5 h-3.5" />

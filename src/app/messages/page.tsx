@@ -186,7 +186,7 @@ function MessagesContent() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-800">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-800">
       <LinkedInNavbar />
 
       <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
@@ -202,7 +202,7 @@ function MessagesContent() {
             <div className="p-3.5 border-b border-slate-100 flex items-center justify-between">
               <h2 className="font-bold text-slate-900 text-base">Messaging</h2>
               <div className="flex items-center gap-1 text-slate-500">
-                <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-[#0A66C2] rounded-full">
+                <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-[#6969F5] rounded-full">
                   {conversations.length} Active
                 </span>
               </div>
@@ -217,7 +217,7 @@ function MessagesContent() {
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Search messages..."
-                  className="w-full pl-9 pr-3 py-1.5 bg-[#EDF3F8] hover:bg-[#E1E9F0] focus:bg-white text-xs rounded-lg border border-transparent focus:border-[#0A66C2] focus:outline-none transition-all"
+                  className="w-full pl-9 pr-3 py-1.5 bg-[#EDF3F8] hover:bg-[#E1E9F0] focus:bg-white text-xs rounded-lg border border-transparent focus:border-[#6969F5] focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -240,7 +240,7 @@ function MessagesContent() {
                       key={convo.participant_id}
                       onClick={() => handleSelectConversation(convo)}
                       className={`p-3.5 flex items-start gap-3 cursor-pointer transition-colors ${
-                        isSelected ? 'bg-blue-50/70 border-l-4 border-[#0A66C2]' : 'hover:bg-slate-50'
+                        isSelected ? 'bg-blue-50/70 border-l-4 border-[#6969F5]' : 'hover:bg-slate-50'
                       }`}
                     >
                       {/* Avatar */}
@@ -252,7 +252,7 @@ function MessagesContent() {
                             className="w-12 h-12 rounded-full object-cover border border-slate-200"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm">
+                          <div className="w-12 h-12 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm">
                             {convo.participant_name.charAt(0)}
                           </div>
                         )}
@@ -283,7 +283,7 @@ function MessagesContent() {
 
                       {/* Unread badge */}
                       {convo.unread_count > 0 && (
-                        <span className="px-1.5 py-0.5 bg-[#0A66C2] text-white rounded-full text-[10px] font-bold shrink-0 self-center">
+                        <span className="px-1.5 py-0.5 bg-[#6969F5] text-white rounded-full text-[10px] font-bold shrink-0 self-center">
                           {convo.unread_count}
                         </span>
                       )}
@@ -320,7 +320,7 @@ function MessagesContent() {
                           className="w-10 h-10 rounded-full object-cover border border-slate-200"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm">
+                        <div className="w-10 h-10 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm">
                           {activePartnerProfile.full_name.charAt(0)}
                         </div>
                       )}
@@ -330,7 +330,7 @@ function MessagesContent() {
                       <div className="flex items-center gap-1.5">
                         <Link
                           href={`/u/${activePartnerProfile.username}`}
-                          className="font-bold text-slate-900 text-sm hover:text-[#0A66C2] hover:underline"
+                          className="font-bold text-slate-900 text-sm hover:text-[#6969F5] hover:underline"
                         >
                           {activePartnerProfile.full_name}
                         </Link>
@@ -367,7 +367,7 @@ function MessagesContent() {
                         className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm mx-auto mb-2"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xl mx-auto mb-2">
+                      <div className="w-16 h-16 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-xl mx-auto mb-2">
                         {activePartnerProfile.full_name.charAt(0)}
                       </div>
                     )}
@@ -389,7 +389,7 @@ function MessagesContent() {
                         <div
                           className={`max-w-[78%] sm:max-w-[70%] p-3 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-2xs ${
                             isMe
-                              ? 'bg-[#0A66C2] text-white rounded-tr-xs'
+                              ? 'bg-[#6969F5] text-white rounded-tr-xs'
                               : 'bg-white text-slate-800 border border-slate-200 rounded-tl-xs'
                           }`}
                         >
@@ -428,7 +428,7 @@ function MessagesContent() {
                   )}
 
                   <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-                    <div className="flex-1 bg-slate-100 rounded-2xl border border-slate-300 focus-within:border-[#0A66C2] focus-within:bg-white transition-all px-3 py-1.5 flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-2xl border border-slate-300 focus-within:border-[#6969F5] focus-within:bg-white transition-all px-3 py-1.5 flex items-center gap-2">
                       <textarea
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
@@ -443,7 +443,7 @@ function MessagesContent() {
                         className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none resize-none max-h-24"
                       />
 
-                      <label className="p-1 text-slate-500 hover:text-[#0A66C2] cursor-pointer shrink-0">
+                      <label className="p-1 text-slate-500 hover:text-[#6969F5] cursor-pointer shrink-0">
                         <ImageIcon className="w-4 h-4" />
                         <input
                           type="file"
@@ -457,7 +457,7 @@ function MessagesContent() {
                     <button
                       type="submit"
                       disabled={!inputMessage.trim() && !attachedImage}
-                      className="p-2.5 rounded-full bg-[#0A66C2] disabled:opacity-50 text-white hover:bg-blue-700 transition-colors shrink-0 shadow-xs cursor-pointer"
+                      className="p-2.5 rounded-full bg-[#6969F5] disabled:opacity-50 text-white hover:bg-blue-700 transition-colors shrink-0 shadow-xs cursor-pointer"
                     >
                       <Send className="w-4 h-4" />
                     </button>
@@ -484,7 +484,7 @@ function MessagesContent() {
 export default function MessagesPage() {
   return (
     <React.Suspense fallback={
-      <div className="min-h-screen bg-[#F4F2EE] flex items-center justify-center text-slate-500 text-sm font-semibold">
+      <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center text-slate-500 text-sm font-semibold">
         <LinkedInNavbar />
         <span>Loading SignTap Messaging...</span>
       </div>

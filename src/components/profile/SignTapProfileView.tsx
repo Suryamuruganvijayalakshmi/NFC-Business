@@ -30,6 +30,7 @@ import {
 } from '@/lib/store';
 import { downloadVCard } from '@/lib/vcard';
 import { sanitizeUrl } from '@/lib/security';
+import { popMiniPapers } from '@/lib/celebrate';
 import {
   MapPin,
   Briefcase,
@@ -129,7 +130,7 @@ export default function SignTapProfileView({
     setTimeout(() => setSavedToast(null), 3000);
   };
 
-  const handleFollow = () => {
+  const handleFollow = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!currentUser) {
       window.location.href = `/login?redirect=/u/${profile.username}`;
       return;
@@ -137,9 +138,10 @@ export default function SignTapProfileView({
     const next = toggleFollow(currentUser.id, profile.user_id);
     setFollowing(next);
     setFollowersCount(getLiveFollowersCount(profile.user_id));
+    if (next) popMiniPapers(e);
   };
 
-  const handleConnect = () => {
+  const handleConnect = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!currentUser) {
       window.location.href = `/login?redirect=/u/${profile.username}`;
       return;
@@ -147,6 +149,7 @@ export default function SignTapProfileView({
     const requesterProfile = getProfileByUserId(currentUser.id) || getOrCreateProfileForUser(currentUser);
     sendConnectionRequest(requesterProfile, profile);
     setConnStatus('pending');
+    popMiniPapers(e);
     showNotice(`Connection request sent to ${profile.full_name}`);
   };
 
@@ -196,31 +199,30 @@ export default function SignTapProfileView({
         </div>
       )}
 
-      {/* Soft Gradient Hero Banner */}
-      <div className="pt-14 relative overflow-hidden">
-        <div className="h-44 sm:h-52 w-full relative overflow-hidden bg-gradient-to-r from-[#EEF2FF] via-[#F3E8FF] to-[#FCE7F3]">
-          {profile.cover_image ? (
-            <img
-              src={profile.cover_image}
-              alt={`${profile.full_name} banner`}
-              className="w-full h-full object-cover opacity-90"
-            />
-          ) : (
-            <>
-              <div className="absolute -top-24 left-1/4 w-96 h-96 rounded-full bg-[#6969F5]/20 blur-3xl pointer-events-none" />
-              <div className="absolute -top-16 right-1/4 w-80 h-80 rounded-full bg-[#A78BFA]/25 blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-20 right-12 w-72 h-72 rounded-full bg-pink-300/25 blur-3xl pointer-events-none" />
-            </>
-          )}
-        </div>
-
-        {/* Profile Header Container */}
+      {/* Compact Contained Cover Banner (never stretches full-width or overlaps text) */}
+      <div className="pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-8">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 -mt-20 sm:-mt-24 relative z-10 pb-8">
-            {/* Left + Middle: Large Rounded-Rect Photo + Info */}
+          <div className="h-28 sm:h-36 w-full rounded-2xl relative overflow-hidden bg-gradient-to-r from-[#EEF2FF] via-[#F3E8FF] to-[#FCE7F3] border border-[#E8E8EF]">
+            {profile.cover_image ? (
+              <img
+                src={profile.cover_image}
+                alt={`${profile.full_name} banner`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="absolute -top-16 left-1/4 w-72 h-72 rounded-full bg-[#6969F5]/20 blur-3xl pointer-events-none" />
+                <div className="absolute -top-12 right-1/4 w-64 h-64 rounded-full bg-[#A78BFA]/25 blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-16 right-12 w-56 h-56 rounded-full bg-pink-300/25 blur-3xl pointer-events-none" />
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-4 pb-8">
+            {/* Left + Middle: Rounded-Rect Photo overlapping compact cover + Clean White Text Area */}
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 sm:gap-7 flex-1 min-w-0">
-              {/* Large Rounded-Rectangle Photograph */}
-              <div className="w-36 h-36 sm:w-52 sm:h-52 md:w-60 md:h-60 rounded-[24px] border-4 border-white bg-[#F7F7FB] shadow-sm overflow-hidden shrink-0">
+              {/* Rounded-Rectangle Photograph */}
+              <div className="-mt-16 sm:-mt-20 ml-2 sm:ml-4 relative z-10 w-32 h-32 sm:w-44 sm:h-44 rounded-[22px] border-4 border-white bg-[#F7F7FB] shadow-md overflow-hidden shrink-0">
                 {profile.profile_image ? (
                   <img
                     src={profile.profile_image}
@@ -308,7 +310,7 @@ export default function SignTapProfileView({
                     <>
                       <button
                         onClick={handleFollow}
-                        className={`px-5 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                        className={`px-5 py-2 rounded-xl text-xs font-semibold active:scale-95 transition-all cursor-pointer ${
                           following
                             ? 'bg-[#F7F7FB] border border-[#E8E8EF] text-[#202124]'
                             : 'bg-[#202124] hover:bg-black text-white'
@@ -328,7 +330,7 @@ export default function SignTapProfileView({
                       ) : (
                         <button
                           onClick={handleConnect}
-                          className="px-4 py-2 rounded-xl bg-[#6969F5] hover:bg-[#5858e6] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="px-4 py-2 rounded-xl bg-[#6969F5] hover:bg-[#5858e6] text-white text-xs font-semibold active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <UserPlus className="w-3.5 h-3.5" />
                           Connect

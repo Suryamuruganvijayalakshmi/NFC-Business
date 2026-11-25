@@ -84,7 +84,7 @@ export default function OrganizationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-900 pb-20 md:pb-12">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-900 pb-20 md:pb-12">
       <LinkedInNavbar />
       <main className="max-w-6xl mx-auto px-4 pt-20 space-y-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -97,7 +97,7 @@ export default function OrganizationsPage() {
           {profile && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-4 py-2.5 rounded-full bg-[#6969F5] hover:bg-[#5858E6] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Create Organization
@@ -112,14 +112,14 @@ export default function OrganizationsPage() {
                 key={org.id}
                 onClick={() => handleSelectOrg(org)}
                 className={`w-full text-left p-5 rounded-2xl bg-white border transition-all cursor-pointer ${
-                  selectedOrg?.id === org.id ? 'border-[#0A66C2] shadow-sm' : 'border-slate-200 hover:border-slate-300'
+                  selectedOrg?.id === org.id ? 'border-[#6969F5] shadow-sm' : 'border-slate-200 hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase text-[#0A66C2] bg-blue-50 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold uppercase text-[#6969F5] bg-blue-50 px-2 py-0.5 rounded-full">
                     {org.org_type}
                   </span>
-                  {org.verified && <ShieldCheck className="w-4 h-4 text-[#0A66C2]" />}
+                  {org.verified && <ShieldCheck className="w-4 h-4 text-[#6969F5]" />}
                 </div>
                 <h2 className="text-base font-bold text-slate-900 mt-2">{org.name}</h2>
                 <p className="text-xs text-slate-500 mt-1 line-clamp-2">{org.tagline || org.description}</p>
@@ -134,7 +134,7 @@ export default function OrganizationsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-5">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Building2 className="w-5 h-5 text-[#0A66C2]" />
+                      <Building2 className="w-5 h-5 text-[#6969F5]" />
                       <h2 className="text-xl font-extrabold text-slate-900">{selectedOrg.name}</h2>
                     </div>
                     {selectedOrg.tagline && <p className="text-sm text-slate-600 mt-1">{selectedOrg.tagline}</p>}
@@ -143,7 +143,7 @@ export default function OrganizationsPage() {
                         <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {selectedOrg.location}</span>
                       )}
                       {selectedOrg.website && (
-                        <a href={selectedOrg.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#0A66C2] hover:underline">
+                        <a href={selectedOrg.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#6969F5] hover:underline">
                           <Globe className="w-3.5 h-3.5" /> Website
                         </a>
                       )}
@@ -153,7 +153,7 @@ export default function OrganizationsPage() {
                   {user && !members.some((m) => m.user_id === user.id) && (
                     <button
                       onClick={() => handleJoin(selectedOrg.id)}
-                      className="px-4 py-2 rounded-full bg-[#0A66C2] text-white text-xs font-bold cursor-pointer"
+                      className="px-4 py-2 rounded-full bg-[#6969F5] text-white text-xs font-bold cursor-pointer"
                     >
                       Join Organization
                     </button>
@@ -173,7 +173,7 @@ export default function OrganizationsPage() {
                     {members.map((m) => (
                       <div key={m.id} className="py-3 flex items-center justify-between gap-3">
                         <div>
-                          <Link href={`/u/${m.username}`} className="text-sm font-bold text-slate-900 hover:text-[#0A66C2]">
+                          <Link href={`/u/${m.username}`} className="text-sm font-bold text-slate-900 hover:text-[#6969F5]">
                             {m.full_name}
                           </Link>
                           <p className="text-xs text-slate-500">{m.headline || m.title || `@${m.username}`}</p>
@@ -217,7 +217,7 @@ export default function OrganizationsPage() {
                 </div>
                 <input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="Short tagline" className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl" />
                 <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Organization mission & overview..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl" />
-                <button type="submit" className="w-full py-2.5 rounded-xl bg-[#0A66C2] text-white text-sm font-bold cursor-pointer">
+                <button type="submit" className="w-full py-2.5 rounded-xl bg-[#6969F5] text-white text-sm font-bold cursor-pointer">
                   Create Page
                 </button>
               </form>
@@ -228,3 +228,4 @@ export default function OrganizationsPage() {
     </div>
   );
 }
+

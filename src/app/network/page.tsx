@@ -19,6 +19,7 @@ import {
   syncProfilesFromSupabase
 } from '@/lib/store';
 import { Profile, Connection, UserSession } from '@/lib/types';
+import { popMiniPapers } from '@/lib/celebrate';
 import { 
   Users, 
   UserCheck, 
@@ -87,9 +88,10 @@ export default function NetworkPage() {
     refreshNetwork();
   };
 
-  const handleSendConnect = (targetProfile: Profile) => {
+  const handleSendConnect = (targetProfile: Profile, e?: React.MouseEvent<HTMLElement>) => {
     if (!profile) return;
     sendConnectionRequest(profile, targetProfile);
+    popMiniPapers(e);
     setSentRequestsMap(prev => ({ ...prev, [targetProfile.user_id]: true }));
     setTimeout(refreshNetwork, 400);
   };
@@ -135,7 +137,7 @@ export default function NetworkPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] text-slate-800">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-800">
       <LinkedInNavbar />
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
@@ -161,7 +163,7 @@ export default function NetworkPage() {
                     <Users className="w-4 h-4 text-slate-400" />
                     <span className="font-medium">Connections</span>
                   </div>
-                  <span className="font-bold text-[#0A66C2]">{liveConnCount}</span>
+                  <span className="font-bold text-[#6969F5]">{liveConnCount}</span>
                 </button>
 
                 <div className="flex items-center justify-between px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors">
@@ -188,7 +190,7 @@ export default function NetworkPage() {
                   className="flex items-center justify-between px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
-                    <CreditCard className="w-4 h-4 text-[#0A66C2]" />
+                    <CreditCard className="w-4 h-4 text-[#6969F5]" />
                     <span className="font-medium">SignTap Hardware Cards</span>
                   </div>
                   <span className="font-bold text-amber-600">NFC</span>
@@ -208,7 +210,7 @@ export default function NetworkPage() {
               </p>
               <Link
                 href="/cards"
-                className="mt-3 inline-block py-1.5 px-4 rounded-full bg-[#0A66C2] hover:bg-blue-600 text-white text-xs font-semibold shadow-xs transition-colors"
+                className="mt-3 inline-block py-1.5 px-4 rounded-full bg-[#6969F5] hover:bg-blue-600 text-white text-xs font-semibold shadow-xs transition-colors"
               >
                 Order Card · ₹199
               </Link>
@@ -273,7 +275,7 @@ export default function NetworkPage() {
                                 className="w-14 h-14 rounded-full object-cover border border-slate-200 shadow-xs"
                               />
                             ) : (
-                              <div className="w-14 h-14 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-lg">
+                              <div className="w-14 h-14 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-lg">
                                 {inv.requester_name.charAt(0)}
                               </div>
                             )}
@@ -281,7 +283,7 @@ export default function NetworkPage() {
                           <div>
                             <Link
                               href={`/u/${inv.requester_username}`}
-                              className="font-bold text-slate-900 text-sm hover:text-[#0A66C2] hover:underline"
+                              className="font-bold text-slate-900 text-sm hover:text-[#6969F5] hover:underline"
                             >
                               {inv.requester_name}
                             </Link>
@@ -301,7 +303,7 @@ export default function NetworkPage() {
                           </button>
                           <button
                             onClick={() => handleAccept(inv.id)}
-                            className="px-4 py-1.5 rounded-full bg-[#0A66C2] hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                            className="px-4 py-1.5 rounded-full bg-[#6969F5] hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                           >
                             Accept
                           </button>
@@ -338,7 +340,7 @@ export default function NetworkPage() {
                                 className="w-12 h-12 rounded-full object-cover border border-slate-200"
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm">
+                              <div className="w-12 h-12 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm">
                                 {inv.recipient_name.charAt(0)}
                               </div>
                             )}
@@ -405,7 +407,7 @@ export default function NetworkPage() {
                                 className="w-10 h-10 rounded-full object-cover border border-slate-200"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xs">
+                              <div className="w-10 h-10 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-xs">
                                 {otherName.charAt(0)}
                               </div>
                             )}
@@ -420,7 +422,7 @@ export default function NetworkPage() {
 
                         <Link
                           href={`/messages?user=${otherUserId}`}
-                          className="shrink-0 px-3 py-1 rounded-full border border-[#0A66C2] text-[#0A66C2] hover:bg-blue-50 text-xs font-semibold transition-colors flex items-center gap-1"
+                          className="shrink-0 px-3 py-1 rounded-full border border-[#6969F5] text-[#6969F5] hover:bg-blue-50 text-xs font-semibold transition-colors flex items-center gap-1"
                         >
                           <MessageSquare className="w-3 h-3" />
                           <span>Message</span>
@@ -450,7 +452,7 @@ export default function NetworkPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by name, role, skill..."
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-100 focus:bg-white text-xs rounded-lg border border-transparent focus:border-[#0A66C2] focus:outline-none transition-all"
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-100 focus:bg-white text-xs rounded-lg border border-transparent focus:border-[#6969F5] focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -478,7 +480,7 @@ export default function NetworkPage() {
                             className="w-18 h-18 rounded-full object-cover border-2 border-white shadow-sm group-hover:scale-105 transition-transform"
                           />
                         ) : (
-                          <div className="w-18 h-18 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm">
+                          <div className="w-18 h-18 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm">
                             {p.full_name.charAt(0)}
                           </div>
                         )}
@@ -492,7 +494,7 @@ export default function NetworkPage() {
                         <div className="flex items-center justify-center gap-1.5 flex-wrap">
                           <Link
                             href={`/u/${p.username}`}
-                            className="font-bold text-slate-900 text-sm hover:text-[#0A66C2] hover:underline truncate"
+                            className="font-bold text-slate-900 text-sm hover:text-[#6969F5] hover:underline truncate"
                           >
                             {p.full_name}
                           </Link>
@@ -515,12 +517,12 @@ export default function NetworkPage() {
                       {/* Action Button */}
                       <div className="w-full mt-4 pt-3 border-t border-slate-100">
                         <button
-                          onClick={() => handleSendConnect(p)}
+                          onClick={(e) => handleSendConnect(p, e)}
                           disabled={isSent}
                           className={`w-full py-1.5 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                             isSent
                               ? 'bg-slate-100 text-slate-500 border border-slate-200'
-                              : 'border border-[#0A66C2] text-[#0A66C2] hover:bg-blue-50/70 hover:border-blue-700'
+                              : 'border border-[#6969F5] text-[#6969F5] hover:bg-blue-50/70 hover:border-blue-700'
                           }`}
                         >
                           {isSent ? (
