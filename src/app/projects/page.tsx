@@ -60,35 +60,37 @@ export default function ProjectsGalleryPage() {
           {filtered.map((proj) => {
             const owner = profiles.find((pr) => pr.id === proj.profile_id);
             return (
-              <div key={proj.id} className="group">
-                <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-[#F7F7FB] border border-[#E8E8EF] relative">
+              <div key={proj.id} className="group pt-1.5">
+                <div className="mx-3 h-2 rounded-t-2xl bg-[#EFEFF7] border border-b-0 border-[#E8E8EF] transition-transform duration-300 group-hover:-translate-y-0.5" />
+                <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-[#F7F7FB] border border-[#E8E8EF] relative shadow-sm group-hover:shadow-md group-hover:-translate-y-1 transition-all duration-300">
                   <img
                     src={proj.image_url || '/images/nfc-smart-card.webp'}
                     alt={proj.title}
                     className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                   />
-                </div>
-                <div className="mt-3 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h2 className="text-sm font-bold text-[#202124] truncate">{proj.title}</h2>
-                    {owner ? (
-                      <Link href={`/u/${owner.username}`} className="text-xs text-[#777783] hover:text-[#6969F5]">
-                        by {owner.full_name}
-                      </Link>
-                    ) : (
-                      <p className="text-xs text-[#777783] truncate">{proj.category}</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+                  <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="text-sm font-bold text-white truncate drop-shadow-xs">{proj.title}</h2>
+                      {owner ? (
+                        <Link href={`/u/${owner.username}`} className="text-[11px] text-white/85 hover:underline">
+                          by {owner.full_name}
+                        </Link>
+                      ) : (
+                        <p className="text-[11px] text-white/80 truncate">{proj.category}</p>
+                      )}
+                    </div>
+                    {proj.project_url && (
+                      <a
+                        href={sanitizeUrl(proj.project_url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1 rounded-full bg-white/95 hover:bg-white text-[#202124] text-[11px] font-semibold flex items-center gap-1 shrink-0 shadow-xs"
+                      >
+                        Open <ExternalLink className="w-3 h-3" />
+                      </a>
                     )}
                   </div>
-                  {proj.project_url && (
-                    <a
-                      href={sanitizeUrl(proj.project_url)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-2.5 py-1 rounded-lg bg-[#F7F7FB] border border-[#E8E8EF] hover:border-[#6969F5] text-[11px] font-semibold text-[#202124] flex items-center gap-1 shrink-0"
-                    >
-                      Open <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
                 </div>
               </div>
             );

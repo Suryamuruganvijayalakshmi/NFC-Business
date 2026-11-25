@@ -55,6 +55,9 @@ import {
   Heart,
   Eye,
   Sparkles,
+  Layers,
+  LayoutGrid,
+  User as UserIcon,
 } from 'lucide-react';
 
 interface SignTapProfileViewProps {
@@ -242,8 +245,11 @@ export default function SignTapProfileView({
                   <h1 className="text-2xl sm:text-3xl font-bold text-[#202124] tracking-tight">
                     {profile.full_name}
                   </h1>
+                  <span className="text-xs sm:text-sm font-semibold text-[#6969F5] bg-[#F7F7FB] border border-[#E8E8EF] px-2.5 py-0.5 rounded-full">
+                    @{profile.username}
+                  </span>
                   {profile.is_premium && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#6969F5] text-white text-[11px] font-bold tracking-wide">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#6969F5] text-white text-[11px] font-bold tracking-wide">
                       PRO <Zap className="w-3 h-3 fill-white" />
                     </span>
                   )}
@@ -403,31 +409,42 @@ export default function SignTapProfileView({
             </div>
           </div>
 
-          {/* Horizontal Profile Tabs */}
-          <div className="border-b border-[#E8E8EF] flex items-center gap-6 sm:gap-8 overflow-x-auto no-scrollbar">
+          {/* Horizontal Pill Tabs (inspired by modern SignTap mobile/web card aesthetic) */}
+          <div className="pb-3 border-b border-[#E8E8EF] flex items-center gap-2.5 overflow-x-auto no-scrollbar">
             {([
-              { id: 'overview', label: 'Overview' },
-              { id: 'projects', label: 'Projects', count: projects.length },
-              { id: 'experience', label: 'Experience', count: experiences.length },
-              { id: 'skills', label: 'Skills', count: skills.length },
-              { id: 'certifications', label: 'Certifications', count: certifications.length },
-              { id: 'about', label: 'About' },
-            ] as const).map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-3.5 text-sm whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-                  activeTab === tab.id
-                    ? 'border-[#202124] text-[#202124] font-semibold'
-                    : 'border-transparent text-[#777783] hover:text-[#202124] font-medium'
-                }`}
-              >
-                {tab.label}
-                {'count' in tab && tab.count > 0 && (
-                  <sup className="ml-1 text-[10px] font-semibold text-[#777783]">{tab.count}</sup>
-                )}
-              </button>
-            ))}
+              { id: 'overview', label: 'Overview', icon: LayoutGrid },
+              { id: 'projects', label: 'Projects', count: projects.length, icon: Layers },
+              { id: 'experience', label: 'Experience', count: experiences.length, icon: Briefcase },
+              { id: 'skills', label: 'Skills', count: skills.length, icon: Sparkles },
+              { id: 'certifications', label: 'Certifications', count: certifications.length, icon: Award },
+              { id: 'about', label: 'About', icon: UserIcon },
+            ] as const).map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#6969F5] text-white font-semibold shadow-sm shadow-[#6969F5]/25'
+                      : 'bg-[#F7F7FB] text-[#202124] hover:bg-[#EFEFF7] font-medium'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#777783]'}`} />
+                  <span>{tab.label}</span>
+                  {'count' in tab && tab.count > 0 && (
+                    <span
+                      className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-white text-[#777783]'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Tab Content Panels */}
@@ -779,35 +796,35 @@ export default function SignTapProfileView({
 
 function ProjectCard({ project }: { project: PortfolioProject }) {
   return (
-    <div className="group">
-      <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-[#F7F7FB] border border-[#E8E8EF] relative">
+    <div className="group relative pt-1.5">
+      {/* Subtle stacked card edge behind main preview */}
+      <div className="mx-3 h-2 rounded-t-2xl bg-[#EFEFF7] border border-b-0 border-[#E8E8EF] transition-transform duration-300 group-hover:-translate-y-0.5" />
+
+      <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-[#F7F7FB] border border-[#E8E8EF] relative shadow-sm group-hover:shadow-md group-hover:-translate-y-1 transition-all duration-300">
         <img
           src={project.image_url || '/images/nfc-smart-card.webp'}
           alt={project.title}
           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
         {project.category && (
           <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/95 text-[#202124] text-[10px] font-bold shadow-2xs">
             {project.category}
           </span>
         )}
-      </div>
-
-      <div className="mt-3 flex items-start justify-between gap-2 px-0.5">
-        <div className="min-w-0">
-          <h3 className="text-sm font-bold text-[#202124] truncate">{project.title}</h3>
-          <p className="text-xs text-[#777783] truncate mt-0.5">
-            {(project.technologies || []).slice(0, 3).join(', ') || project.description}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 text-[11px] text-[#777783] font-medium">
+        <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-white truncate drop-shadow-xs">{project.title}</h3>
+            <p className="text-[11px] text-white/80 truncate mt-0.5">
+              {(project.technologies || []).slice(0, 3).join(' · ') || project.description}
+            </p>
+          </div>
           {project.project_url && (
             <a
               href={sanitizeUrl(project.project_url)}
               target="_blank"
               rel="noreferrer"
-              className="px-2.5 py-1 rounded-lg bg-[#F7F7FB] border border-[#E8E8EF] hover:border-[#6969F5] text-[#202124] flex items-center gap-1"
+              className="px-2.5 py-1 rounded-full bg-white/95 hover:bg-white text-[#202124] text-[11px] font-semibold flex items-center gap-1 shrink-0 shadow-xs"
             >
               <span>Open</span>
               <ExternalLink className="w-3 h-3" />

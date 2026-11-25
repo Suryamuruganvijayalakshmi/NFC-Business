@@ -13,6 +13,9 @@ function CallbackContent() {
 
   useEffect(() => {
     let isMounted = true;
+    let processed = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let unsubscribeAuth: (() => void) | null = null;
 
     async function handleAuth() {
       if (isSupabaseConfigured && supabase) {
@@ -32,15 +35,24 @@ function CallbackContent() {
           const { data, error } = await supabase.auth.getSession();
           if (error) {
             if (isMounted) setStatus(`Authentication error: ${error.message}`);
-            setTimeout(() => router.push('/login'), 2000);
+            timeoutId = setTimeout(() => router.replace('/login'), 2000);
             return;
           }
 
           const processUser = async (user: any) => {
+            if (processed) return;
+            processed = true;
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
+
             const fullName = user.user_metadata?.full_name || user.user_metadata?.name || 'SignTap Member';
             const email = user.email || '';
             const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
-            const username = user.user_metadata?.username || email.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase() || `user${Date.now().toString().slice(-4)}`;
+            const rawHandle = email ? email.split('@')[0] : '';
+            const cleanHandle = rawHandle.replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+            const username = user.user_metadata?.username || cleanHandle || `user${Date.now().toString().slice(-4)}`;
 
             const sessionUser: UserSession = {
               id: user.id,
@@ -53,65 +65,71 @@ function CallbackContent() {
               }
             };
 
-            setCurrentUser(sessionUser);
-
-            // Fetch profile from Supabase if available or create locally
             try {
-              if (supabase) {
-                const { data: dbProfile } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('user_id', user.id)
-                  .maybeSingle();
+              setCurrentUser(sessionUser);
 
-                if (dbProfile) {
-                  saveProfile(dbProfile);
-                  if (isMounted) setStatus('Welcome back! Loading your SignTap Feed...');
-                  setTimeout(() => router.replace('/feed'), 200);
-                  return;
+              // Fetch profile from Supabase if available or create locally
+              try {
+                if (supabase) {
+                  const { data: dbProfile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                  if (dbProfile) {
+                    saveProfile(dbProfile);
+                    if (isMounted) setStatus('Welcome back! Loading your SignTap Feed...');
+                    setTimeout(() => {
+                      if (isMounted) router.replace('/feed');
+                    }, 150);
+                    return;
+                  }
                 }
+              } catch (err) {
+                console.warn('Profile fetch notice:', err);
               }
-            } catch (err) {
-              console.warn('Profile fetch notice:', err);
+
+              // Create or fetch profile for this user
+              getOrCreateProfileForUser(sessionUser);
+            } catch (storageErr) {
+              console.warn('Profile hydration notice:', storageErr);
             }
 
-            // Create or fetch profile for this user
-            const userProfile = getOrCreateProfileForUser(sessionUser);
             if (isMounted) setStatus('Welcome to SignTap! Loading your Home Feed...');
-            setTimeout(() => router.replace('/feed'), 200);
+            setTimeout(() => {
+              if (isMounted) router.replace('/feed');
+            }, 150);
           };
 
           if (data.session?.user) {
-            processUser(data.session.user);
+            await processUser(data.session.user);
             return;
           }
 
           // Listen for session resolution via onAuthStateChange
-          const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
               processUser(session.user);
             }
           });
+          unsubscribeAuth = () => authListener.subscription.unsubscribe();
 
           // Timeout fallback: if no session detected after 4 seconds, send to login
-          setTimeout(() => {
-            if (isMounted && !data.session?.user) {
+          timeoutId = setTimeout(() => {
+            if (isMounted && !processed) {
               setStatus('Authentication incomplete. Redirecting to login...');
               router.replace('/login');
             }
           }, 4000);
-
-          return () => {
-            authListener.subscription.unsubscribe();
-          };
         } catch (e: any) {
           console.warn('Callback error:', e);
           if (isMounted) setStatus('Authentication failed. Returning to login...');
-          setTimeout(() => router.replace('/login'), 2000);
+          timeoutId = setTimeout(() => router.replace('/login'), 2000);
         }
       } else {
         if (isMounted) setStatus('Authentication service not configured. Returning to login...');
-        setTimeout(() => router.replace('/login'), 2000);
+        timeoutId = setTimeout(() => router.replace('/login'), 2000);
       }
     }
 
@@ -119,6 +137,8 @@ function CallbackContent() {
 
     return () => {
       isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      if (unsubscribeAuth) unsubscribeAuth();
     };
   }, [router]);
 

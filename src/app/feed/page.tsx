@@ -291,7 +291,13 @@ export default function FeedPage() {
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#202124] relative">
       {/* Subtle Top Editorial Glow */}
-      <div className="pointer-events-none fixed inset-x-0 top-14 h-64 bg-gradient-to-b from-[#EEF2FF]/70 via-[#F5F3FF]/30 to-transparent -z-10" />
+      <div
+        className="pointer-events-none fixed inset-x-0 top-14 h-72 -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(105, 105, 245, 0.14), rgba(232, 224, 255, 0.25) 55%, transparent 100%)',
+        }}
+      />
       <LinkedInNavbar />
 
       <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-20 pb-20 md:pb-12">
@@ -303,7 +309,7 @@ export default function FeedPage() {
           <aside className="hidden md:block w-56 lg:w-60 xl:w-64 shrink-0 space-y-3">
             
             {/* User Mini Profile Card */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-2xl border border-[#E8E8EF] shadow-xs overflow-hidden">
               {/* Cover Banner */}
               <Link href={targetProfileUrl} className="block h-14 bg-gradient-to-r from-[#EEF2FF] via-[#F3E8FF] to-[#FCE7F3] relative overflow-hidden group">
                 {displayProfile?.cover_image && (
@@ -590,24 +596,37 @@ export default function FeedPage() {
               </div>
             </div>
 
-            {/* Filter / Sort Divider */}
-            <div className="flex items-center justify-between px-1 text-xs text-slate-500">
-              <div className="h-px bg-slate-300 flex-1 mr-3" />
-              <div className="flex items-center gap-1.5 font-medium shrink-0">
-                <span>Sort by:</span>
-                <select
-                  value={feedFilter}
-                  onChange={(e) => setFeedFilter(e.target.value as 'recent' | 'top')}
-                  className="bg-transparent text-slate-900 font-semibold focus:outline-none cursor-pointer"
+            {/* Filter / Sort Pill Tabs */}
+            <div className="flex items-center justify-between gap-3 px-1">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setFeedFilter('recent')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    feedFilter === 'recent'
+                      ? 'bg-[#6969F5] text-white shadow-sm shadow-[#6969F5]/25'
+                      : 'bg-[#F7F7FB] text-[#202124] hover:bg-[#EFEFF7]'
+                  }`}
                 >
-                  <option value="recent">Recent</option>
-                  <option value="top">Top</option>
-                </select>
+                  Recent
+                </button>
+                <button
+                  onClick={() => setFeedFilter('top')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    feedFilter === 'top'
+                      ? 'bg-[#6969F5] text-white shadow-sm shadow-[#6969F5]/25'
+                      : 'bg-[#F7F7FB] text-[#202124] hover:bg-[#EFEFF7]'
+                  }`}
+                >
+                  Top
+                </button>
               </div>
+              <span className="text-[11px] text-[#777783] font-medium">
+                {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+              </span>
             </div>
 
             {/* Posts Stream */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {posts.slice(0, visibleCount).map((post) => {
                 const userReaction = post.user_reaction;
                 const activeReaction = REACTION_CONFIG.find(r => r.type === userReaction);
@@ -616,7 +635,7 @@ export default function FeedPage() {
                 return (
                   <article
                     key={post.id}
-                    className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden"
+                    className="bg-white rounded-2xl border border-[#E8E8EF] shadow-xs hover:shadow-sm transition-shadow overflow-hidden"
                   >
                     {/* Author Header */}
                     <div className="p-3.5 pb-2 flex items-start justify-between gap-3">
@@ -630,22 +649,22 @@ export default function FeedPage() {
                             />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-sm">
-                              {post.author_name.charAt(0)}
+                              {(post.author_name || 'S').charAt(0).toUpperCase()}
                             </div>
                           )}
                         </Link>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <Link
-                              href={`/u/${post.author_username}`}
+                              href={`/u/${post.author_username || 'user'}`}
                               className="font-bold text-slate-900 text-sm hover:text-[#6969F5] hover:underline truncate"
                             >
-                              {post.author_name}
+                              {post.author_name || 'SignTap Member'}
                             </Link>
                           </div>
                           <p className="text-xs text-slate-500 truncate">{post.author_headline}</p>
                           <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                            <span>{new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                            <span>{post.created_at ? new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Recent'}</span>
                             <span>•</span>
                             <Globe className="w-3 h-3 text-slate-400" />
                           </div>
@@ -893,20 +912,20 @@ export default function FeedPage() {
                                   />
                                 ) : (
                                   <div className="w-7 h-7 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-[10px]">
-                                    {comm.author_name.charAt(0)}
+                                    {(comm.author_name || 'S').charAt(0).toUpperCase()}
                                   </div>
                                 )}
                               </Link>
                               <div className="flex-1 bg-white p-2.5 rounded-xl border border-slate-200">
                                 <div className="flex items-center justify-between">
                                   <Link
-                                    href={`/u/${comm.author_username}`}
+                                    href={`/u/${comm.author_username || 'user'}`}
                                     className="font-bold text-slate-900 hover:underline"
                                   >
-                                    {comm.author_name}
+                                    {comm.author_name || 'SignTap Member'}
                                   </Link>
                                   <span className="text-[10px] text-slate-400">
-                                    {new Date(comm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {comm.created_at ? new Date(comm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                   </span>
                                 </div>
                                 <p className="text-slate-700 mt-1 leading-relaxed">{comm.content}</p>
@@ -995,17 +1014,17 @@ export default function FeedPage() {
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-[#6969F5] text-white flex items-center justify-center font-bold text-xs">
-                            {person.full_name.charAt(0)}
+                            {(person.full_name || 'S').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </Link>
 
                       <div className="flex-1 min-w-0">
                         <Link
-                          href={`/u/${person.username}`}
+                          href={`/u/${person.username || 'user'}`}
                           className="font-bold text-slate-900 text-xs hover:text-[#6969F5] hover:underline block truncate"
                         >
-                          {person.full_name}
+                          {person.full_name || 'SignTap Member'}
                         </Link>
                         <p className="text-[11px] text-slate-500 line-clamp-1">{person.headline || person.title}</p>
                         
