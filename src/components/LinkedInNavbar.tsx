@@ -399,6 +399,24 @@ export default function LinkedInNavbar() {
                         <span>Organizations & Teams</span>
                       </Link>
 
+                      <Link
+                        href="/dashboard/orders"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                      >
+                        <Briefcase className="w-4 h-4 text-slate-500" />
+                        <span>My Card Orders</span>
+                      </Link>
+
+                      <Link
+                        href="/dashboard/settings"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-slate-500" />
+                        <span>Settings & Privacy</span>
+                      </Link>
+
                       {/* Super Admin Console for authorized accounts */}
                       {isSuperAdmin && (
                         <Link

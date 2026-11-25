@@ -66,6 +66,7 @@ export default function FeedPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [previewProfile, setPreviewProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
+  const [visibleCount, setVisibleCount] = useState(10);
   const [feedFilter, setFeedFilter] = useState<'recent' | 'top'>('recent');
   const [peopleYouMayKnow, setPeopleYouMayKnow] = useState<Profile[]>([]);
   const [connectionsCount, setConnectionsCount] = useState(0);
@@ -525,7 +526,7 @@ export default function FeedPage() {
 
             {/* Posts Stream */}
             <div className="space-y-3">
-              {posts.map((post) => {
+              {posts.slice(0, visibleCount).map((post) => {
                 const userReaction = post.user_reaction;
                 const activeReaction = REACTION_CONFIG.find(r => r.type === userReaction);
                 const isAuthor = user?.id === post.author_id;
@@ -781,6 +782,17 @@ export default function FeedPage() {
                   </article>
                 );
               })}
+
+              {posts.length > visibleCount && (
+                <div className="pt-2 flex justify-center">
+                  <button
+                    onClick={() => setVisibleCount((prev) => prev + 10)}
+                    className="px-6 py-2.5 rounded-full bg-white border border-slate-300 hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    Load more posts ({posts.length - visibleCount} remaining)
+                  </button>
+                </div>
+              )}
             </div>
           </section>
 

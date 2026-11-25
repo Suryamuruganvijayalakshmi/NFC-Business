@@ -61,10 +61,10 @@ export default function OnboardingPage() {
     }
     setCurrentUser(user);
 
-    // If user already has an active profile, they can proceed to dashboard
+    // If user already has an active profile, proceed directly to Home Feed
     const existing = getProfileByUserId(user.id);
     if (existing && existing.title && existing.title !== 'Digital Identity Pioneer' && existing.title !== 'SignBridge Pioneer') {
-      router.push('/dashboard');
+      router.push('/feed');
       return;
     }
 
@@ -161,8 +161,8 @@ export default function OnboardingPage() {
         saveLink(starterLink);
       }
 
-      // Route directly to their personalized dashboard!
-      router.push('/dashboard');
+      // Route directly to their Home Feed!
+      router.push('/feed');
     } catch (err: any) {
       setError(err?.message || 'Failed to complete profile creation.');
       setLoading(false);

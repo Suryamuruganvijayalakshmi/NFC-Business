@@ -66,8 +66,8 @@ function CallbackContent() {
 
                 if (dbProfile) {
                   saveProfile(dbProfile);
-                  if (isMounted) setStatus('Welcome back! Loading your dashboard...');
-                  setTimeout(() => router.replace('/dashboard'), 200);
+                  if (isMounted) setStatus('Welcome back! Loading your SignTap Feed...');
+                  setTimeout(() => router.replace('/feed'), 200);
                   return;
                 }
               }
@@ -77,8 +77,8 @@ function CallbackContent() {
 
             // Create or fetch profile for this user
             const userProfile = getOrCreateProfileForUser(sessionUser);
-            if (isMounted) setStatus('Welcome to SignTap! Loading your personalized dashboard...');
-            setTimeout(() => router.replace('/dashboard'), 200);
+            if (isMounted) setStatus('Welcome to SignTap! Loading your Home Feed...');
+            setTimeout(() => router.replace('/feed'), 200);
           };
 
           if (data.session?.user) {

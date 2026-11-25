@@ -20,9 +20,9 @@ export default function LoginPage() {
   const getDestinationUrl = () => {
     if (typeof window !== 'undefined') {
       const raw = new URLSearchParams(window.location.search).get('redirect');
-      return getSafeRedirectUrl(raw, '/dashboard');
+      return getSafeRedirectUrl(raw, '/feed');
     }
-    return '/dashboard';
+    return '/feed';
   };
 
   const handleLogin = async (e: React.FormEvent) => {

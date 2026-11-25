@@ -81,7 +81,7 @@ export function sanitizeText(text: string | null | undefined): string {
  * Validates internal redirect paths to protect against Open Redirect vulnerabilities.
  * Ensures the target is strictly an internal application route (starts with single / and contains no host).
  */
-export function getSafeRedirectUrl(target: string | null | undefined, fallback: string = '/dashboard'): string {
+export function getSafeRedirectUrl(target: string | null | undefined, fallback: string = '/feed'): string {
   if (!target || typeof target !== 'string') return fallback;
   
   const trimmed = target.trim();
