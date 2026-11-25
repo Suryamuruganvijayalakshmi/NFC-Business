@@ -1,5 +1,4 @@
 # Cloudflare Pages SPA Routing & Dynamic Profile Fallbacks
-/u/*  /u/_shell.html  200
-/id/*  /id/surya.html  200
-/t/*  /t/demo.html  200
-/dashboard/*  /dashboard.html  200
+# Note: Targets omit .html and sit outside the wildcard prefix to prevent Pretty-URL 308 redirect loops
+/u/*  /u  200
+/dashboard/*  /dashboard  200
