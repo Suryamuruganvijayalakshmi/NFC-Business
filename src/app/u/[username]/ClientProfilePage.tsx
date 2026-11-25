@@ -16,11 +16,9 @@ import {
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Profile, ProfileSection, PortfolioProject, SocialLink, UserSession } from '@/lib/types';
 import MinimalTemplate from '@/components/templates/MinimalTemplate';
-import SignatureTemplate from '@/components/templates/SignatureTemplate';
 import CreativeTemplate from '@/components/templates/CreativeTemplate';
-import PremiumIdentityTemplate from '@/components/templates/PremiumIdentityTemplate';
-import ProfileEditModal, { ProfileEditTab } from '@/components/ProfileEditModal';
-import { UserX, ArrowLeft, Sparkles, Wifi, ShieldAlert, Lock, Compass, ExternalLink, Edit3, Plus, CreditCard, Share2, Check } from 'lucide-react';
+import SignTapProfileView from '@/components/profile/SignTapProfileView';
+import { UserX, ArrowLeft, Sparkles, Wifi, Lock, Compass } from 'lucide-react';
 
 function extractUsernameFromPath(paramUsername?: string): string {
   if (typeof window !== 'undefined') {
@@ -56,14 +54,6 @@ function ProfileContent() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isPrivateDenied, setIsPrivateDenied] = useState(false);
-  const [editModalTab, setEditModalTab] = useState<ProfileEditTab | null>(() => {
-    if (typeof window !== 'undefined') {
-      const editParam = new URLSearchParams(window.location.search).get('edit');
-      if (editParam) return (editParam === '1' ? 'basic' : (editParam as ProfileEditTab));
-    }
-    return null;
-  });
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // Sync username if URL or params change
   useEffect(() => {
@@ -344,84 +334,16 @@ function ProfileContent() {
     );
   }
 
-  // 4. Render Active Theme Template (Guaranteed Fallback)
+  // 4. Render Active Theme Template (SignTap Editorial Portfolio View as flagship default)
   const activeTheme = profile.theme || 'signature';
-  const isOwner = Boolean(
-    currentUser &&
-      (currentUser.id === profile.user_id ||
-        (currentUser.email && profile.email && currentUser.email.toLowerCase() === profile.email.toLowerCase()))
-  );
-
-  const handleCopyProfileLink = () => {
-    const url = `${window.location.origin}/u/${profile.username}`;
-    navigator.clipboard.writeText(url);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
 
   return (
     <>
-      {/* Owner-only contextual controls (never visible to other users) */}
-      {isOwner && (
-        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <Link href="/feed" className="text-[#0A66C2] hover:underline font-bold">
-              ← Home Feed
-            </Link>
-            <span>·</span>
-            <span>Viewing Your Public Profile</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setEditModalTab('basic')}
-              className="px-3 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              Edit Profile
-            </button>
-            <button
-              onClick={() => setEditModalTab('experience')}
-              className="px-3 py-1.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Section
-            </button>
-            <Link
-              href="/dashboard/nfc"
-              className="px-3 py-1.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              Manage Card
-            </Link>
-            <button
-              onClick={handleCopyProfileLink}
-              className="px-3 py-1.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
-              {copiedLink ? 'Copied!' : 'Share'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {editModalTab && isOwner && (
-        <ProfileEditModal
-          profile={profile}
-          initialTab={editModalTab}
-          onClose={() => setEditModalTab(null)}
-          onSaved={(updated) => {
-            setProfile(updated);
-            setProjects(getProjectsByProfileId(updated.id));
-            setLinks(getLinksByProfileId(updated.id));
-          }}
-        />
-      )}
-
       {/* Banner if owner is viewing their own private profile */}
       {profile.published === false && (
-        <div className="bg-amber-500/20 border-b border-amber-500/30 text-amber-200 text-xs px-4 py-2.5 text-center font-medium flex items-center justify-center gap-2">
-          <Lock className="w-3.5 h-3.5 text-amber-400" />
-          <span>Private Mode: Only you can view this profile. Turn on Public Visibility in your dashboard settings to make it public.</span>
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs px-4 py-2 text-center font-medium flex items-center justify-center gap-2">
+          <Lock className="w-3.5 h-3.5 text-amber-600" />
+          <span>Private Mode: Only you can view this profile.</span>
         </div>
       )}
 
@@ -446,11 +368,11 @@ function ProfileContent() {
       )}
 
       {(activeTheme === 'signature' || (activeTheme !== 'minimal' && activeTheme !== 'creative')) && (
-        <PremiumIdentityTemplate 
-          profile={profile} 
-          sections={sections} 
-          projects={projects} 
-          links={links}
+        <SignTapProfileView
+          initialProfile={profile}
+          initialProjects={projects}
+          initialLinks={links}
+          currentUser={currentUser}
           onLinkClick={handleLinkClick}
         />
       )}

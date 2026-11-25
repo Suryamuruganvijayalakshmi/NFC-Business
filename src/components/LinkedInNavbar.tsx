@@ -128,161 +128,156 @@ export default function LinkedInNavbar() {
       active: pathname === '/feed' || pathname === '/',
     },
     {
-      label: 'My Network',
+      label: 'Discover',
+      href: '/discover',
+      icon: Compass,
+      active: pathname.startsWith('/discover'),
+    },
+    {
+      label: 'Network',
       href: '/network',
       icon: Users,
       badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
       active: pathname.startsWith('/network'),
     },
     {
-      label: 'Jobs',
+      label: 'Projects',
+      href: '/projects',
+      icon: Sparkles,
+      active: pathname.startsWith('/projects'),
+    },
+    {
+      label: 'Opportunities',
       href: '/jobs',
       icon: Briefcase,
       active: pathname.startsWith('/jobs'),
-    },
-    {
-      label: 'Messaging',
-      href: '/messages',
-      icon: MessageSquare,
-      badge: unreadMessagesCount > 0 ? unreadMessagesCount : null,
-      active: pathname.startsWith('/messages'),
-    },
-    {
-      label: 'Discover',
-      href: '/discover',
-      icon: Compass,
-      active: pathname.startsWith('/discover'),
     },
   ];
 
   return (
     <>
-      {/* Top Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] h-14 transition-all">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-full flex items-center justify-between gap-2 sm:gap-4">
+      {/* Top Fixed Header (Editorial SignTap Navigation) */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#E8E8EF] h-14 transition-all">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-full flex items-center justify-between gap-4">
           
-          {/* Left: Brand Logo & Search Bar */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-md">
+          {/* Left: Brand Logo */}
+          <div className="flex items-center gap-3 shrink-0">
             <Link 
               href="/feed" 
               className="flex items-center gap-2 focus:outline-none shrink-0 group"
-              title="SignTap Professional Network"
+              title="SignTap"
             >
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#0A66C2] to-[#004182] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#6969F5] to-[#A78BFA] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
                 <Image
                   src="/images/signtap-logo.png"
                   alt="SignTap"
-                  width={24}
-                  height={24}
+                  width={20}
+                  height={20}
                   className="brightness-0 invert object-contain"
                 />
               </div>
-              <span className="font-bold text-lg text-slate-900 tracking-tight hidden sm:inline-block">
-                Sign<span className="text-[#0A66C2]">Tap</span>
+              <span className="font-bold text-base text-[#202124] tracking-tight">
+                Sign<span className="text-[#6969F5]">Tap</span>
               </span>
             </Link>
-
-            {/* Desktop Search Bar */}
-            <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search professionals, skills, jobs..."
-                className="w-full pl-9 pr-4 py-1.5 bg-[#EDF3F8] hover:bg-[#E1E9F0] focus:bg-white text-xs sm:text-sm text-slate-800 placeholder-slate-500 rounded-md border border-transparent focus:border-[#0A66C2] focus:outline-none transition-all"
-              />
-            </form>
 
             {/* Mobile Search Toggle */}
             <button
               onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
+              className="md:hidden p-2 text-[#777783] hover:text-[#202124] rounded-lg hover:bg-[#F7F7FB]"
               aria-label="Search"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Right: Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`relative flex flex-col items-center justify-center px-2.5 lg:px-3.5 py-1 min-w-[62px] h-12 text-[11px] font-medium transition-colors ${
-                    item.active
-                      ? 'text-slate-950 font-semibold border-b-2 border-slate-900'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="relative">
-                    <Icon className="w-5 h-5 mb-0.5" />
-                    {item.badge ? (
-                      <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
-                        {item.badge > 99 ? '99+' : item.badge}
-                      </span>
-                    ) : null}
-                  </div>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-
-            {/* Notifications Dropdown Component */}
-            <div className="flex flex-col items-center justify-center px-2 py-1 min-w-[62px]">
-              <NotificationDropdown />
-              <span className="text-[11px] font-medium text-slate-500 -mt-1">Notifications</span>
-            </div>
-
-            {/* SignTap NFC Cards Link */}
+          {/* Center: Minimal Editorial Navigation Links */}
+          <nav className="hidden md:flex items-center gap-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`relative text-xs font-medium transition-colors py-1 ${
+                  item.active
+                    ? 'text-[#202124] font-semibold'
+                    : 'text-[#777783] hover:text-[#202124]'
+                }`}
+              >
+                <span>{item.label}</span>
+                {item.badge ? (
+                  <span className="ml-1 px-1.5 py-0.2 bg-[#6969F5] text-white text-[10px] font-bold rounded-full">
+                    {item.badge}
+                  </span>
+                ) : null}
+              </Link>
+            ))}
             <Link
               href="/cards"
-              className={`relative flex flex-col items-center justify-center px-2.5 lg:px-3 py-1 min-w-[66px] h-12 text-[11px] font-medium transition-colors ${
-                pathname.startsWith('/cards')
-                  ? 'text-slate-950 font-semibold border-b-2 border-slate-900'
-                  : 'text-slate-500 hover:text-slate-900'
+              className={`text-xs font-medium transition-colors py-1 ${
+                pathname.startsWith('/cards') ? 'text-[#6969F5] font-semibold' : 'text-[#777783] hover:text-[#6969F5]'
               }`}
             >
-              <div className="relative">
-                <CreditCard className="w-5 h-5 mb-0.5 text-[#0A66C2]" />
-                <span className="absolute -top-1.5 -right-3 text-[9px] font-bold px-1 py-0.2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-full">
-                  NFC
-                </span>
-              </div>
-              <span className="text-[#0A66C2] font-semibold">NFC Cards</span>
+              NFC Cards
+            </Link>
+          </nav>
+
+          {/* Right: Search, Messages, Notifications, Create CTA, Profile Avatar */}
+          <div className="hidden md:flex items-center gap-2.5">
+            <form onSubmit={handleSearchSubmit} className="hidden xl:flex items-center relative w-44">
+              <Search className="w-3.5 h-3.5 text-[#777783] absolute left-2.5 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search..."
+                className="w-full pl-8 pr-3 py-1.5 bg-[#F7F7FB] text-xs text-[#202124] placeholder-[#777783] rounded-xl border border-[#E8E8EF] focus:border-[#6969F5] focus:outline-none transition-all"
+              />
+            </form>
+
+            <Link
+              href="/messages"
+              className="relative p-2 rounded-xl text-[#777783] hover:text-[#202124] hover:bg-[#F7F7FB] transition-colors"
+              title="Messages"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {unreadMessagesCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-[#6969F5] rounded-full" />
+              )}
             </Link>
 
-            <div className="h-7 w-px bg-slate-200 mx-1 hidden lg:block" />
+            <NotificationDropdown />
+
+            {user && (
+              <Link
+                href="/feed?create=1"
+                className="px-3.5 py-1.5 rounded-xl bg-[#6969F5] hover:bg-[#5858e6] text-white text-xs font-semibold transition-colors shadow-2xs"
+              >
+                Create
+              </Link>
+            )}
 
             {/* Profile Dropdown or Login / Join */}
             {user ? (
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex flex-col items-center justify-center px-2 py-1 min-w-[60px] h-12 text-[11px] font-medium text-slate-600 hover:text-slate-950 focus:outline-none cursor-pointer"
+                  className="flex items-center gap-1.5 p-1 rounded-full hover:bg-[#F7F7FB] focus:outline-none cursor-pointer"
                 >
                   <div className="relative">
                     {profile?.profile_image ? (
                       <img
                         src={profile.profile_image}
                         alt={profile.full_name}
-                        className="w-6 h-6 rounded-full object-cover border border-slate-300 shadow-xs"
+                        className="w-8 h-8 rounded-full object-cover border border-[#E8E8EF]"
                       />
                     ) : (
-                      <div className="w-6 h-6 rounded-full bg-[#0A66C2] text-white flex items-center justify-center text-[10px] font-bold">
+                      <div className="w-8 h-8 rounded-full bg-[#6969F5] text-white flex items-center justify-center text-xs font-bold">
                         {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'U'}
                       </div>
                     )}
                     {isPremium && (
-                      <Crown className="w-3 h-3 text-amber-500 absolute -bottom-1 -right-1 fill-amber-400 stroke-amber-600 drop-shadow-xs" />
+                      <Crown className="w-3 h-3 text-amber-500 absolute -bottom-0.5 -right-0.5 fill-amber-400 stroke-amber-600" />
                     )}
-                  </div>
-                  <div className="flex items-center gap-0.5 text-slate-700">
-                    <span>Me</span>
-                    <ChevronDown className="w-3 h-3 text-slate-500" />
                   </div>
                 </button>
 
@@ -458,7 +453,7 @@ export default function LinkedInNavbar() {
                 </Link>
               </div>
             )}
-          </nav>
+          </div>
 
           {/* Mobile Right Bar: Profile Avatar or Login, Notification & Mobile Menu Toggle */}
           <div className="flex md:hidden items-center gap-2">

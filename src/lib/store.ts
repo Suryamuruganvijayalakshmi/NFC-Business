@@ -689,8 +689,12 @@ export function deleteSection(sectionId: string): void {
 // -----------------------------------------------------------------------------
 // Portfolio Projects
 // -----------------------------------------------------------------------------
+export function getAllProjects(): PortfolioProject[] {
+  return getLocalItem<PortfolioProject[]>(STORAGE_KEYS.PROJECTS, INITIAL_PROJECTS);
+}
+
 export function getProjectsByProfileId(profileId: string): PortfolioProject[] {
-  const allProjects = getLocalItem<PortfolioProject[]>(STORAGE_KEYS.PROJECTS, INITIAL_PROJECTS);
+  const allProjects = getAllProjects();
   return allProjects.filter(p => p.profile_id === profileId).sort((a, b) => a.display_order - b.display_order);
 }
 
