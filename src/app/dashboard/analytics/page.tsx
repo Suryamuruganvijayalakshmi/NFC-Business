@@ -37,9 +37,9 @@ export default function AnalyticsDashboardPage() {
 
     if (p) {
       setProfile(p);
-      setAnalytics(getAnalyticsSummary(p.id));
+      setAnalytics(getAnalyticsSummary(p.id, timeRange));
     }
-  }, []);
+  }, [timeRange]);
 
   if (!profile || !analytics) return null;
 
@@ -89,10 +89,10 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
           <p className="text-3xl font-extrabold text-slate-900 mt-3">
-            {timeRange === '30d' ? analytics.total_views * 3 : analytics.total_views}
+            {analytics.total_views}
           </p>
           <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1">
-            <TrendingUp className="w-3 h-3" /> Healthy upward engagement
+            <TrendingUp className="w-3 h-3" /> Real tracked visits
           </span>
         </div>
 
@@ -104,7 +104,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
           <p className="text-3xl font-extrabold text-slate-900 mt-3">
-            {timeRange === '30d' ? analytics.total_nfc_taps * 3 : analytics.total_nfc_taps}
+            {analytics.total_nfc_taps}
           </p>
           <span className="text-[11px] text-slate-400 mt-1 font-mono">
             Direct contactless reads
@@ -119,7 +119,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
           <p className="text-3xl font-extrabold text-slate-900 mt-3">
-            {timeRange === '30d' ? analytics.total_qr_scans * 3 : analytics.total_qr_scans}
+            {analytics.total_qr_scans}
           </p>
           <span className="text-[11px] text-slate-400 mt-1 font-mono">
             Optical smartphone scans
@@ -134,7 +134,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
           <p className="text-3xl font-extrabold text-slate-900 mt-3">
-            {timeRange === '30d' ? analytics.total_link_clicks * 3 : analytics.total_link_clicks}
+            {analytics.total_link_clicks}
           </p>
           <span className="text-[11px] text-slate-400 mt-1 font-mono">
             Social & portfolio clicks

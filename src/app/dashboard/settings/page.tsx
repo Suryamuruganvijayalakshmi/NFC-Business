@@ -6,8 +6,11 @@ import {
   getProfileByUserId, 
   getOrCreateProfileForUser, 
   getAllProfiles,
-  saveProfile 
+  saveProfile,
+  deleteProfile,
+  logoutUser
 } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 import { Profile } from '@/lib/types';
 import { 
   Settings, 
@@ -43,6 +46,13 @@ export default function AccountSettingsPage() {
       setProfile(p);
       setUsername(p.username);
       setEmail(p.email);
+      const prefs = (p.section_visibility as Record<string, unknown> | undefined)?._notifications as
+        | { notifyTaps?: boolean; notifyViews?: boolean }
+        | undefined;
+      if (prefs) {
+        if (typeof prefs.notifyTaps === 'boolean') setNotifyTaps(prefs.notifyTaps);
+        if (typeof prefs.notifyViews === 'boolean') setNotifyViews(prefs.notifyViews);
+      }
     }
   }, []);
 
@@ -70,6 +80,10 @@ export default function AccountSettingsPage() {
       ...profile,
       username: cleanUsername,
       email: email.trim(),
+      section_visibility: {
+        ...(profile.section_visibility || {}),
+        _notifications: { notifyTaps, notifyViews },
+      } as Profile['section_visibility'],
       updated_at: new Date().toISOString(),
     };
 
@@ -77,6 +91,28 @@ export default function AccountSettingsPage() {
     setProfile(updated);
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2500);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!profile) return;
+    if (!window.confirm('Are you sure you want to permanently delete your SignTap account and profile? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      const sessionRes = supabase ? await supabase.auth.getSession() : null;
+      const token = sessionRes?.data?.session?.access_token;
+      if (token) {
+        await fetch('/api/account/delete', {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    } catch (err) {
+      console.warn('Account delete request note:', err);
+    }
+    deleteProfile(profile.id);
+    logoutUser();
+    window.location.href = '/login';
   };
 
   const handleExportData = () => {
@@ -229,6 +265,27 @@ export default function AccountSettingsPage() {
           >
             <Save className="w-4 h-4" />
             <span>Save Preferences</span>
+          </button>
+        </div>
+
+        {/* Danger Zone: Account Deletion */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-rose-50/70 border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-bold text-rose-900 flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-600" />
+              Delete Account
+            </h2>
+            <p className="text-xs text-rose-700 mt-1">
+              Permanently remove your SignTap digital identity, saved contacts, and posts.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 flex-shrink-0"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete My Account</span>
           </button>
         </div>
 

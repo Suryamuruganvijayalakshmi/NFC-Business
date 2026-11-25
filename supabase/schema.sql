@@ -20,6 +20,16 @@ DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
 
 -- Drop All Tables in Dependency Order
+DROP TABLE IF EXISTS public.reports CASCADE;
+DROP TABLE IF EXISTS public.saved_jobs CASCADE;
+DROP TABLE IF EXISTS public.event_registrations CASCADE;
+DROP TABLE IF EXISTS public.events CASCADE;
+DROP TABLE IF EXISTS public.organization_members CASCADE;
+DROP TABLE IF EXISTS public.organizations CASCADE;
+DROP TABLE IF EXISTS public.recommendations CASCADE;
+DROP TABLE IF EXISTS public.skill_endorsements CASCADE;
+DROP TABLE IF EXISTS public.contact_exchanges CASCADE;
+DROP TABLE IF EXISTS public.projects CASCADE;
 DROP TABLE IF EXISTS public.job_applications CASCADE;
 DROP TABLE IF EXISTS public.job_listings CASCADE;
 DROP TABLE IF EXISTS public.order_items CASCADE;
@@ -499,6 +509,207 @@ CREATE TABLE public.job_applications (
 CREATE INDEX idx_job_apps_job ON public.job_applications(job_id);
 CREATE INDEX idx_job_apps_user ON public.job_applications(applicant_user_id);
 
+-- ------------------------------------------------------------------------------
+-- 14. STRUCTURED PROJECT SHOWCASE
+-- ------------------------------------------------------------------------------
+CREATE TABLE public.projects (
+  id TEXT PRIMARY KEY,
+  profile_id TEXT NOT NULL,
+  owner_user_id TEXT NOT NULL,
+  owner_name TEXT,
+  owner_username TEXT,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  problem_solved TEXT,
+  image_url TEXT,
+  project_url TEXT,
+  github_url TEXT,
+  live_demo TEXT,
+  technologies TEXT[] DEFAULT '{}',
+  category TEXT DEFAULT 'Featured Work',
+  status TEXT DEFAULT 'launched', -- 'concept', 'in_progress', 'launched', 'archived'
+  team_members TEXT[] DEFAULT '{}',
+  collaborators TEXT[] DEFAULT '{}',
+  achievements TEXT[] DEFAULT '{}',
+  likes_count INTEGER NOT NULL DEFAULT 0,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_projects_profile ON public.projects(profile_id);
+CREATE INDEX idx_projects_owner ON public.projects(owner_user_id);
+
+-- ------------------------------------------------------------------------------
+-- 15. SIGNTAP CONNECT: CONTACT EXCHANGES
+-- ------------------------------------------------------------------------------
+CREATE TABLE public.contact_exchanges (
+  id TEXT PRIMARY KEY,
+  initiator_user_id TEXT NOT NULL,
+  initiator_name TEXT NOT NULL,
+  initiator_username TEXT NOT NULL,
+  initiator_image TEXT,
+  initiator_headline TEXT,
+  recipient_user_id TEXT NOT NULL,
+  recipient_name TEXT NOT NULL,
+  recipient_username TEXT NOT NULL,
+  recipient_image TEXT,
+  recipient_headline TEXT,
+  method TEXT NOT NULL DEFAULT 'qr', -- 'nfc', 'qr', 'link', 'short_code'
+  exchange_code TEXT,
+  event_id TEXT,
+  event_name TEXT,
+  status TEXT NOT NULL DEFAULT 'completed', -- 'pending', 'completed', 'declined'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_exchanges_initiator ON public.contact_exchanges(initiator_user_id);
+CREATE INDEX idx_exchanges_recipient ON public.contact_exchanges(recipient_user_id);
+CREATE INDEX idx_exchanges_event ON public.contact_exchanges(event_id);
+
+-- ------------------------------------------------------------------------------
+-- 16. SKILL ENDORSEMENTS & RECOMMENDATIONS
+-- ------------------------------------------------------------------------------
+CREATE TABLE public.skill_endorsements (
+  id TEXT PRIMARY KEY,
+  profile_id TEXT NOT NULL,
+  skill_name TEXT NOT NULL,
+  endorser_user_id TEXT NOT NULL,
+  endorser_name TEXT NOT NULL,
+  endorser_username TEXT NOT NULL,
+  endorser_image TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_skill_endorsement UNIQUE (profile_id, skill_name, endorser_user_id)
+);
+
+CREATE INDEX idx_endorsements_profile ON public.skill_endorsements(profile_id);
+
+CREATE TABLE public.recommendations (
+  id TEXT PRIMARY KEY,
+  recipient_user_id TEXT NOT NULL,
+  author_user_id TEXT NOT NULL,
+  author_name TEXT NOT NULL,
+  author_username TEXT NOT NULL,
+  author_image TEXT,
+  author_headline TEXT,
+  relationship TEXT NOT NULL,
+  skill_focus TEXT,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_recommendations_recipient ON public.recommendations(recipient_user_id);
+
+-- ------------------------------------------------------------------------------
+-- 17. ORGANIZATIONS, COMPANIES & TEAMS
+-- ------------------------------------------------------------------------------
+CREATE TABLE public.organizations (
+  id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  org_type TEXT NOT NULL DEFAULT 'company', -- 'company', 'startup', 'club', 'community', 'team'
+  tagline TEXT,
+  description TEXT NOT NULL,
+  logo_url TEXT,
+  cover_url TEXT,
+  website TEXT,
+  industry TEXT,
+  location TEXT,
+  contact_email TEXT,
+  owner_user_id TEXT NOT NULL,
+  followers_count INTEGER NOT NULL DEFAULT 0,
+  members_count INTEGER NOT NULL DEFAULT 1,
+  verified BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_orgs_slug ON public.organizations(slug);
+CREATE INDEX idx_orgs_owner ON public.organizations(owner_user_id);
+
+CREATE TABLE public.organization_members (
+  id TEXT PRIMARY KEY,
+  organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  username TEXT NOT NULL,
+  avatar_url TEXT,
+  headline TEXT,
+  role TEXT NOT NULL DEFAULT 'member', -- 'owner', 'admin', 'editor', 'member'
+  title TEXT,
+  joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_org_member UNIQUE (organization_id, user_id)
+);
+
+CREATE INDEX idx_org_members_org ON public.organization_members(organization_id);
+CREATE INDEX idx_org_members_user ON public.organization_members(user_id);
+
+-- ------------------------------------------------------------------------------
+-- 18. EVENTS & REAL-WORLD NETWORKING
+-- ------------------------------------------------------------------------------
+CREATE TABLE public.events (
+  id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'meetup', -- 'conference', 'hackathon', 'workshop', 'meetup', 'startup', 'college'
+  organizer_user_id TEXT NOT NULL,
+  organizer_name TEXT NOT NULL,
+  organization_id TEXT,
+  location TEXT NOT NULL,
+  is_virtual BOOLEAN NOT NULL DEFAULT false,
+  start_date TIMESTAMPTZ NOT NULL,
+  end_date TIMESTAMPTZ,
+  cover_image TEXT,
+  visibility TEXT NOT NULL DEFAULT 'public', -- 'public', 'invite_only'
+  max_participants INTEGER,
+  registrations_count INTEGER NOT NULL DEFAULT 0,
+  exchanges_count INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_events_start ON public.events(start_date ASC);
+CREATE INDEX idx_events_organizer ON public.events(organizer_user_id);
+
+CREATE TABLE public.event_registrations (
+  id TEXT PRIMARY KEY,
+  event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  username TEXT NOT NULL,
+  avatar_url TEXT,
+  headline TEXT,
+  discoverable BOOLEAN NOT NULL DEFAULT true,
+  status TEXT NOT NULL DEFAULT 'registered', -- 'registered', 'attended', 'cancelled'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_event_user UNIQUE (event_id, user_id)
+);
+
+CREATE INDEX idx_event_regs_event ON public.event_registrations(event_id);
+CREATE INDEX idx_event_regs_user ON public.event_registrations(user_id);
+
+-- ------------------------------------------------------------------------------
+-- 19. SAVED OPPORTUNITIES & ABUSE REPORTS
+-- ------------------------------------------------------------------------------
+CREATE TABLE public.saved_jobs (
+  id TEXT PRIMARY KEY,
+  job_id TEXT NOT NULL REFERENCES public.job_listings(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_saved_job UNIQUE (job_id, user_id)
+);
+
+CREATE TABLE public.reports (
+  id TEXT PRIMARY KEY,
+  reporter_user_id TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  details TEXT,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- STEP 3: ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -525,6 +736,16 @@ ALTER TABLE public.card_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_exchanges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.skill_endorsements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recommendations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.saved_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 
 -- Helper Admin Detection Function
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -560,10 +781,10 @@ CREATE POLICY "Analytics viewable by everyone" ON public.analytics_events FOR SE
 CREATE POLICY "Admin activity loggable by anyone" ON public.admin_activity FOR INSERT WITH CHECK (true);
 CREATE POLICY "Admin activity readable by anyone" ON public.admin_activity FOR SELECT USING (true);
 
--- CRM Policies
-CREATE POLICY "Users manage smart contacts" ON public.smart_contacts FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Users manage follow-ups" ON public.contact_follow_ups FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Users manage interactions" ON public.contact_interactions FOR ALL USING (true) WITH CHECK (true);
+-- CRM Policies (Strictly Owner-Only Private Notes & Contacts)
+CREATE POLICY "Users manage smart contacts" ON public.smart_contacts FOR ALL USING (auth.uid()::text = owner_user_id) WITH CHECK (auth.uid()::text = owner_user_id);
+CREATE POLICY "Users manage follow-ups" ON public.contact_follow_ups FOR ALL USING (auth.uid()::text = owner_user_id) WITH CHECK (auth.uid()::text = owner_user_id);
+CREATE POLICY "Users manage interactions" ON public.contact_interactions FOR ALL USING (auth.uid()::text = owner_user_id) WITH CHECK (auth.uid()::text = owner_user_id);
 
 -- Social Feed Policies
 CREATE POLICY "Posts viewable by everyone" ON public.posts FOR SELECT USING (true);
@@ -604,6 +825,35 @@ CREATE POLICY "Jobs viewable by everyone" ON public.job_listings FOR SELECT USIN
 CREATE POLICY "Posters manage job listings" ON public.job_listings FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Applications viewable by applicant and poster" ON public.job_applications FOR SELECT USING (true);
 CREATE POLICY "Applicants can submit application" ON public.job_applications FOR INSERT WITH CHECK (true);
+
+-- Projects, Exchanges, Endorsements, Recommendations, Organizations, Events, Reports
+CREATE POLICY "Projects viewable by everyone" ON public.projects FOR SELECT USING (true);
+CREATE POLICY "Users manage own projects" ON public.projects FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Exchanges viewable by participants" ON public.contact_exchanges FOR SELECT USING (true);
+CREATE POLICY "Users manage exchanges" ON public.contact_exchanges FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Endorsements viewable by everyone" ON public.skill_endorsements FOR SELECT USING (true);
+CREATE POLICY "Users manage endorsements" ON public.skill_endorsements FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Recommendations viewable by everyone" ON public.recommendations FOR SELECT USING (true);
+CREATE POLICY "Users manage recommendations" ON public.recommendations FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Organizations viewable by everyone" ON public.organizations FOR SELECT USING (true);
+CREATE POLICY "Authorized users manage organizations" ON public.organizations FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Org members viewable by everyone" ON public.organization_members FOR SELECT USING (true);
+CREATE POLICY "Org admins manage members" ON public.organization_members FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Events viewable by everyone" ON public.events FOR SELECT USING (true);
+CREATE POLICY "Organizers manage events" ON public.events FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Event registrations viewable by everyone" ON public.event_registrations FOR SELECT USING (true);
+CREATE POLICY "Users manage own event registrations" ON public.event_registrations FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Users manage saved jobs" ON public.saved_jobs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Users submit reports" ON public.reports FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admins view reports" ON public.reports FOR SELECT USING (public.is_admin());
 
 -- ==============================================================================
 -- STEP 4: AUTOMATIC USER REGISTRATION TRIGGER

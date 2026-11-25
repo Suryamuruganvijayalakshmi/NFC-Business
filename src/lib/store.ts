@@ -44,7 +44,17 @@ import {
   JobListing,
   JobApplication,
   JobType,
-  WorkplaceType
+  WorkplaceType,
+  ContactExchange,
+  ExchangeMethod,
+  SkillEndorsement,
+  Recommendation,
+  Organization,
+  OrganizationMember,
+  OrgRole,
+  SignTapEvent,
+  EventRegistration,
+  AbuseReport
 } from './types';
 export type { AppNotification, NotificationType, ReactionType, PostReaction, JobListing, JobApplication };
 import { 
@@ -93,6 +103,15 @@ const STORAGE_KEYS = {
   JOBS: 'sb_jobs',
   JOB_APPLICATIONS: 'sb_job_applications',
   POST_REACTIONS: 'sb_post_reactions',
+  EXCHANGES: 'sb_contact_exchanges',
+  ENDORSEMENTS: 'sb_skill_endorsements',
+  RECOMMENDATIONS: 'sb_recommendations',
+  ORGANIZATIONS: 'sb_organizations',
+  ORG_MEMBERS: 'sb_org_members',
+  EVENTS: 'sb_events',
+  EVENT_REGISTRATIONS: 'sb_event_registrations',
+  SAVED_JOBS: 'sb_saved_jobs',
+  REPORTS: 'sb_reports',
 };
 
 export const INITIAL_JOBS: JobListing[] = [
@@ -1039,9 +1058,22 @@ export function logAnalyticsEvent(profileId: string, eventType: AnalyticsEventTy
   }
 }
 
-export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
+export function getAnalyticsSummary(profileId: string, range: '7d' | '30d' | 'all' = '7d'): AnalyticsSummary {
   const events = getLocalItem<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS, INITIAL_ANALYTICS);
-  const profileEvents = events.filter(e => e.profile_id === profileId);
+  const nowMs = Date.now();
+  const cutoffMs =
+    range === '7d'
+      ? nowMs - 7 * 24 * 60 * 60 * 1000
+      : range === '30d'
+      ? nowMs - 30 * 24 * 60 * 60 * 1000
+      : 0;
+
+  const profileEvents = events.filter((e) => {
+    if (e.profile_id !== profileId) return false;
+    if (!cutoffMs) return true;
+    const t = new Date(e.created_at).getTime();
+    return !Number.isNaN(t) && t >= cutoffMs;
+  });
   const links = getLinksByProfileId(profileId);
 
   const total_views = profileEvents.filter(e => e.event_type === 'profile_view').length;
@@ -1051,10 +1083,11 @@ export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
   const total_contact_saves = profileEvents.filter(e => e.event_type === 'contact_save').length;
   const total_whatsapp_clicks = profileEvents.filter(e => e.event_type === 'whatsapp_click').length;
 
-  // Build last 7 days chart data
+  // Build chart data (7 or 14 days for display)
+  const dayCount = range === '30d' ? 14 : 7;
   const days: { date: string; views: number; nfc_taps: number }[] = [];
   const now = new Date();
-  for (let i = 6; i >= 0; i--) {
+  for (let i = dayCount - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(now.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
@@ -1071,14 +1104,14 @@ export function getAnalyticsSummary(profileId: string): AnalyticsSummary {
     });
   }
 
-  // Top clicked links
+  // Top clicked links (actual counts only, zero fabricated random numbers)
   const top_links = links.map(link => {
     const clicks = profileEvents.filter(e => e.event_type === 'link_click' && e.link_id === link.id).length;
     return {
       id: link.id,
       label: link.label || link.platform,
       url: link.url,
-      clicks: clicks || Math.floor(Math.random() * 4) + 1
+      clicks
     };
   }).sort((a, b) => b.clicks - a.clicks);
 
@@ -3123,6 +3156,418 @@ export async function syncJobsFromSupabase(): Promise<JobListing[]> {
     console.warn('Sync jobs from Supabase note:', err);
     return getAllJobs();
   }
+}
+
+// -----------------------------------------------------------------------------
+// SignTap Connect: Smart Contact Exchange
+// -----------------------------------------------------------------------------
+export function getAllContactExchanges(): ContactExchange[] {
+  return getLocalItem<ContactExchange[]>(STORAGE_KEYS.EXCHANGES, []);
+}
+
+export function getContactExchangesForUser(userId: string): ContactExchange[] {
+  return getAllContactExchanges()
+    .filter(e => e.initiator_user_id === userId || e.recipient_user_id === userId)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function recordContactExchange(
+  initiator: Profile,
+  recipient: Profile,
+  method: ExchangeMethod,
+  eventId?: string,
+  eventName?: string
+): { exchange: ContactExchange; duplicate: boolean } {
+  const all = getAllContactExchanges();
+  const fiveMinsAgo = Date.now() - 5 * 60 * 1000;
+  const recentDuplicate = all.find(
+    e =>
+      ((e.initiator_user_id === initiator.user_id && e.recipient_user_id === recipient.user_id) ||
+        (e.initiator_user_id === recipient.user_id && e.recipient_user_id === initiator.user_id)) &&
+      e.method === method &&
+      new Date(e.created_at).getTime() > fiveMinsAgo
+  );
+
+  if (recentDuplicate) {
+    return { exchange: recentDuplicate, duplicate: true };
+  }
+
+  const newExchange: ContactExchange = {
+    id: `exch-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    initiator_user_id: initiator.user_id,
+    initiator_name: initiator.full_name,
+    initiator_username: initiator.username,
+    initiator_image: initiator.profile_image,
+    initiator_headline: initiator.headline || initiator.title,
+    recipient_user_id: recipient.user_id,
+    recipient_name: recipient.full_name,
+    recipient_username: recipient.username,
+    recipient_image: recipient.profile_image,
+    recipient_headline: recipient.headline || recipient.title,
+    method,
+    exchange_code: `ST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+    event_id: eventId,
+    event_name: eventName,
+    status: 'completed',
+    created_at: new Date().toISOString(),
+  };
+
+  all.unshift(newExchange);
+  setLocalItem(STORAGE_KEYS.EXCHANGES, all);
+
+  // Automatically save recipient to initiator's Smart CRM
+  savePublicProfileAsContact(
+    initiator.user_id,
+    recipient,
+    eventName ? `${method.toUpperCase()} Exchange @ ${eventName}` : `SignTap Connect (${method.toUpperCase()})`
+  );
+
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('contact_exchanges').insert(newExchange)).catch(() => {});
+  }
+
+  createNotification({
+    user_id: recipient.user_id,
+    sender_id: initiator.user_id,
+    sender_name: initiator.full_name,
+    sender_username: initiator.username,
+    sender_image: initiator.profile_image,
+    sender_headline: initiator.headline || initiator.title,
+    type: 'system',
+    title: 'Identity Exchanged via SignTap Connect',
+    message: `${initiator.full_name} exchanged contact details with you via ${method.toUpperCase()}${eventName ? ` at ${eventName}` : ''}.`,
+    link: `/u/${initiator.username}`,
+  });
+
+  return { exchange: newExchange, duplicate: false };
+}
+
+// -----------------------------------------------------------------------------
+// Skill Endorsements & Recommendations
+// -----------------------------------------------------------------------------
+export function getEndorsementsForProfile(profileId: string): SkillEndorsement[] {
+  const all = getLocalItem<SkillEndorsement[]>(STORAGE_KEYS.ENDORSEMENTS, []);
+  return all.filter(e => e.profile_id === profileId);
+}
+
+export function endorseSkill(
+  profileId: string,
+  skillName: string,
+  endorser: Profile
+): { endorsed: boolean; list: SkillEndorsement[] } {
+  const all = getLocalItem<SkillEndorsement[]>(STORAGE_KEYS.ENDORSEMENTS, []);
+  const idx = all.findIndex(
+    e =>
+      e.profile_id === profileId &&
+      e.skill_name.toLowerCase() === skillName.toLowerCase() &&
+      e.endorser_user_id === endorser.user_id
+  );
+
+  if (idx >= 0) {
+    const removed = all[idx];
+    all.splice(idx, 1);
+    setLocalItem(STORAGE_KEYS.ENDORSEMENTS, all);
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(supabase.from('skill_endorsements').delete().eq('id', removed.id)).catch(() => {});
+    }
+    return { endorsed: false, list: all.filter(e => e.profile_id === profileId) };
+  }
+
+  const newEndorsement: SkillEndorsement = {
+    id: `end-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    profile_id: profileId,
+    skill_name: skillName,
+    endorser_user_id: endorser.user_id,
+    endorser_name: endorser.full_name,
+    endorser_username: endorser.username,
+    endorser_image: endorser.profile_image,
+    created_at: new Date().toISOString(),
+  };
+
+  all.push(newEndorsement);
+  setLocalItem(STORAGE_KEYS.ENDORSEMENTS, all);
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('skill_endorsements').insert(newEndorsement)).catch(() => {});
+  }
+  return { endorsed: true, list: all.filter(e => e.profile_id === profileId) };
+}
+
+export function getRecommendationsForUser(userId: string): Recommendation[] {
+  const all = getLocalItem<Recommendation[]>(STORAGE_KEYS.RECOMMENDATIONS, []);
+  return all
+    .filter(r => r.recipient_user_id === userId)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function addRecommendation(
+  rec: Omit<Recommendation, 'id' | 'created_at'>
+): Recommendation {
+  const all = getLocalItem<Recommendation[]>(STORAGE_KEYS.RECOMMENDATIONS, []);
+  const newRec: Recommendation = {
+    ...rec,
+    id: `rec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    created_at: new Date().toISOString(),
+  };
+  all.unshift(newRec);
+  setLocalItem(STORAGE_KEYS.RECOMMENDATIONS, all);
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('recommendations').insert(newRec)).catch(() => {});
+  }
+  return newRec;
+}
+
+// -----------------------------------------------------------------------------
+// Organizations & Teams
+// -----------------------------------------------------------------------------
+export function getAllOrganizations(): Organization[] {
+  return getLocalItem<Organization[]>(STORAGE_KEYS.ORGANIZATIONS, [
+    {
+      id: 'org-signtap',
+      slug: 'signtap-labs',
+      name: 'SignTap Labs',
+      org_type: 'company',
+      tagline: 'Bridging physical contactless networking with verified digital identities.',
+      description: 'SignTap builds NFC-enabled smart identity hardware, real-time analytics, and professional networking tools for modern teams and creators.',
+      website: 'https://signtap.click',
+      industry: 'IoT & Professional Networking',
+      location: 'Bengaluru, India',
+      owner_user_id: 'user-surya-01',
+      followers_count: 142,
+      members_count: 3,
+      verified: true,
+      created_at: '2026-01-15T00:00:00Z',
+      updated_at: '2026-01-15T00:00:00Z',
+    },
+  ]);
+}
+
+export function createOrganization(
+  orgData: Omit<Organization, 'id' | 'slug' | 'followers_count' | 'members_count' | 'created_at' | 'updated_at'>,
+  ownerProfile: Profile
+): Organization {
+  const orgs = getAllOrganizations();
+  const slugBase = orgData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const newOrg: Organization = {
+    ...orgData,
+    id: `org-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    slug: `${slugBase}-${Math.random().toString(36).substring(2, 5)}`,
+    followers_count: 1,
+    members_count: 1,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  orgs.unshift(newOrg);
+  setLocalItem(STORAGE_KEYS.ORGANIZATIONS, orgs);
+
+  joinOrganization(newOrg.id, ownerProfile, 'owner', 'Founder / Owner');
+
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('organizations').insert(newOrg)).catch(() => {});
+  }
+  return newOrg;
+}
+
+export function getMembersForOrganization(organizationId: string): OrganizationMember[] {
+  const all = getLocalItem<OrganizationMember[]>(STORAGE_KEYS.ORG_MEMBERS, [
+    {
+      id: 'orgm-1',
+      organization_id: 'org-signtap',
+      user_id: 'user-surya-01',
+      full_name: 'Surya Narayanan',
+      username: 'surya',
+      headline: 'Founder & CEO at SignTap',
+      role: 'owner',
+      title: 'Founder & CEO',
+      joined_at: '2026-01-15T00:00:00Z',
+    },
+  ]);
+  return all.filter(m => m.organization_id === organizationId);
+}
+
+export function joinOrganization(
+  organizationId: string,
+  profile: Profile,
+  role: OrgRole = 'member',
+  title?: string
+): OrganizationMember {
+  const all = getLocalItem<OrganizationMember[]>(STORAGE_KEYS.ORG_MEMBERS, []);
+  const existing = all.find(m => m.organization_id === organizationId && m.user_id === profile.user_id);
+  if (existing) return existing;
+
+  const member: OrganizationMember = {
+    id: `orgm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    organization_id: organizationId,
+    user_id: profile.user_id,
+    full_name: profile.full_name,
+    username: profile.username,
+    avatar_url: profile.profile_image,
+    headline: profile.headline || profile.title,
+    role,
+    title: title || profile.title,
+    joined_at: new Date().toISOString(),
+  };
+
+  all.push(member);
+  setLocalItem(STORAGE_KEYS.ORG_MEMBERS, all);
+
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('organization_members').upsert(member, { onConflict: 'organization_id,user_id' })).catch(() => {});
+  }
+  return member;
+}
+
+// -----------------------------------------------------------------------------
+// Events & Real-World Networking
+// -----------------------------------------------------------------------------
+export function getAllEvents(): SignTapEvent[] {
+  return getLocalItem<SignTapEvent[]>(STORAGE_KEYS.EVENTS, [
+    {
+      id: 'evt-summit-2026',
+      slug: 'signtap-founders-summit-2026',
+      title: 'SignTap Founders & Hardware Builders Meetup',
+      description: 'Live NFC identity exchange session, hardware demos, and startup networking for builders, engineers, and founders.',
+      category: 'meetup',
+      organizer_user_id: 'user-surya-01',
+      organizer_name: 'Surya Narayanan',
+      location: 'Indiranagar Innovation Hub, Bengaluru',
+      is_virtual: false,
+      start_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      visibility: 'public',
+      max_participants: 150,
+      registrations_count: 1,
+      exchanges_count: 0,
+      created_at: new Date().toISOString(),
+    },
+  ]);
+}
+
+export function createEvent(
+  eventData: Omit<SignTapEvent, 'id' | 'slug' | 'registrations_count' | 'exchanges_count' | 'created_at'>
+): SignTapEvent {
+  const events = getAllEvents();
+  const slugBase = eventData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const newEvent: SignTapEvent = {
+    ...eventData,
+    id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    slug: `${slugBase}-${Math.random().toString(36).substring(2, 5)}`,
+    registrations_count: 0,
+    exchanges_count: 0,
+    created_at: new Date().toISOString(),
+  };
+  events.unshift(newEvent);
+  setLocalItem(STORAGE_KEYS.EVENTS, events);
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('events').insert(newEvent)).catch(() => {});
+  }
+  return newEvent;
+}
+
+export function getRegistrationsForEvent(eventId: string): EventRegistration[] {
+  const all = getLocalItem<EventRegistration[]>(STORAGE_KEYS.EVENT_REGISTRATIONS, []);
+  return all.filter(r => r.event_id === eventId && r.status !== 'cancelled');
+}
+
+export function registerForEvent(
+  eventId: string,
+  profile: Profile,
+  discoverable: boolean = true
+): EventRegistration {
+  const all = getLocalItem<EventRegistration[]>(STORAGE_KEYS.EVENT_REGISTRATIONS, []);
+  const existingIdx = all.findIndex(r => r.event_id === eventId && r.user_id === profile.user_id);
+
+  const reg: EventRegistration = {
+    id: existingIdx >= 0 ? all[existingIdx].id : `ereg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    event_id: eventId,
+    user_id: profile.user_id,
+    full_name: profile.full_name,
+    username: profile.username,
+    avatar_url: profile.profile_image,
+    headline: profile.headline || profile.title,
+    discoverable,
+    status: 'registered',
+    created_at: new Date().toISOString(),
+  };
+
+  if (existingIdx >= 0) {
+    all[existingIdx] = reg;
+  } else {
+    all.push(reg);
+    const events = getAllEvents();
+    const evt = events.find(e => e.id === eventId);
+    if (evt) {
+      evt.registrations_count = (evt.registrations_count || 0) + 1;
+      setLocalItem(STORAGE_KEYS.EVENTS, events);
+    }
+  }
+
+  setLocalItem(STORAGE_KEYS.EVENT_REGISTRATIONS, all);
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('event_registrations').upsert(reg, { onConflict: 'event_id,user_id' })).catch(() => {});
+  }
+  return reg;
+}
+
+export function cancelEventRegistration(eventId: string, userId: string): void {
+  const all = getLocalItem<EventRegistration[]>(STORAGE_KEYS.EVENT_REGISTRATIONS, []);
+  const idx = all.findIndex(r => r.event_id === eventId && r.user_id === userId);
+  if (idx >= 0) {
+    all[idx].status = 'cancelled';
+    setLocalItem(STORAGE_KEYS.EVENT_REGISTRATIONS, all);
+    const events = getAllEvents();
+    const evt = events.find(e => e.id === eventId);
+    if (evt) {
+      evt.registrations_count = Math.max(0, (evt.registrations_count || 1) - 1);
+      setLocalItem(STORAGE_KEYS.EVENTS, events);
+    }
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(
+        supabase.from('event_registrations').update({ status: 'cancelled' }).match({ event_id: eventId, user_id: userId })
+      ).catch(() => {});
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Saved Jobs & Abuse Reporting
+// -----------------------------------------------------------------------------
+export function getSavedJobIds(userId: string): string[] {
+  const map = getLocalItem<Record<string, string[]>>(STORAGE_KEYS.SAVED_JOBS, {});
+  return map[userId] || [];
+}
+
+export function toggleSaveJob(jobId: string, userId: string): boolean {
+  const map = getLocalItem<Record<string, string[]>>(STORAGE_KEYS.SAVED_JOBS, {});
+  const list = map[userId] || [];
+  const exists = list.includes(jobId);
+  map[userId] = exists ? list.filter(id => id !== jobId) : [...list, jobId];
+  setLocalItem(STORAGE_KEYS.SAVED_JOBS, map);
+
+  if (isSupabaseConfigured && supabase) {
+    if (exists) {
+      Promise.resolve(supabase.from('saved_jobs').delete().match({ job_id: jobId, user_id: userId })).catch(() => {});
+    } else {
+      Promise.resolve(
+        supabase.from('saved_jobs').upsert({ id: `sj-${jobId}-${userId}`, job_id: jobId, user_id: userId }, { onConflict: 'job_id,user_id' })
+      ).catch(() => {});
+    }
+  }
+  return !exists;
+}
+
+export function submitAbuseReport(report: Omit<AbuseReport, 'id' | 'status' | 'created_at'>): AbuseReport {
+  const all = getLocalItem<AbuseReport[]>(STORAGE_KEYS.REPORTS, []);
+  const newReport: AbuseReport = {
+    ...report,
+    id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    status: 'open',
+    created_at: new Date().toISOString(),
+  };
+  all.unshift(newReport);
+  setLocalItem(STORAGE_KEYS.REPORTS, all);
+  if (isSupabaseConfigured && supabase) {
+    Promise.resolve(supabase.from('reports').insert(newReport)).catch(() => {});
+  }
+  return newReport;
 }
 
 

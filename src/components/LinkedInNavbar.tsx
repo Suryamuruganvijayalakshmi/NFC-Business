@@ -355,7 +355,7 @@ export default function LinkedInNavbar() {
                       </Link>
 
                       <Link
-                        href="/dashboard/cards"
+                        href="/dashboard/nfc"
                         onClick={() => setShowProfileMenu(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
                       >
@@ -364,12 +364,39 @@ export default function LinkedInNavbar() {
                       </Link>
 
                       <Link
-                        href="/dashboard/crm"
+                        href="/dashboard/contacts"
                         onClick={() => setShowProfileMenu(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
                       >
                         <Users className="w-4 h-4 text-slate-500" />
                         <span>Smart CRM & Follow-ups</span>
+                      </Link>
+
+                      <Link
+                        href="/connect"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#0A66C2]" />
+                        <span>SignTap Connect (QR / NFC)</span>
+                      </Link>
+
+                      <Link
+                        href="/events"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                      >
+                        <Compass className="w-4 h-4 text-slate-500" />
+                        <span>Events & Networking</span>
+                      </Link>
+
+                      <Link
+                        href="/organizations"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                      >
+                        <Briefcase className="w-4 h-4 text-slate-500" />
+                        <span>Organizations & Teams</span>
                       </Link>
 
                       {/* Super Admin Console for authorized accounts */}

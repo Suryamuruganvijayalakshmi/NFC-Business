@@ -617,5 +617,171 @@ export interface JobApplication {
   created_at: string;
 }
 
+// -----------------------------------------------------------------------------
+// SignTap Connect: Smart Contact Exchange
+// -----------------------------------------------------------------------------
+export type ExchangeMethod = 'nfc' | 'qr' | 'link' | 'short_code';
+export type ExchangeStatus = 'pending' | 'completed' | 'declined';
+
+export interface ContactExchange {
+  id: string;
+  initiator_user_id: string;
+  initiator_name: string;
+  initiator_username: string;
+  initiator_image?: string;
+  initiator_headline?: string;
+  recipient_user_id: string;
+  recipient_name: string;
+  recipient_username: string;
+  recipient_image?: string;
+  recipient_headline?: string;
+  method: ExchangeMethod;
+  exchange_code?: string;
+  event_id?: string;
+  event_name?: string;
+  status: ExchangeStatus;
+  created_at: string;
+}
+
+// -----------------------------------------------------------------------------
+// Structured Project Showcase
+// -----------------------------------------------------------------------------
+export type ProjectStatus = 'concept' | 'in_progress' | 'launched' | 'archived';
+
+export interface ProjectShowcase extends PortfolioProject {
+  owner_user_id?: string;
+  owner_name?: string;
+  owner_username?: string;
+  problem_solved?: string;
+  github_url?: string;
+  live_demo?: string;
+  status?: ProjectStatus;
+  team_members?: string[];
+  collaborators?: string[];
+  achievements?: string[];
+  likes_count?: number;
+}
+
+// -----------------------------------------------------------------------------
+// Skills Endorsements & Recommendations
+// -----------------------------------------------------------------------------
+export interface SkillEndorsement {
+  id: string;
+  profile_id: string;
+  skill_name: string;
+  endorser_user_id: string;
+  endorser_name: string;
+  endorser_username: string;
+  endorser_image?: string;
+  created_at: string;
+}
+
+export interface Recommendation {
+  id: string;
+  recipient_user_id: string;
+  author_user_id: string;
+  author_name: string;
+  author_username: string;
+  author_image?: string;
+  author_headline?: string;
+  relationship: string;
+  skill_focus?: string;
+  content: string;
+  created_at: string;
+}
+
+// -----------------------------------------------------------------------------
+// Organizations, Companies & Teams
+// -----------------------------------------------------------------------------
+export type OrgRole = 'owner' | 'admin' | 'editor' | 'member';
+export type OrgType = 'company' | 'startup' | 'club' | 'community' | 'team';
+
+export interface Organization {
+  id: string;
+  slug: string;
+  name: string;
+  org_type: OrgType;
+  tagline?: string;
+  description: string;
+  logo_url?: string;
+  cover_url?: string;
+  website?: string;
+  industry?: string;
+  location?: string;
+  contact_email?: string;
+  owner_user_id: string;
+  followers_count: number;
+  members_count: number;
+  verified?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationMember {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  full_name: string;
+  username: string;
+  avatar_url?: string;
+  headline?: string;
+  role: OrgRole;
+  title?: string;
+  joined_at: string;
+}
+
+// -----------------------------------------------------------------------------
+// Events & Real-World Networking
+// -----------------------------------------------------------------------------
+export type EventCategory = 'conference' | 'hackathon' | 'workshop' | 'meetup' | 'startup' | 'college';
+
+export interface SignTapEvent {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: EventCategory;
+  organizer_user_id: string;
+  organizer_name: string;
+  organization_id?: string;
+  location: string;
+  is_virtual: boolean;
+  start_date: string;
+  end_date?: string;
+  cover_image?: string;
+  visibility: 'public' | 'invite_only';
+  max_participants?: number;
+  registrations_count: number;
+  exchanges_count: number;
+  created_at: string;
+}
+
+export interface EventRegistration {
+  id: string;
+  event_id: string;
+  user_id: string;
+  full_name: string;
+  username: string;
+  avatar_url?: string;
+  headline?: string;
+  discoverable: boolean;
+  status: 'registered' | 'attended' | 'cancelled';
+  created_at: string;
+}
+
+// -----------------------------------------------------------------------------
+// Safety & Abuse Reporting
+// -----------------------------------------------------------------------------
+export interface AbuseReport {
+  id: string;
+  reporter_user_id: string;
+  target_type: 'post' | 'comment' | 'profile' | 'recommendation' | 'job';
+  target_id: string;
+  reason: string;
+  details?: string;
+  status: 'open' | 'reviewed' | 'resolved';
+  created_at: string;
+}
+
 
 

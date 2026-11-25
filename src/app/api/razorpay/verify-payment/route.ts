@@ -3,7 +3,10 @@ import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tzqpsxtjfgkmqsxrtlgx.supabase.co';
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_5lDEIb-SirWekMpfsr8xaw_5hbj5z_X';
+const SUPABASE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'sb_publishable_5lDEIb-SirWekMpfsr8xaw_5hbj5z_X';
 
 function getSupabase() {
   return createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -11,7 +14,8 @@ function getSupabase() {
 
 /**
  * POST /api/razorpay/verify-payment
- * Verifies Razorpay payment signature on the server and updates database order records.
+ * Verifies Razorpay HMAC-SHA256 payment signature on the server,
+ * enforces idempotency on razorpay_payment_id, and updates Supabase orders/profiles.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -24,39 +28,41 @@ export async function POST(req: NextRequest) {
       currency = 'INR',
       customer,
       package_label,
-      quantity = 1,
-      order_type = 'card_purchase', // 'card_purchase' or 'premium_upgrade'
+      order_type = 'card_purchase',
       user_id,
       profile_id,
       username,
     } = body;
 
-    if (!razorpay_order_id || !razorpay_payment_id) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
-        { success: false, error: 'Missing payment identifiers.' },
+        { success: false, error: 'Missing required payment verification parameters.' },
         { status: 400 }
       );
     }
 
-    const keySecret = 
-      process.env.RAZORPAY_KEY_SECRET || 
-      process.env.RAZORPAY_SECRET || 
-      '';
-
-    let isVerified = false;
-
-    // Verify cryptographic signature when secret is available
-    if (keySecret && razorpay_signature) {
-      const generatedSignature = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest('hex');
-
-      isVerified = generatedSignature === razorpay_signature;
-    } else {
-      // In development / standard client token mode: verify presence of payment_id
-      isVerified = Boolean(razorpay_payment_id && razorpay_payment_id.length > 5);
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET || '';
+    if (!keySecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          configured: false,
+          error: 'RAZORPAY_KEY_SECRET is not configured on the server. Payment cannot be cryptographically verified.',
+        },
+        { status: 503 }
+      );
     }
+
+    // Cryptographic HMAC-SHA256 signature verification
+    const generatedSignature = crypto
+      .createHmac('sha256', keySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    const sigBuf = Buffer.from(generatedSignature, 'utf8');
+    const providedBuf = Buffer.from(String(razorpay_signature), 'utf8');
+    const isVerified =
+      sigBuf.length === providedBuf.length && crypto.timingSafeEqual(sigBuf, providedBuf);
 
     if (!isVerified) {
       return NextResponse.json(
@@ -67,7 +73,23 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabase();
 
-    // 1. If it's a card purchase, create or update the order in Supabase
+    // Idempotency check: prevent duplicate order creation for the same payment ID
+    const { data: existingOrder } = await supabase
+      .from('orders')
+      .select('id, status')
+      .eq('razorpay_payment_id', razorpay_payment_id)
+      .maybeSingle();
+
+    if (existingOrder) {
+      return NextResponse.json({
+        success: true,
+        verified: true,
+        idempotent: true,
+        order_id: existingOrder.id,
+        payment_id: razorpay_payment_id,
+      });
+    }
+
     const orderId = `ord_${Date.now()}`;
     const cleanCustomerName = customer?.name || 'Customer';
     const cleanEmail = customer?.email || '';
@@ -75,94 +97,91 @@ export async function POST(req: NextRequest) {
     const cleanAddress = customer?.address || '';
     const cleanPincode = customer?.pincode || '';
 
-    try {
-      await supabase.from('orders').insert({
-        id: orderId,
-        user_id: user_id || 'anonymous_buyer',
-        razorpay_order_id: razorpay_order_id,
-        razorpay_payment_id: razorpay_payment_id,
-        status: 'paid',
-        total_amount: typeof amount === 'number' ? amount : 199,
-        currency,
-        shipping_name: cleanCustomerName,
-        shipping_email: cleanEmail,
-        shipping_phone: cleanPhone,
-        shipping_address: cleanAddress,
-        shipping_city: customer?.city || 'India',
-        shipping_pincode: cleanPincode,
-        engraving_name: cleanCustomerName,
-        engraving_company: customer?.company || '',
-        card_product_id: 'card-matte-black',
-        card_product_name: package_label || 'SignTap Laser-Engraved NFC Smart Card',
-        card_chip_uid: `ST-NFC-${Math.floor(1000 + Math.random() * 9000)}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    } catch (orderErr) {
+    const { error: orderErr } = await supabase.from('orders').insert({
+      id: orderId,
+      user_id: user_id || 'anonymous_buyer',
+      razorpay_order_id,
+      razorpay_payment_id,
+      status: 'confirmed',
+      payment_status: 'verified',
+      total_amount: typeof amount === 'number' ? amount : 199,
+      currency,
+      customer_name: cleanCustomerName,
+      customer_email: cleanEmail,
+      customer_phone: cleanPhone,
+      shipping_address: {
+        fullName: cleanCustomerName,
+        street: cleanAddress,
+        city: customer?.city || 'India',
+        postalCode: cleanPincode,
+        country: 'India',
+      },
+      items: [
+        {
+          product_name: package_label || 'SignTap Laser-Engraved NFC Smart Card',
+          quantity: body.quantity || 1,
+          unit_price: typeof amount === 'number' ? amount : 199,
+        },
+      ],
+      notes: `Razorpay Verified Payment: ${razorpay_payment_id}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    if (orderErr) {
       console.warn('Supabase order insert note:', orderErr);
     }
 
-    // 2. If it is a premium upgrade, upgrade the profile in Supabase
     if (order_type === 'premium_upgrade' || package_label?.toLowerCase().includes('premium')) {
       const oneYearLater = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-      try {
-        if (profile_id) {
-          await supabase
-            .from('profiles')
-            .update({
-              is_premium: true,
-              premium_until: oneYearLater,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', profile_id);
-        } else if (username) {
-          await supabase
-            .from('profiles')
-            .update({
-              is_premium: true,
-              premium_until: oneYearLater,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('username', username.toLowerCase());
-        }
-      } catch (profileErr) {
-        console.warn('Supabase premium profile update note:', profileErr);
+      if (profile_id) {
+        await supabase
+          .from('profiles')
+          .update({
+            is_premium: true,
+            premium_plan: 'yearly',
+            premium_until: oneYearLater,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', profile_id);
+      } else if (username) {
+        await supabase
+          .from('profiles')
+          .update({
+            is_premium: true,
+            premium_plan: 'yearly',
+            premium_until: oneYearLater,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('username', username.toLowerCase());
       }
     }
 
-    // 3. Create confirmed notification in Supabase
     if (user_id) {
-      try {
-        await supabase.from('notifications').insert({
-          id: `notif_${Date.now()}`,
-          recipient_id: user_id,
-          actor_id: 'system',
-          actor_name: 'SignTap Orders',
-          actor_username: 'signtap',
-          type: 'order_status',
-          title: 'Payment Confirmed 🎉',
-          message: `Your payment of ₹${amount || 199} (ID: ${razorpay_payment_id}) was verified successfully. Your order is now in production!`,
-          link: '/dashboard/orders',
-          read: false,
-          created_at: new Date().toISOString(),
-        });
-      } catch (notifErr) {
-        console.warn('Supabase notification note:', notifErr);
-      }
+      await supabase.from('notifications').insert({
+        id: `notif_${Date.now()}`,
+        recipient_id: user_id,
+        actor_id: 'system',
+        actor_name: 'SignTap Orders',
+        actor_username: 'signtap',
+        type: 'order_update',
+        title: 'Payment Confirmed',
+        message: `Your payment of ₹${amount || 199} (ID: ${razorpay_payment_id}) was verified successfully.`,
+        link: '/dashboard/orders',
+        read: false,
+        created_at: new Date().toISOString(),
+      });
     }
 
     return NextResponse.json({
       success: true,
       verified: true,
-      order_id: razorpay_order_id,
+      order_id: orderId,
       payment_id: razorpay_payment_id,
-      message: 'Payment verified and registered in database.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal payment verification failure';
     console.error('API /api/razorpay/verify-payment error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Payment verification failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
