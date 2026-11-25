@@ -343,21 +343,12 @@ export default function LinkedInNavbar() {
                     {/* Menu Links */}
                     <div className="py-1">
                       <Link
-                        href="/dashboard/profile"
+                        href={`/u/${username}?edit=basic`}
                         onClick={() => setShowProfileMenu(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
                       >
                         <User className="w-4 h-4 text-slate-500" />
                         <span>Edit Professional Profile</span>
-                      </Link>
-
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-slate-500" />
-                        <span>SignTap Identity Console</span>
                       </Link>
 
                       <Link
@@ -594,20 +585,12 @@ export default function LinkedInNavbar() {
                 <>
                   <div className="border-t border-slate-100 my-2 pt-2" />
                   <Link
-                    href="/dashboard/profile"
+                    href={`/u/${username}?edit=basic`}
                     onClick={() => setShowMobileDrawer(false)}
                     className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                   >
                     <User className="w-4 h-4 text-slate-500" />
                     <span>Edit Profile</span>
-                  </Link>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setShowMobileDrawer(false)}
-                    className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <LayoutDashboard className="w-4 h-4 text-slate-500" />
-                    <span>Identity Dashboard</span>
                   </Link>
                   {isSuperAdmin && (
                     <Link

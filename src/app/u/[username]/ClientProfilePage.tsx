@@ -19,7 +19,7 @@ import MinimalTemplate from '@/components/templates/MinimalTemplate';
 import SignatureTemplate from '@/components/templates/SignatureTemplate';
 import CreativeTemplate from '@/components/templates/CreativeTemplate';
 import PremiumIdentityTemplate from '@/components/templates/PremiumIdentityTemplate';
-import ProfileEditModal from '@/components/ProfileEditModal';
+import ProfileEditModal, { ProfileEditTab } from '@/components/ProfileEditModal';
 import { UserX, ArrowLeft, Sparkles, Wifi, ShieldAlert, Lock, Compass, ExternalLink, Edit3, Plus, CreditCard, Share2, Check } from 'lucide-react';
 
 function extractUsernameFromPath(paramUsername?: string): string {
@@ -56,7 +56,13 @@ function ProfileContent() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isPrivateDenied, setIsPrivateDenied] = useState(false);
-  const [editModalTab, setEditModalTab] = useState<'basic' | 'about' | 'skills' | 'experience' | 'education' | 'contact' | null>(null);
+  const [editModalTab, setEditModalTab] = useState<ProfileEditTab | null>(() => {
+    if (typeof window !== 'undefined') {
+      const editParam = new URLSearchParams(window.location.search).get('edit');
+      if (editParam) return (editParam === '1' ? 'basic' : (editParam as ProfileEditTab));
+    }
+    return null;
+  });
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Sync username if URL or params change
@@ -403,7 +409,11 @@ function ProfileContent() {
           profile={profile}
           initialTab={editModalTab}
           onClose={() => setEditModalTab(null)}
-          onSaved={(updated) => setProfile(updated)}
+          onSaved={(updated) => {
+            setProfile(updated);
+            setProjects(getProjectsByProfileId(updated.id));
+            setLinks(getLinksByProfileId(updated.id));
+          }}
         />
       )}
 
