@@ -221,7 +221,7 @@ export default function ProfileEditModal({
       title: projTitle.trim(),
       description: projDesc.trim() || 'Featured project on SignTap.',
       image_url: projImage || '/images/nfc-smart-card.webp',
-      project_url: projUrl.trim() || undefined,
+      project_url: projUrl.trim() || '',
       technologies: projTech
         .split(',')
         .map((t) => t.trim())
@@ -250,7 +250,7 @@ export default function ProfileEditModal({
       {
         id: `cert-${Date.now()}`,
         name: certName.trim(),
-        issuing_organization: certOrg.trim(),
+        issuing_org: certOrg.trim(),
         issue_date: certDate.trim() || '2025',
       },
       ...certifications,
@@ -673,7 +673,7 @@ export default function ProfileEditModal({
                   <div key={c.id} className="p-3 rounded-xl border border-slate-200 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-bold text-slate-900">{c.name}</p>
-                      <p className="text-xs text-slate-500">{c.issuing_organization} · {c.issue_date}</p>
+                      <p className="text-xs text-slate-500">{c.issuing_org} · {c.issue_date}</p>
                     </div>
                     <button
                       type="button"
