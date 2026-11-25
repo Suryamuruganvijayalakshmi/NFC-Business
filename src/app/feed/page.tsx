@@ -21,8 +21,15 @@ import {
   getLiveConnectionCount,
   getNewMemberStatus,
   syncPostsFromSupabase,
-  syncProfilesFromSupabase
+  syncProfilesFromSupabase,
+  getProjectsByProfileId,
+  getLinksByProfileId,
+  getAnalyticsSummary,
+  toggleBookmarkPost,
+  deletePost,
+  submitAbuseReport
 } from '@/lib/store';
+import { calculateProfileCompletion } from '@/lib/profileCompletion';
 import { Profile, PostItem, PostComment, ReactionType, UserSession } from '@/lib/types';
 import { 
   ThumbsUp, 
@@ -70,6 +77,9 @@ export default function FeedPage() {
   const [feedFilter, setFeedFilter] = useState<'recent' | 'top'>('recent');
   const [peopleYouMayKnow, setPeopleYouMayKnow] = useState<Profile[]>([]);
   const [connectionsCount, setConnectionsCount] = useState(0);
+  const [profileImpressions, setProfileImpressions] = useState(0);
+  const [dismissedCompletion, setDismissedCompletion] = useState(false);
+  const [openPostMenuId, setOpenPostMenuId] = useState<string | null>(null);
 
   // Post creation modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -105,14 +115,33 @@ export default function FeedPage() {
       setProfile(p);
       setPreviewProfile(p);
       setConnectionsCount(getLiveConnectionCount(currentUser.id));
+      setProfileImpressions(p ? getAnalyticsSummary(p.id).total_views : 0);
     } else {
       setProfile(null);
       const fallback = allProfiles.find(p => p.username === 'surya') || allProfiles[0] || null;
       setPreviewProfile(fallback);
       setConnectionsCount(fallback ? getLiveConnectionCount(fallback.user_id) : 0);
+      setProfileImpressions(fallback ? getAnalyticsSummary(fallback.id).total_views : 0);
     }
 
-    const all = getAllPosts();
+    const connectedSet = new Set<string>();
+    if (currentUser) {
+      for (const c of getAllConnections()) {
+        if (c.status === 'connected') {
+          if (c.requester_id === currentUser.id) connectedSet.add(c.recipient_id);
+          if (c.recipient_id === currentUser.id) connectedSet.add(c.requester_id);
+        }
+      }
+    }
+
+    const all = getAllPosts().filter((post) => {
+      const vis: string = (post as PostItem & { visibility?: string }).visibility || 'public';
+      if (vis === 'private') return Boolean(currentUser && post.author_id === currentUser.id);
+      if (vis === 'connections') {
+        return Boolean(currentUser && (post.author_id === currentUser.id || connectedSet.has(post.author_id)));
+      }
+      return true;
+    });
     if (feedFilter === 'top') {
       all.sort((a, b) => (b.likes_count + b.comments_count) - (a.likes_count + a.comments_count));
     } else {
@@ -134,10 +163,18 @@ export default function FeedPage() {
     }).catch(() => {});
   }, [feedFilter]);
 
-  // Handle post image upload
+  // Handle post image upload with validation
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPG, PNG, WebP, GIF).');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image exceeds the 10MB upload limit.');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -310,7 +347,7 @@ export default function FeedPage() {
                     </Link>
                     <div className="flex items-center justify-between text-slate-600">
                       <span>Profile impressions</span>
-                      <span className="font-bold text-slate-900">1,280</span>
+                      <span className="font-bold text-slate-900">{profileImpressions}</span>
                     </div>
                   </div>
                 )}
@@ -327,6 +364,44 @@ export default function FeedPage() {
                 </Link>
               </div>
             </div>
+
+            {/* Profile Completion Widget (for incomplete profiles) */}
+            {user && profile && !dismissedCompletion && (() => {
+              const comp = calculateProfileCompletion(
+                profile,
+                getProjectsByProfileId(profile.id),
+                getLinksByProfileId(profile.id)
+              );
+              if (comp.percentage >= 100) return null;
+              return (
+                <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900">Profile Completion: {comp.percentage}%</span>
+                    <button
+                      onClick={() => setDismissedCompletion(true)}
+                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                      aria-label="Dismiss profile completion"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#0A66C2] transition-all" style={{ width: `${comp.percentage}%` }} />
+                  </div>
+                  <div className="space-y-1">
+                    {comp.suggestions.slice(0, 2).map((s) => (
+                      <Link
+                        key={s.id}
+                        href={`/u/${profile.username}?edit=${s.tab}`}
+                        className="block text-[11px] text-[#0A66C2] hover:underline font-medium"
+                      >
+                        + {s.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Premium Upgrade CTA Card */}
             {!profile?.is_premium && (
@@ -570,16 +645,71 @@ export default function FeedPage() {
                         </div>
                       </div>
 
-                      {/* Connect / Options button */}
-                      {!isAuthor && (
+                      {/* Connect & Post Menu */}
+                      <div className="flex items-center gap-1 shrink-0 relative">
+                        {!isAuthor && (
+                          <button
+                            onClick={() => handleConnect(post.author_id)}
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#0A66C2] hover:bg-blue-50 transition-colors cursor-pointer"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Connect</span>
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleConnect(post.author_id)}
-                          className="shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#0A66C2] hover:bg-blue-50 transition-colors"
+                          onClick={() => setOpenPostMenuId(openPostMenuId === post.id ? null : post.id)}
+                          className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                          aria-label="Post options"
                         >
-                          <UserPlus className="w-3.5 h-3.5" />
-                          <span>Connect</span>
+                          <MoreHorizontal className="w-4 h-4" />
                         </button>
-                      )}
+                        {openPostMenuId === post.id && (
+                          <div className="absolute right-0 top-8 w-44 bg-white rounded-xl border border-slate-200 shadow-lg py-1.5 z-30 text-xs">
+                            {user && (
+                              <button
+                                onClick={() => {
+                                  toggleBookmarkPost(post.id, user.id);
+                                  setOpenPostMenuId(null);
+                                  refreshFeed();
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                              >
+                                {(post.bookmarked_by || []).includes(user.id) ? 'Remove Bookmark' : 'Save Post'}
+                              </button>
+                            )}
+                            {isAuthor ? (
+                              <button
+                                onClick={() => {
+                                  deletePost(post.id);
+                                  setOpenPostMenuId(null);
+                                  refreshFeed();
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-rose-50 text-rose-600 font-semibold cursor-pointer"
+                              >
+                                Delete Post
+                              </button>
+                            ) : (
+                              user && (
+                                <button
+                                  onClick={() => {
+                                    submitAbuseReport({
+                                      reporter_user_id: user.id,
+                                      target_type: 'post',
+                                      target_id: post.id,
+                                      reason: 'Inappropriate or spam content',
+                                    });
+                                    setOpenPostMenuId(null);
+                                    alert('Post reported for review.');
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 hover:bg-rose-50 text-rose-600 font-medium cursor-pointer"
+                                >
+                                  Report Post
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Post Content */}

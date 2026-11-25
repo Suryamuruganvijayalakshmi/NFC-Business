@@ -3,378 +3,564 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
-import { 
-  getCurrentUser, 
-  getProfileByUserId, 
-  getAllProfiles, 
-  saveProfile, 
-  saveNFCCard,
-  saveLink
+import {
+  getCurrentUser,
+  getProfileByUserId,
+  getAllProfiles,
+  saveProfile,
+  saveProject,
+  saveLink,
+  getProjectsByProfileId,
+  getLinksByProfileId,
 } from '@/lib/store';
-import { Profile, ProfileType, NFCCard, SocialLink } from '@/lib/types';
-import { 
-  Sparkles, 
-  User, 
-  Briefcase, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  ArrowRight, 
-  CheckCircle2, 
-  Palette, 
-  Building,
-  GraduationCap,
-  Wifi,
-  ShieldCheck,
-  Globe
+import { calculateProfileCompletion } from '@/lib/profileCompletion';
+import { Profile, ProfileType, SocialLink, PortfolioProject, UserSession } from '@/lib/types';
+import {
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  Camera,
+  MapPin,
+  Briefcase,
+  Sparkles,
+  FolderGit2,
+  Globe,
+  Eye,
+  Upload,
 } from 'lucide-react';
 
-const profileCategories: { id: ProfileType; title: string; desc: string; icon: any }[] = [
-  { id: 'professional', title: 'Professional', desc: 'Consultants, executives, developers & engineers', icon: Briefcase },
-  { id: 'creator', title: 'Creator & Artist', desc: 'Designers, YouTubers, photographers & writers', icon: Palette },
-  { id: 'personal', title: 'Student & Individual', desc: 'Students, graduates, resumes & social identity', icon: GraduationCap },
-  { id: 'business', title: 'Business & Agency', desc: 'Startups, corporate sales teams & enterprises', icon: Building },
+const PROFILE_CATEGORIES: { id: ProfileType; label: string }[] = [
+  { id: 'professional', label: 'Professional / Engineer' },
+  { id: 'creator', label: 'Creator / Designer' },
+  { id: 'personal', label: 'Student / Individual' },
+  { id: 'business', label: 'Founder / Business' },
 ];
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const [existingProfile, setExistingProfile] = useState<Profile | null>(null);
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Form Fields
-  const [username, setUsername] = useState('');
+  // Step 1: Basic Identity
   const [fullName, setFullName] = useState('');
-  const [title, setTitle] = useState('');
-  const [bio, setBio] = useState('');
-  const [profileType, setProfileType] = useState<ProfileType>('professional');
-  const [phone, setPhone] = useState('');
+  const [profileImage, setProfileImage] = useState('');
+  const [headline, setHeadline] = useState('');
   const [location, setLocation] = useState('');
+  const [profileType, setProfileType] = useState<ProfileType>('professional');
+
+  // Step 2: Professional Information
+  const [about, setAbout] = useState('');
+  const [company, setCompany] = useState('');
+  const [skillsInput, setSkillsInput] = useState('');
+  const [eduSchool, setEduSchool] = useState('');
+  const [eduDegree, setEduDegree] = useState('');
+
+  // Step 3: Work & Projects (Optional)
+  const [projTitle, setProjTitle] = useState('');
+  const [projDesc, setProjDesc] = useState('');
+  const [projTech, setProjTech] = useState('');
+  const [projGithub, setProjGithub] = useState('');
+  const [projLive, setProjLive] = useState('');
+
+  // Step 4: Digital Identity
+  const [username, setUsername] = useState('');
   const [website, setWebsite] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [phone, setPhone] = useState('');
+  const [published, setPublished] = useState(true);
 
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     setCurrentUser(user);
 
-    // If user already has an active profile, proceed directly to Home Feed
     const existing = getProfileByUserId(user.id);
-    if (existing && existing.title && existing.title !== 'Digital Identity Pioneer' && existing.title !== 'SignBridge Pioneer') {
-      router.push('/feed');
+    const onboardingDone = Boolean(
+      (existing?.section_visibility as Record<string, unknown> | undefined)?._onboarding_completed
+    );
+
+    // Existing user who already completed onboarding -> immediate Home Feed
+    if (existing && onboardingDone) {
+      router.replace('/feed');
       return;
     }
 
-    // Pre-populate fields from Google or session metadata
-    if (user.user_metadata) {
-      const meta = user.user_metadata as any;
+    if (existing) {
+      setExistingProfile(existing);
+      setFullName(existing.full_name || '');
+      setHeadline(existing.headline || existing.title || '');
+      setLocation(existing.location || '');
+      setProfileType(existing.profile_type || 'professional');
+      setProfileImage(existing.profile_image || '');
+      setAbout(existing.about || existing.bio || '');
+      setCompany(existing.company || '');
+      setSkillsInput((existing.skills || []).join(', '));
+      setUsername(existing.username || '');
+      setWebsite(existing.website || existing.portfolio_url || '');
+      setPhone(existing.phone || '');
+    } else {
+      const meta = (user.user_metadata || {}) as Record<string, string>;
       if (meta.full_name) setFullName(meta.full_name);
-      else if (meta.name) setFullName(meta.name);
       if (meta.username) setUsername(meta.username);
-      if (meta.profile_type) setProfileType(meta.profile_type);
-    }
-    if (!username && user.email) {
-      const suggested = user.email.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase();
-      setUsername(suggested);
+      if (meta.profile_type) setProfileType(meta.profile_type as ProfileType);
+      if (!meta.username && user.email) {
+        setUsername(user.email.split('@')[0].replace(/[^a-z0-9_-]/g, '').toLowerCase());
+      }
     }
   }, [router]);
 
-  const handleFinishOnboarding = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPG, PNG, WebP).');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image size must be under 10MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxW = 512;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxW) {
+          h = Math.round((h * maxW) / w);
+          w = maxW;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          setProfileImage(canvas.toDataURL('image/jpeg', 0.85));
+        }
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const buildDraftProfile = (markCompleted: boolean): Profile => {
+    const cleanUsername = (username || currentUser?.email?.split('@')[0] || 'member')
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '')
+      .trim();
+
+    const parsedSkills = skillsInput
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const profileId = existingProfile?.id || `prof-${Date.now()}`;
+
+    return {
+      ...(existingProfile || {}),
+      id: profileId,
+      user_id: currentUser?.id || existingProfile?.user_id || '',
+      username: cleanUsername,
+      full_name: fullName.trim() || cleanUsername,
+      profile_type: profileType,
+      title: headline.trim() || 'SignTap Member',
+      headline: headline.trim() || 'SignTap Member',
+      about: about.trim(),
+      bio: about.trim().slice(0, 220),
+      profile_image: profileImage || existingProfile?.profile_image || '',
+      cover_image: existingProfile?.cover_image || '',
+      location: location.trim(),
+      company: company.trim(),
+      email: existingProfile?.email || currentUser?.email || '',
+      phone: phone.trim(),
+      website: website.trim(),
+      portfolio_url: website.trim(),
+      skills: parsedSkills,
+      education:
+        eduSchool.trim() && eduDegree.trim()
+          ? [
+              {
+                id: `edu-${Date.now()}`,
+                school: eduSchool.trim(),
+                degree: eduDegree.trim(),
+                field_of_study: eduDegree.trim(),
+                start_year: '2021',
+                end_year: '2025',
+              },
+              ...(existingProfile?.education || []),
+            ]
+          : existingProfile?.education || [],
+      theme: existingProfile?.theme || 'signature',
+      accent_color: existingProfile?.accent_color || '#0A66C2',
+      button_style: existingProfile?.button_style || 'rounded',
+      font_family: existingProfile?.font_family || 'sans',
+      background_style: existingProfile?.background_style || 'clean',
+      published,
+      section_visibility: {
+        ...(existingProfile?.section_visibility || {}),
+        bio: true,
+        contact: true,
+        socials: true,
+        skills: true,
+        portfolio: true,
+        education: true,
+        experience: true,
+        _onboarding_completed: markCompleted,
+      } as Profile['section_visibility'],
+      created_at: existingProfile?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  };
+
+  const previewProfile = buildDraftProfile(false);
+  const previewProjects: PortfolioProject[] = projTitle.trim()
+    ? [
+        {
+          id: 'preview-proj',
+          profile_id: previewProfile.id,
+          title: projTitle.trim(),
+          description: projDesc.trim(),
+          image_url: '/images/nfc-smart-card.webp',
+          project_url: projLive.trim() || projGithub.trim(),
+          technologies: projTech.split(',').map((t) => t.trim()).filter(Boolean),
+          category: 'Featured Work',
+          display_order: 1,
+          created_at: new Date().toISOString(),
+        },
+        ...getProjectsByProfileId(previewProfile.id),
+      ]
+    : getProjectsByProfileId(previewProfile.id);
+
+  const previewLinks: SocialLink[] = [
+    ...(linkedinUrl.trim()
+      ? [
+          {
+            id: 'preview-li',
+            profile_id: previewProfile.id,
+            platform: 'linkedin' as const,
+            label: 'LinkedIn',
+            url: linkedinUrl.trim(),
+            display_order: 1,
+            visible: true,
+          },
+        ]
+      : []),
+    ...getLinksByProfileId(previewProfile.id),
+  ];
+
+  const completion = calculateProfileCompletion(previewProfile, previewProjects, previewLinks);
+
+  const handleFinish = (skipForLater: boolean = false) => {
     setError('');
+    if (!currentUser) return;
 
     const cleanUsername = username.toLowerCase().replace(/[^a-z0-9_-]/g, '').trim();
     if (!cleanUsername || cleanUsername.length < 3) {
       setError('Username must be at least 3 alphanumeric characters.');
+      setStep(4);
       return;
     }
 
-    // Check if username taken by another user
-    const all = getAllProfiles();
-    const taken = all.find(p => p.username.toLowerCase() === cleanUsername && p.user_id !== currentUser?.id);
+    const taken = getAllProfiles().find(
+      (p) => p.username.toLowerCase() === cleanUsername && p.user_id !== currentUser.id
+    );
     if (taken) {
-      setError(`The username "${cleanUsername}" is already claimed. Please choose another.`);
+      setError(`@${cleanUsername} is already taken. Please choose another handle.`);
+      setStep(4);
       return;
     }
 
     setLoading(true);
+    const finalProfile = buildDraftProfile(!skipForLater);
+    saveProfile(finalProfile);
 
-    try {
-      const user = currentUser;
-      const profileId = `prof-${Date.now()}`;
-
-      const newProfile: Profile = {
-        id: profileId,
-        user_id: user.id,
-        username: cleanUsername,
-        full_name: fullName.trim() || cleanUsername,
-        profile_type: profileType,
-        title: title.trim() || 'Professional & Innovator',
-        bio: bio.trim() || `Welcome to my official digital identity page. Connect with me or save my contact details below.`,
-        profile_image: user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-        cover_image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80',
-        email: user.email || '',
-        phone: phone.trim() || '',
-        location: location.trim() || '',
-        website: website.trim() || '',
-        theme: profileType === 'creator' ? 'creative' : 'signature',
-        accent_color: '#087CF0',
-        button_style: 'rounded',
-        font_family: 'sans',
-        background_style: 'navy_grid',
-        published: true,
+    if (projTitle.trim()) {
+      saveProject({
+        id: `proj-${Date.now()}`,
+        profile_id: finalProfile.id,
+        title: projTitle.trim(),
+        description: projDesc.trim() || 'Featured project on SignTap.',
+        image_url: '/images/nfc-smart-card.webp',
+        project_url: projLive.trim() || projGithub.trim() || '',
+        technologies: projTech.split(',').map((t) => t.trim()).filter(Boolean),
+        category: 'Featured Work',
+        display_order: 1,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      saveProfile(newProfile);
-
-      // Create their unique NFC card
-      const newCard: NFCCard = {
-        id: `card-${Date.now()}`,
-        card_uid: `ST-NFC-${Math.floor(1000 + Math.random() * 9000)}`,
-        activation_code: `ACT-${Math.floor(1000 + Math.random() * 9000)}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
-        owner_user_id: user.id,
-        profile_id: newProfile.id,
-        card_name: `${newProfile.full_name}'s Smart Card`,
-        status: 'active',
-        tap_count: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      saveNFCCard(newCard);
-
-      // Add a starter link if website provided
-      if (website.trim()) {
-        const starterLink: SocialLink = {
-          id: `link-${Date.now()}`,
-          profile_id: newProfile.id,
-          platform: 'website',
-          label: 'My Official Website',
-          url: website.startsWith('http') ? website : `https://${website}`,
-          display_order: 1,
-          visible: true,
-        };
-        saveLink(starterLink);
-      }
-
-      // Route directly to their Home Feed!
-      router.push('/feed');
-    } catch (err: any) {
-      setError(err?.message || 'Failed to complete profile creation.');
-      setLoading(false);
+      });
     }
+
+    if (linkedinUrl.trim()) {
+      saveLink({
+        id: `link-li-${Date.now()}`,
+        profile_id: finalProfile.id,
+        platform: 'linkedin',
+        label: 'LinkedIn',
+        url: linkedinUrl.trim(),
+        display_order: 1,
+        visible: true,
+      });
+    }
+
+    router.push('/feed');
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFD] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center mb-6">
-        <Logo theme="light" size="lg" className="inline-block mb-3" />
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 text-[#923cf6] text-xs font-semibold mb-2">
-          <Sparkles className="w-3.5 h-3.5" /> Step 1 of 1: Welcome to SignTap
-        </span>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#101828]">
-          Claim Your Digital Identity Page
-        </h2>
-        <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
-          Set up your unique public link and contactless profile. You can modify any details later from your dashboard.
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#F4F2EE] py-10 px-4 flex flex-col items-center">
+      <div className="w-full max-w-2xl space-y-6">
+        <div className="flex items-center justify-between">
+          <Logo theme="light" size="md" />
+          <button
+            type="button"
+            onClick={() => handleFinish(true)}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+          >
+            Continue later →
+          </button>
+        </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
-        <div className="bg-white py-8 px-6 sm:px-10 shadow-xl rounded-3xl border border-slate-200">
-          
+        {/* Stepper & Live Completion Progress */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-800">Step {step} of 5 · Profile Setup</span>
+            <span className="font-bold text-[#0A66C2]">Profile Completion: {completion.percentage}%</span>
+          </div>
+          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#0A66C2] transition-all duration-300"
+              style={{ width: `${completion.percentage}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2 pt-1 text-[11px] font-semibold text-slate-400">
+            {['Basic Identity', 'Professional Info', 'Projects', 'Digital Identity', 'Preview'].map((lbl, idx) => (
+              <button
+                key={lbl}
+                type="button"
+                onClick={() => setStep(idx + 1)}
+                className={`cursor-pointer ${step === idx + 1 ? 'text-[#0A66C2]' : step > idx + 1 ? 'text-emerald-600' : ''}`}
+              >
+                {idx + 1}. {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
           {error && (
-            <div className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-              <span className="font-semibold">Notice:</span> {error}
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+              {error}
             </div>
           )}
 
-          <form onSubmit={handleFinishOnboarding} className="space-y-6">
-            
-            {/* 1. Unique Profile URL */}
-            <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1">
-                1. Choose Your Unique Public Handle <span className="text-rose-500">*</span>
-              </label>
-              <p className="text-[11px] text-slate-500 mb-2">
-                This is the web link written to your physical NFC Smart Card and QR code.
-              </p>
-              <div className="relative flex items-center">
-                <span className="absolute left-3.5 text-xs font-mono font-medium text-slate-400 select-none">
-                  signtap.me/u/
-                </span>
-                <input
-                  required
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
-                  placeholder="yourname"
-                  className="w-full pl-40 sm:pl-42 pr-3.5 py-3 rounded-xl border border-slate-200 text-sm font-mono font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#087CF0] bg-slate-50/50"
-                />
-              </div>
-            </div>
-
-            {/* 2. Full Name & Professional Headline */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Full Name <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    required
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Surya Narayanan"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
-                  />
-                  <User className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+          {step === 1 && (
+            <div className="space-y-4">
+              <h1 className="text-xl font-extrabold text-slate-900">Basic Identity</h1>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                  {profileImage ? (
+                    <img src={profileImage} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera className="w-6 h-6 text-slate-400" />
+                  )}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Professional Title / Role <span className="text-rose-500">*</span>
+                <label className="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                  <Upload className="w-3.5 h-3.5" />
+                  Upload Profile Photo
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
                 </label>
-                <div className="relative">
-                  <input
-                    required
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Founder & Engineer"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
-                  />
-                  <Briefcase className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Full Name *</label>
+                <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Professional Headline</label>
+                <input value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Product Engineer | Building AI & Hardware" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Location</label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="City, Country" className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Current Role / Category</label>
+                  <select value={profileType} onChange={(e) => setProfileType(e.target.value as ProfileType)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
+                    {PROFILE_CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* 3. Category Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-2">
-                Select Profile Category
-              </label>
-              <div className="grid grid-cols-2 gap-2.5">
-                {profileCategories.map((cat) => {
-                  const Icon = cat.icon;
-                  const isSelected = profileType === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setProfileType(cat.id)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        isSelected
-                          ? 'border-[#087CF0] bg-[#087CF0]/5 ring-1 ring-[#087CF0]'
-                          : 'border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 ${isSelected ? 'text-[#087CF0]' : 'text-slate-400'}`} />
-                        <span className={`text-xs font-bold ${isSelected ? 'text-[#087CF0]' : 'text-slate-800'}`}>
-                          {cat.title}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">{cat.desc}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 4. Bio */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Short Bio / Introduction
-              </label>
-              <textarea
-                rows={2}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Briefly describe what you do, your achievements, or who you'd like to meet."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
-              />
-            </div>
-
-            {/* 5. Contact Information */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {step === 2 && (
+            <div className="space-y-4">
+              <h1 className="text-xl font-extrabold text-slate-900">Professional Information</h1>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Phone / WhatsApp (Optional)
-                </label>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
-                  />
-                  <Phone className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                <label className="block text-xs font-bold text-slate-700 mb-1">About</label>
+                <textarea rows={3} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Briefly describe your work, goals, or interests..." className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Industry / Organization</label>
+                  <input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Company, Startup, or College" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Skills (comma separated)</label>
+                  <input value={skillsInput} onChange={(e) => setSkillsInput(e.target.value)} placeholder="React, Product Design, IoT" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
                 </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  City / Location (Optional)
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Bangalore, India"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
-                  />
-                  <MapPin className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Education (School / University)</label>
+                  <input value={eduSchool} onChange={(e) => setEduSchool(e.target.value)} placeholder="e.g. IIT Madras" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Degree / Program</label>
+                  <input value={eduDegree} onChange={(e) => setEduDegree(e.target.value)} placeholder="e.g. B.Tech Computer Science" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Website / Portfolio Link */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Portfolio or Company Website (Optional)
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  placeholder="https://yourportfolio.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087CF0]"
-                />
-                <Globe className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                  <FolderGit2 className="w-5 h-5 text-[#0A66C2]" /> Work & Projects
+                </h1>
+                <span className="text-xs text-slate-400 font-semibold">Optional</span>
+              </div>
+              <input value={projTitle} onChange={(e) => setProjTitle(e.target.value)} placeholder="Project Title" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <textarea rows={3} value={projDesc} onChange={(e) => setProjDesc(e.target.value)} placeholder="Short description of what you built..." className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <input value={projTech} onChange={(e) => setProjTech(e.target.value)} placeholder="Technologies used (comma separated)" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input value={projGithub} onChange={(e) => setProjGithub(e.target.value)} placeholder="GitHub Link (optional)" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                <input value={projLive} onChange={(e) => setProjLive(e.target.value)} placeholder="Live Project URL (optional)" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
               </div>
             </div>
+          )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-4 py-3.5 rounded-xl bg-[#087CF0] text-white text-sm font-semibold hover:bg-[#0668cc] transition-colors flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 disabled:opacity-50 cursor-pointer"
-            >
-              <span>{loading ? 'Configuring Your Identity...' : 'Launch My Digital Dashboard'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+          {step === 4 && (
+            <div className="space-y-4">
+              <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[#0A66C2]" /> Digital Identity
+              </h1>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Public SignTap Handle *</label>
+                <div className="flex items-center rounded-xl border border-slate-200 overflow-hidden">
+                  <span className="px-3 py-2.5 bg-slate-50 text-xs text-slate-500 border-r border-slate-200">
+                    signtap.click/u/
+                  </span>
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                    className="flex-1 px-3 py-2.5 text-sm font-mono focus:outline-none"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="Portfolio / Website URL" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                <input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="LinkedIn URL (optional)" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Contact Phone / WhatsApp (optional)" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <label className="flex items-center gap-2 text-xs text-slate-700">
+                <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
+                Make my public profile discoverable on SignTap
+              </label>
+            </div>
+          )}
 
-          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-center gap-6 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1">
-              <Wifi className="w-3.5 h-3.5 text-[#087CF0]" /> NFC Ready
-            </span>
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Encrypted Identity
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" /> Instant vCard
-            </span>
+          {step === 5 && (
+            <div className="space-y-4">
+              <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                <Eye className="w-5 h-5 text-[#0A66C2]" /> Profile Preview
+              </h1>
+              <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-[#0A66C2] text-white font-bold flex items-center justify-center overflow-hidden">
+                    {profileImage ? (
+                      <img src={profileImage} alt={fullName} className="w-full h-full object-cover" />
+                    ) : (
+                      (fullName || 'S').charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-slate-900 text-base">{fullName || username}</h2>
+                    <p className="text-xs text-slate-600">{headline || 'SignTap Member'}</p>
+                    <p className="text-[11px] text-[#0A66C2] font-mono mt-0.5">/u/{username}</p>
+                  </div>
+                </div>
+                {about && <p className="text-xs text-slate-700 leading-relaxed">{about}</p>}
+                {skillsInput && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {skillsInput.split(',').map((s) => s.trim()).filter(Boolean).map((s) => (
+                      <span key={s} className="px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-[11px] font-semibold text-slate-700">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {completion.suggestions.length > 0 && (
+                <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-slate-700 space-y-1">
+                  <p className="font-bold text-[#0A66C2] flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" /> Remaining optional items ({100 - completion.percentage}%):
+                  </p>
+                  {completion.suggestions.slice(0, 3).map((s) => (
+                    <p key={s.id}>• {s.label}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Navigation Controls */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+            {step > 1 ? (
+              <button
+                type="button"
+                onClick={() => setStep(step - 1)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Back
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {step < 5 ? (
+              <button
+                type="button"
+                onClick={() => setStep(step + 1)}
+                className="px-5 py-2.5 rounded-xl bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                Next <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleFinish(false)}
+                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {loading ? 'Publishing...' : 'Publish & Go to Home Feed'}
+              </button>
+            )}
           </div>
         </div>
       </div>

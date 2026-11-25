@@ -44,7 +44,7 @@ export default function SignUpPage() {
         setError(res.error);
         setLoading(false);
       } else {
-        router.push('/feed');
+        router.push('/onboarding');
       }
     } catch (err: any) {
       setError(err?.message || 'Registration failed');
